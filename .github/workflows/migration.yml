@@ -1,0 +1,53 @@
+name: Continuous integration for Spot Matching Engine
+
+on:
+  push:
+    branches:
+      - migration*
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up AdoptOpenJDK 1.11
+        uses: joschi/setup-jdk@v2.3.0
+        with:
+          java-version: 11
+          architecture: x64
+
+      - name: Get current time
+        uses: MyJetTools/get-current-time@v2
+        id: current-time
+        with:
+          format: YYYY-MM-DD HH:mm:ss
+          utcOffset: "+00:00"
+
+      - name: Build
+        uses: eskatos/gradle-command-action@v1
+        with:
+          gradle-version: 6.6.1
+          arguments: clean build printProperties
+
+      - name: Check dir
+        run: ls build/distributions
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: MyJetWallet.MatchingEngine-1.0.zip
+          path: build/distributions
+
+      - name: Publish image
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          path: ./build/distributions
+          registry: docker.pkg.github.com
+          repository: ${{ secrets.ORG_NAME }}/service.matchingengine/myjetwallet.service.matchingengine-test
+          tags: latest
+          add_git_labels: true
+          build_args: app_version=myjetwallet.service.matchingengine-test:latest,app_compilation_date=${{ steps.current-time.outputs.formattedTime }}
