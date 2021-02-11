@@ -4,10 +4,10 @@ import com.lykke.matching.engine.balance.BalanceException
 import com.lykke.matching.engine.daos.LimitOrder
 import com.lykke.matching.engine.daos.WalletOperation
 import com.lykke.matching.engine.holders.ApplicationSettingsHolder
-import com.lykke.matching.engine.order.transaction.ExecutionContext
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.order.process.common.OrderUtils
 import com.lykke.matching.engine.order.process.context.StopLimitOrderContext
+import com.lykke.matching.engine.order.transaction.ExecutionContext
 import com.lykke.matching.engine.outgoing.messages.LimitOrderWithTrades
 import com.lykke.matching.engine.services.validators.business.StopOrderBusinessValidator
 import com.lykke.matching.engine.services.validators.impl.OrderValidationException
@@ -18,10 +18,12 @@ import org.springframework.stereotype.Component
 import java.math.BigDecimal
 
 @Component
-class StopLimitOrderProcessor(private val limitOrderInputValidator: LimitOrderInputValidator,
-                              private val stopOrderBusinessValidator: StopOrderBusinessValidator,
-                              private val applicationSettingsHolder: ApplicationSettingsHolder,
-                              private val limitOrderProcessor: LimitOrderProcessor) : OrderProcessor<LimitOrder> {
+class StopLimitOrderProcessor(
+    private val limitOrderInputValidator: LimitOrderInputValidator,
+    private val stopOrderBusinessValidator: StopOrderBusinessValidator,
+    private val applicationSettingsHolder: ApplicationSettingsHolder,
+    private val limitOrderProcessor: LimitOrderProcessor
+) : OrderProcessor<LimitOrder> {
 
     override fun processOrder(order: LimitOrder, executionContext: ExecutionContext): ProcessedOrder {
         val orderContext = StopLimitOrderContext(order, executionContext)
@@ -35,7 +37,8 @@ class StopLimitOrderProcessor(private val limitOrderInputValidator: LimitOrderIn
     }
 
     private fun validateOrder(orderContext: StopLimitOrderContext): OrderValidationResult {
-        val preProcessorValidationResult = orderContext.executionContext.preProcessorValidationResultsByOrderId[orderContext.order.id]
+        val preProcessorValidationResult =
+            orderContext.executionContext.preProcessorValidationResultsByOrderId[orderContext.order.id]
         if (preProcessorValidationResult != null && !preProcessorValidationResult.isValid) {
             return preProcessorValidationResult
         }
@@ -56,10 +59,12 @@ class StopLimitOrderProcessor(private val limitOrderInputValidator: LimitOrderIn
     private fun performBusinessValidation(orderContext: StopLimitOrderContext): OrderValidationResult {
         if (orderContext.limitVolume != null) {
             try {
-                stopOrderBusinessValidator.performValidation(calculateAvailableBalance(orderContext),
-                        orderContext.limitVolume,
-                        orderContext.order,
-                        orderContext.executionContext.date)
+                stopOrderBusinessValidator.performValidation(
+                    calculateAvailableBalance(orderContext),
+                    orderContext.limitVolume,
+                    orderContext.order,
+                    orderContext.executionContext.date
+                )
             } catch (e: OrderValidationException) {
                 return OrderValidationResult(false, false, e.message, e.orderStatus)
             }
@@ -111,15 +116,18 @@ class StopLimitOrderProcessor(private val limitOrderInputValidator: LimitOrderIn
         val bestBidPrice = orderBook.getBidPrice()
         val bestAskPrice = orderBook.getAskPrice()
 
-        val price: BigDecimal = if (order.lowerLimitPrice != null && (order.isBuySide() && bestAskPrice > BigDecimal.ZERO && bestAskPrice <= order.lowerLimitPrice ||
-                        !order.isBuySide() && bestBidPrice > BigDecimal.ZERO && bestBidPrice <= order.lowerLimitPrice)) {
-            order.lowerPrice!!
-        } else if (order.upperLimitPrice != null && (order.isBuySide() && bestAskPrice >= order.upperLimitPrice ||
-                        !order.isBuySide() && bestBidPrice >= order.upperLimitPrice)) {
-            order.upperPrice!!
-        } else {
-            return false
-        }
+        val price: BigDecimal =
+            if (order.lowerLimitPrice != null && (order.isBuySide() && bestAskPrice > BigDecimal.ZERO && bestAskPrice <= order.lowerLimitPrice ||
+                        !order.isBuySide() && bestBidPrice > BigDecimal.ZERO && bestBidPrice <= order.lowerLimitPrice)
+            ) {
+                order.lowerPrice!!
+            } else if (order.upperLimitPrice != null && (order.isBuySide() && bestAskPrice >= order.upperLimitPrice ||
+                        !order.isBuySide() && bestBidPrice >= order.upperLimitPrice)
+            ) {
+                order.upperPrice!!
+            } else {
+                return false
+            }
         orderContext.immediateExecutionPrice = price
         executionContext.info("${getOrderInfo(order)} is ready to immediate execution (bestBidPrice=$bestBidPrice, bestAskPrice=$bestAskPrice)")
         return true
@@ -139,10 +147,14 @@ class StopLimitOrderProcessor(private val limitOrderInputValidator: LimitOrderIn
     private fun addOrderToStopOrderBook(orderContext: StopLimitOrderContext): ProcessedOrder {
         val order = orderContext.order
         val limitVolume = orderContext.limitVolume!!
-        val walletOperation = WalletOperation(order.clientId,
-                orderContext.limitAsset!!.assetId,
-                BigDecimal.ZERO,
-                limitVolume)
+        val walletOperation = WalletOperation(
+            order.brokerId,
+            order.accountId,
+            order.clientId,
+            orderContext.limitAsset!!.symbol,
+            BigDecimal.ZERO,
+            limitVolume
+        )
 
         try {
             orderContext.executionContext.walletOperationsProcessor.preProcess(listOf(walletOperation))
@@ -163,11 +175,18 @@ class StopLimitOrderProcessor(private val limitOrderInputValidator: LimitOrderIn
         val balancesGetter = orderContext.executionContext.walletOperationsProcessor
         val clientId = orderContext.order.clientId
         val limitAsset = orderContext.limitAsset!!
-        return NumberUtils.setScaleRoundHalfUp(balancesGetter.getAvailableBalance(clientId, limitAsset.assetId), limitAsset.accuracy)
+        return NumberUtils.setScaleRoundHalfUp(
+            balancesGetter.getAvailableBalance(
+                orderContext.order.brokerId,
+                orderContext.order.accountId,
+                clientId,
+                limitAsset.symbol
+            ),
+            limitAsset.accuracy
+        )
     }
 
     private fun getOrderInfo(order: LimitOrder): String {
         return "Stop limit order (id: ${order.externalId})"
     }
-
 }

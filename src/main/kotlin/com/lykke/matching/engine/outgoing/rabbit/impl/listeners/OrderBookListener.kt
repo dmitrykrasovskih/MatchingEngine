@@ -35,10 +35,10 @@ class OrderBookListener {
 
     @PostConstruct
     fun initRabbitMqPublisher() {
-        rabbitMqOldService.startPublisher(config.me.rabbitMqConfigs.orderBooks,
+        rabbitMqOldService.startPublisher(config.matchingEngine.rabbitMqConfigs.orderBooks,
                 OrderBookListener::class.java.simpleName,
                 rabbitOrderBookQueue,
-                config.me.name,
+                config.matchingEngine.name,
                 AppVersion.VERSION,
                 BuiltinExchangeType.FANOUT)
     }

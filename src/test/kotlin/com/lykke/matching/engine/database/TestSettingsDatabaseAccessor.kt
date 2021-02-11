@@ -30,16 +30,16 @@ class TestSettingsDatabaseAccessor : SettingsDatabaseAccessor {
         settingGroups[settingGroup] = SettingsGroup(settingGroup, settings)
     }
 
-    override fun deleteSetting(availableSettingGroup: AvailableSettingGroup, settingName: String) {
-        val settingGroup = settingGroups[availableSettingGroup] ?: return
+    override fun deleteSetting(settingGroup: AvailableSettingGroup, settingName: String) {
+        val currentSettingGroup = settingGroups[settingGroup] ?: return
 
-        val settings = settingGroup.settings.toMutableSet()
+        val settings = currentSettingGroup.settings.toMutableSet()
         settings.removeIf { it.name == settingName }
-        settingGroups.put(availableSettingGroup, SettingsGroup(availableSettingGroup, settings))
+        settingGroups[settingGroup] = SettingsGroup(settingGroup, settings)
     }
 
-    override fun deleteSettingsGroup(availableSettingGroup: AvailableSettingGroup) {
-        settingGroups.remove(availableSettingGroup)
+    override fun deleteSettingsGroup(settingGroup: AvailableSettingGroup) {
+        settingGroups.remove(settingGroup)
     }
 
     fun clear() {

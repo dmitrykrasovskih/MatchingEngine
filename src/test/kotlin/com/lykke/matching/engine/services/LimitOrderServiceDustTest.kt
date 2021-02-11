@@ -5,7 +5,7 @@ import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
-import com.lykke.matching.engine.database.TestBackOfficeDatabaseAccessor
+import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
@@ -38,13 +38,13 @@ class LimitOrderServiceDustTest : AbstractTest() {
     open class Config {
         @Bean
         @Primary
-        open fun testBackOfficeDatabaseAccessor(): TestBackOfficeDatabaseAccessor {
-            val testBackOfficeDatabaseAccessor = TestBackOfficeDatabaseAccessor()
+        open fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
+            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
 
-            testBackOfficeDatabaseAccessor.addAsset(Asset("USD", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("BTC", 8))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 8))
 
-            return testBackOfficeDatabaseAccessor
+            return testDictionariesDatabaseAccessor
         }
 
         @Bean
@@ -66,7 +66,7 @@ class LimitOrderServiceDustTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client2", "BTC", 1000.0)
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 1000.0)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCUSD", "BTC", "USD", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8))
 
         initServices()
     }

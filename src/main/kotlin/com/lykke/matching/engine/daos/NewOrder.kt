@@ -11,6 +11,8 @@ abstract class NewOrder(
         val id: String,
         val externalId: String,
         val assetPairId: String,
+        @Version(3) val brokerId: String,
+        @Version(3) val accountId: String,
         val clientId: String,
         val volume: Double,
         status: String,
@@ -49,7 +51,7 @@ abstract class NewOrder(
 
     fun checkVolume(assetPair: AssetPair): Boolean {
         val volume = getAbsVolume()
-        val minVolume = if (isStraight()) assetPair.minVolume else assetPair.minInvertedVolume
+        val minVolume = if (isStraight()) assetPair.minVolume else null
         return minVolume == null || volume >= minVolume.toDouble()
     }
 

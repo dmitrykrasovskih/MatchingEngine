@@ -5,7 +5,8 @@ import com.lykke.matching.engine.daos.TransferOperation
 import com.lykke.matching.engine.database.reconciliation.events.AccountPersistEvent
 import com.lykke.matching.engine.database.reconciliation.events.OrderBookPersistEvent
 import com.lykke.matching.engine.database.reconciliation.events.StopOrderBookPersistEvent
-import com.lykke.matching.engine.messages.MessageWrapper
+import com.lykke.matching.engine.messages.wrappers.*
+import com.lykke.matching.engine.messages.wrappers.socket.LimitOrderMassCancelMessageWrapper
 import com.lykke.matching.engine.outgoing.messages.*
 import com.lykke.matching.engine.outgoing.messages.v2.events.Event
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
@@ -85,32 +86,32 @@ open class QueueConfig {
     //<editor-fold desc="Input queues">
     @Bean
     @InputQueue
-    open fun limitOrderInputQueue(): BlockingQueue<MessageWrapper> {
-        return LinkedBlockingQueue<MessageWrapper>()
+    open fun limitOrderInputQueue(): BlockingQueue<SingleLimitOrderMessageWrapper> {
+        return LinkedBlockingQueue<SingleLimitOrderMessageWrapper>()
     }
 
     @Bean
     @InputQueue
-    open fun cashInOutInputQueue(): BlockingQueue<MessageWrapper> {
-        return LinkedBlockingQueue<MessageWrapper>()
+    open fun cashInOutInputQueue(): BlockingQueue<CashInOutOperationMessageWrapper> {
+        return LinkedBlockingQueue<CashInOutOperationMessageWrapper>()
     }
 
     @Bean
     @InputQueue
-    open fun cashTransferInputQueue(): BlockingQueue<MessageWrapper> {
-        return LinkedBlockingQueue<MessageWrapper>()
+    open fun cashTransferInputQueue(): BlockingQueue<CashTransferOperationMessageWrapper> {
+        return LinkedBlockingQueue<CashTransferOperationMessageWrapper>()
     }
 
     @Bean
     @InputQueue
-    open fun limitOrderCancelInputQueue(): BlockingQueue<MessageWrapper>{
-        return LinkedBlockingQueue<MessageWrapper>()
+    open fun limitOrderCancelInputQueue(): BlockingQueue<LimitOrderCancelMessageWrapper>{
+        return LinkedBlockingQueue<LimitOrderCancelMessageWrapper>()
     }
 
     @Bean
     @InputQueue
-    open fun limitOrderMassCancelInputQueue(): BlockingQueue<MessageWrapper>{
-        return LinkedBlockingQueue<MessageWrapper>()
+    open fun limitOrderMassCancelInputQueue(): BlockingQueue<LimitOrderMassCancelMessageWrapper>{
+        return LinkedBlockingQueue<LimitOrderMassCancelMessageWrapper>()
     }
 
     @Bean

@@ -7,11 +7,9 @@ import com.lykke.matching.engine.daos.FeeSizeType
 import com.lykke.matching.engine.daos.FeeType
 import com.lykke.matching.engine.daos.wallet.AssetBalance
 import com.lykke.matching.engine.daos.wallet.Wallet
-import com.lykke.matching.engine.database.BackOfficeDatabaseAccessor
-import com.lykke.matching.engine.database.TestBackOfficeDatabaseAccessor
-import com.lykke.matching.engine.messages.MessageType
-import com.lykke.matching.engine.messages.MessageWrapper
-import com.lykke.matching.engine.messages.ProtocolMessages
+import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
+import com.lykke.matching.engine.grpc.TestStreamObserver
+import com.lykke.matching.engine.messages.wrappers.ReservedCashInOutOperationMessageWrapper
 import com.lykke.matching.engine.notification.TestReservedCashOperationListener
 import com.lykke.matching.engine.outgoing.messages.CashOperation
 import com.lykke.matching.engine.outgoing.messages.v2.events.CashInEvent
@@ -20,6 +18,8 @@ import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildFeeInstruction
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildFeeInstructions
 import com.lykke.matching.engine.utils.assertEquals
+import com.lykke.matching.engine.utils.proto.createProtobufTimestampBuilder
+import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Before
@@ -50,19 +50,19 @@ class CashInOutOperationServiceTest : AbstractTest() {
     protected lateinit var reservedCashInOutOperationService: ReservedCashInOutOperationService
 
     @TestConfiguration
-    open class Config {
+    class Config {
         @Bean
         @Primary
-        open fun testBackOfficeDatabaseAccessor(): BackOfficeDatabaseAccessor {
-            val testBackOfficeDatabaseAccessor = TestBackOfficeDatabaseAccessor()
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
+            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
 
-            testBackOfficeDatabaseAccessor.addAsset(Asset("Asset1", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("Asset2", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("Asset3", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("Asset4", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("Asset5", 8))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "Asset1", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "Asset2", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "Asset3", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "Asset4", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "Asset5", 8))
 
-            return testBackOfficeDatabaseAccessor
+            return testDictionariesDatabaseAccessor
         }
     }
 
@@ -182,7 +182,7 @@ class CashInOutOperationServiceTest : AbstractTest() {
     @Test
     fun testCashOutNegative() {
         cashInOutOperationService.processMessage(messageBuilder.buildCashInOutWrapper("Client1", "Asset1", -50.0))
-        var balance = testWalletDatabaseAccessor.getBalance("Client1", "Asset1")
+        val balance = testWalletDatabaseAccessor.getBalance("Client1", "Asset1")
         assertNotNull(balance)
         assertEquals(BigDecimal.valueOf(50.0), balance)
 
@@ -244,7 +244,16 @@ class CashInOutOperationServiceTest : AbstractTest() {
 
     @Test
     fun testRounding() {
-        balancesHolder.insertOrUpdateWallets(listOf(Wallet("Client1", listOf(AssetBalance("Client1","Asset1", BigDecimal.valueOf(29.99))))), null)
+        balancesHolder.insertOrUpdateWallets(
+            listOf(
+                Wallet(
+                    "",
+                    "",
+                    "Client1",
+                    listOf(AssetBalance("Client1", "Asset1", BigDecimal.valueOf(29.99)))
+                )
+            ), null
+        )
         cashInOutOperationService.processMessage(messageBuilder.buildCashInOutWrapper("Client1", "Asset1", -0.01))
         val balance = testWalletDatabaseAccessor.getBalance("Client1", "Asset1")
 
@@ -258,7 +267,7 @@ class CashInOutOperationServiceTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client1", "Asset5", 1.00418803)
         testBalanceHolderWrapper.updateReservedBalance("Client1", "Asset5", 0.00418803)
         initServices()
-        
+
         cashInOutOperationService.processMessage(messageBuilder.buildCashInOutWrapper("Client1", "Asset5", -1.0))
 
         assertEquals(1, cashInOutQueue.size)
@@ -277,8 +286,18 @@ class CashInOutOperationServiceTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client1", "Asset5", 11.0)
         testBalanceHolderWrapper.updateReservedBalance("Client1", "Asset5", 0.0)
         initServices()
-        cashInOutOperationService.processMessage(messageBuilder.buildCashInOutWrapper("Client1", "Asset5", -1.0,
-                fees = buildFeeInstructions(type = FeeType.CLIENT_FEE, size = 0.05, sizeType = FeeSizeType.ABSOLUTE, targetClientId = "Client3", assetIds = listOf("Asset4"))))
+        cashInOutOperationService.processMessage(
+            messageBuilder.buildCashInOutWrapper(
+                "Client1", "Asset5", -1.0,
+                fees = buildFeeInstructions(
+                    type = FeeType.CLIENT_FEE,
+                    size = 0.05,
+                    sizeType = FeeSizeType.ABSOLUTE,
+                    targetClientId = "Client3",
+                    assetIds = listOf("Asset4")
+                )
+            )
+        )
 
         assertEquals(BigDecimal.valueOf(0.01), balancesHolder.getBalance("Client1", "Asset4"))
         assertEquals(BigDecimal.valueOf(0.05), balancesHolder.getBalance("Client3", "Asset4"))
@@ -292,31 +311,73 @@ class CashInOutOperationServiceTest : AbstractTest() {
         initServices()
 
         // Negative fee size
-        cashInOutOperationService.processMessage(messageBuilder.buildCashInOutWrapper("Client1", "Asset5", -1.0,
-                fees = buildFeeInstructions(type = FeeType.CLIENT_FEE, size = -0.1, sizeType = FeeSizeType.PERCENTAGE, targetClientId = "Client3")))
+        cashInOutOperationService.processMessage(
+            messageBuilder.buildCashInOutWrapper(
+                "Client1", "Asset5", -1.0,
+                fees = buildFeeInstructions(
+                    type = FeeType.CLIENT_FEE,
+                    size = -0.1,
+                    sizeType = FeeSizeType.PERCENTAGE,
+                    targetClientId = "Client3"
+                )
+            )
+        )
 
         assertEquals(BigDecimal.valueOf(3.0), balancesHolder.getBalance("Client1", "Asset5"))
         assertEquals(BigDecimal.ZERO, balancesHolder.getBalance("Client3", "Asset5"))
 
         // Fee amount is more than operation amount
-        cashInOutOperationService.processMessage(messageBuilder.buildCashInOutWrapper("Client1", "Asset5", -0.9,
-                fees = buildFeeInstructions(type = FeeType.CLIENT_FEE, size = 0.91, sizeType = FeeSizeType.ABSOLUTE, targetClientId = "Client3")))
+        cashInOutOperationService.processMessage(
+            messageBuilder.buildCashInOutWrapper(
+                "Client1", "Asset5", -0.9,
+                fees = buildFeeInstructions(
+                    type = FeeType.CLIENT_FEE,
+                    size = 0.91,
+                    sizeType = FeeSizeType.ABSOLUTE,
+                    targetClientId = "Client3"
+                )
+            )
+        )
 
         // Multiple fee amount is more than operation amount
-        cashInOutOperationService.processMessage(messageBuilder.buildCashInOutWrapper("Client1", "Asset5", -1.0,
-                fees = listOf(buildFeeInstruction(type = FeeType.CLIENT_FEE, size = 0.5, sizeType = FeeSizeType.PERCENTAGE, targetClientId = "Client3")!!,
-                        buildFeeInstruction(type = FeeType.CLIENT_FEE, size = 0.51, sizeType = FeeSizeType.PERCENTAGE, targetClientId = "Client3")!!)))
+        cashInOutOperationService.processMessage(
+            messageBuilder.buildCashInOutWrapper(
+                "Client1", "Asset5", -1.0,
+                fees = listOf(
+                    buildFeeInstruction(
+                        type = FeeType.CLIENT_FEE,
+                        size = 0.5,
+                        sizeType = FeeSizeType.PERCENTAGE,
+                        targetClientId = "Client3"
+                    )!!,
+                    buildFeeInstruction(
+                        type = FeeType.CLIENT_FEE,
+                        size = 0.51,
+                        sizeType = FeeSizeType.PERCENTAGE,
+                        targetClientId = "Client3"
+                    )!!
+                )
+            )
+        )
 
         assertEquals(BigDecimal.valueOf(3.0), balancesHolder.getBalance("Client1", "Asset5"))
         assertEquals(BigDecimal.ZERO, balancesHolder.getBalance("Client3", "Asset5"))
     }
 
-    private fun buildReservedCashInOutWrapper(clientId: String, assetId: String, amount: Double, bussinesId: String = UUID.randomUUID().toString()): MessageWrapper {
-        return MessageWrapper("Test", MessageType.RESERVED_CASH_IN_OUT_OPERATION.type, ProtocolMessages.ReservedCashInOutOperation.newBuilder()
+    private fun buildReservedCashInOutWrapper(
+        clientId: String,
+        assetId: String,
+        amount: Double,
+        bussinesId: String = UUID.randomUUID().toString()
+    ): ReservedCashInOutOperationMessageWrapper {
+        return ReservedCashInOutOperationMessageWrapper(
+            GrpcIncomingMessages.ReservedCashInOutOperation.newBuilder()
                 .setId(bussinesId)
-                .setClientId(clientId)
+                .setWalletId(clientId)
                 .setAssetId(assetId)
-                .setReservedVolume(amount)
-                .setTimestamp(Date().time).build().toByteArray(), null)
+                .setReservedVolume(amount.toString())
+                .setTimestamp(Date().createProtobufTimestampBuilder()).build(),
+            TestStreamObserver()
+        )
     }
 }

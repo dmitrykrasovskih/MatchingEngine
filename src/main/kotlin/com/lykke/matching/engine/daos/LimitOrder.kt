@@ -1,45 +1,60 @@
 package com.lykke.matching.engine.daos
 
 import com.lykke.matching.engine.daos.fee.v2.NewLimitOrderFeeInstruction
-import com.lykke.matching.engine.daos.order.OrderTimeInForce
 import com.lykke.matching.engine.daos.order.LimitOrderType
-import com.lykke.matching.engine.daos.v2.LimitOrderFeeInstruction
+import com.lykke.matching.engine.daos.order.OrderTimeInForce
 import org.nustaq.serialization.annotations.Version
 import java.io.Serializable
 import java.math.BigDecimal
 import java.util.*
 
-class LimitOrder(id: String,
-                 externalId: String,
-                 assetPairId: String,
-                 clientId: String,
-                 volume: BigDecimal,
-                 var price: BigDecimal,
-                 status: String,
-                 statusDate: Date?,
-                 createdAt: Date,
-                 registered: Date?,
-                 var remainingVolume: BigDecimal,
-                 var lastMatchTime: Date?,
-                 reservedLimitVolume: BigDecimal? = null,
-                 fee: LimitOrderFeeInstruction? = null,
-                 fees: List<NewLimitOrderFeeInstruction>? = null,
-                 val type: LimitOrderType?,
-                 val lowerLimitPrice: BigDecimal?,
-                 val lowerPrice: BigDecimal?,
-                 val upperLimitPrice: BigDecimal?,
-                 val upperPrice: BigDecimal?,
-                 @Transient
-                 val previousExternalId: String?,
-                 @Version(1)
-                 val timeInForce: OrderTimeInForce?,
-                 @Version(1)
-                 val expiryTime: Date?,
-                 @Version(2)
-                 val parentOrderExternalId: String?,
-                 @Version(2)
-                 var childOrderExternalId: String?)
-    : Order(id, externalId, assetPairId, clientId, volume, status, createdAt, registered, reservedLimitVolume, fee, fees, statusDate), Serializable {
+class LimitOrder(
+    id: String,
+    externalId: String,
+    assetPairId: String,
+    brokerId: String,
+    accountId: String,
+    clientId: String,
+    volume: BigDecimal,
+    var price: BigDecimal,
+    status: String,
+    statusDate: Date?,
+    createdAt: Date,
+    registered: Date?,
+    var remainingVolume: BigDecimal,
+    var lastMatchTime: Date?,
+    reservedLimitVolume: BigDecimal? = null,
+    fees: List<NewLimitOrderFeeInstruction>? = null,
+    val type: LimitOrderType?,
+    val lowerLimitPrice: BigDecimal?,
+    val lowerPrice: BigDecimal?,
+    val upperLimitPrice: BigDecimal?,
+    val upperPrice: BigDecimal?,
+    @Transient
+    val previousExternalId: String?,
+    @Version(1)
+    val timeInForce: OrderTimeInForce?,
+    @Version(1)
+    val expiryTime: Date?,
+    @Version(2)
+    val parentOrderExternalId: String?,
+    @Version(2)
+    var childOrderExternalId: String?
+) : Order(
+    id,
+    externalId,
+    assetPairId,
+    brokerId,
+    accountId,
+    clientId,
+    volume,
+    status,
+    createdAt,
+    registered,
+    reservedLimitVolume,
+    fees,
+    statusDate
+), Serializable {
 
     fun getAbsRemainingVolume(): BigDecimal {
         return remainingVolume.abs()
@@ -78,14 +93,16 @@ class LimitOrder(id: String,
     }
 
     override fun copy(): LimitOrder {
-        return LimitOrder(id, externalId, assetPairId, clientId, volume, price, status, statusDate, createdAt,
-                registered, remainingVolume, lastMatchTime, reservedLimitVolume, fee as? LimitOrderFeeInstruction,
-                fees?.map { it as NewLimitOrderFeeInstruction }, type, lowerLimitPrice, lowerPrice, upperLimitPrice,
-                upperPrice, previousExternalId,
-                timeInForce,
-                expiryTime,
-                parentOrderExternalId,
-                childOrderExternalId)
+        return LimitOrder(
+            id, externalId, assetPairId, brokerId, accountId, clientId, volume, price, status, statusDate, createdAt,
+            registered, remainingVolume, lastMatchTime, reservedLimitVolume,
+            fees?.map { it as NewLimitOrderFeeInstruction }, type, lowerLimitPrice, lowerPrice, upperLimitPrice,
+            upperPrice, previousExternalId,
+            timeInForce,
+            expiryTime,
+            parentOrderExternalId,
+            childOrderExternalId
+        )
     }
 
     override fun applyToOrigin(origin: Copyable) {

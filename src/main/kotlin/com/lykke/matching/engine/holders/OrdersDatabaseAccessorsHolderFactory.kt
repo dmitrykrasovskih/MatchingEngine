@@ -24,16 +24,16 @@ class OrdersDatabaseAccessorsHolderFactory : FactoryBean<OrdersDatabaseAccessors
     }
 
     override fun getObject(): OrdersDatabaseAccessorsHolder {
-        return when (config.me.storage) {
+        return when (config.matchingEngine.storage) {
             Storage.Azure ->
-                OrdersDatabaseAccessorsHolder(FileOrderBookDatabaseAccessor(config.me.orderBookPath), null)
+                OrdersDatabaseAccessorsHolder(FileOrderBookDatabaseAccessor(config.matchingEngine.orderBookPath), null)
             Storage.Redis ->
-                OrdersDatabaseAccessorsHolder(RedisOrderBookDatabaseAccessor(initialLoadingRedisConnection.get(), config.me.redis.ordersDatabase),
-                        if (config.me.writeOrdersToSecondaryDb)
-                            FileOrderBookDatabaseAccessor(config.me.secondaryOrderBookPath)
+                OrdersDatabaseAccessorsHolder(RedisOrderBookDatabaseAccessor(initialLoadingRedisConnection.get(), config.matchingEngine.redis.ordersDatabase),
+                        if (config.matchingEngine.writeOrdersToSecondaryDb)
+                            FileOrderBookDatabaseAccessor(config.matchingEngine.secondaryOrderBookPath)
                         else null)
             Storage.RedisWithoutOrders ->
-                OrdersDatabaseAccessorsHolder(FileOrderBookDatabaseAccessor(config.me.orderBookPath), null)
+                OrdersDatabaseAccessorsHolder(FileOrderBookDatabaseAccessor(config.matchingEngine.orderBookPath), null)
         }
     }
 }

@@ -9,7 +9,7 @@ import com.lykke.utils.keepalive.http.KeepAliveConfig
 data class MatchingEngineConfig(
         val db: DbConfig,
         val redis: RedisConfig,
-        @SerializedName("IpEndpoint")
+        val grpcEndpoints: GrpcEndpoints,
         val socket: IpEndpoint,
         val serverOrderBookPort: Int?,
         val serverOrderBookMaxConnections: Int?,

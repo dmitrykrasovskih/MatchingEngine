@@ -23,22 +23,25 @@ class MarketStateCache(private val historyTicksDatabaseAccessor: HistoryTicksDat
     fun addTick(assetPair: String, ask: BigDecimal, bid: BigDecimal, currentUpdateTime: Long) {
         val intervalToTickBlobHolder = assetPairToIntervalTickHolder.getOrPut(assetPair) { HashMap() }
 
-        TickUpdateInterval.values().forEach({ interval ->
+        TickUpdateInterval.values().forEach { interval ->
             val blobHolder = intervalToTickBlobHolder[interval]
-            if(blobHolder == null) {
-                val tickBlobHolder = historyTicksDatabaseAccessor.loadHistoryTick(assetPair, interval) ?: TickBlobHolder(assetPair = assetPair,
+            if (blobHolder == null) {
+                val tickBlobHolder =
+                    historyTicksDatabaseAccessor.loadHistoryTick(assetPair, interval) ?: TickBlobHolder(
+                        assetPair = assetPair,
                         tickUpdateInterval = interval,
                         lastUpdate = currentUpdateTime,
-                        frequency = frequency)
+                        frequency = frequency
+                    )
                 intervalToTickBlobHolder[interval] = tickBlobHolder
 
                 tickBlobHolder.addPrice(ask, bid, currentUpdateTime)
                 return@forEach
             }
-            if(isTimeForAddNewTick(blobHolder, currentUpdateTime)) {
+            if (isTimeForAddNewTick(blobHolder, currentUpdateTime)) {
                 blobHolder.addPrice(ask, bid, currentUpdateTime)
             }
-        })
+        }
     }
 
     fun refresh() {

@@ -1,15 +1,15 @@
 package com.lykke.matching.engine.services
 
-import com.lykke.matching.engine.daos.context.SingleLimitOrderContext
-import com.lykke.matching.engine.order.transaction.ExecutionContextFactory
+import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.messages.MessageStatus
 import com.lykke.matching.engine.messages.MessageType
-import com.lykke.matching.engine.messages.MessageWrapper
-import com.lykke.matching.engine.messages.ProtocolMessages
+import com.lykke.matching.engine.messages.wrappers.MessageWrapper
+import com.lykke.matching.engine.messages.wrappers.SingleLimitOrderMessageWrapper
+import com.lykke.matching.engine.order.ExecutionDataApplyService
 import com.lykke.matching.engine.order.process.GenericLimitOrdersProcessor
 import com.lykke.matching.engine.order.process.PreviousLimitOrdersProcessor
 import com.lykke.matching.engine.order.process.StopOrderBookProcessor
-import com.lykke.matching.engine.order.ExecutionDataApplyService
+import com.lykke.matching.engine.order.transaction.ExecutionContextFactory
 import com.lykke.matching.engine.utils.PrintUtils
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
 import org.apache.log4j.Logger
@@ -17,11 +17,14 @@ import org.springframework.stereotype.Service
 import java.util.*
 
 @Service
-class SingleLimitOrderService(private val executionContextFactory: ExecutionContextFactory,
-                              private val genericLimitOrdersProcessor: GenericLimitOrdersProcessor,
-                              private val stopOrderBookProcessor: StopOrderBookProcessor,
-                              private val executionDataApplyService: ExecutionDataApplyService,
-                              private val previousLimitOrdersProcessor: PreviousLimitOrdersProcessor) : AbstractService {
+class SingleLimitOrderService(
+    private val executionContextFactory: ExecutionContextFactory,
+    private val genericLimitOrdersProcessor: GenericLimitOrdersProcessor,
+    private val stopOrderBookProcessor: StopOrderBookProcessor,
+    private val executionDataApplyService: ExecutionDataApplyService,
+    private val previousLimitOrdersProcessor: PreviousLimitOrdersProcessor,
+    private val balancesHolder: BalancesHolder
+) : AbstractService {
     companion object {
         private val LOGGER = Logger.getLogger(SingleLimitOrderService::class.java.name)
         private val STATS_LOGGER = Logger.getLogger("${SingleLimitOrderService::class.java.name}.stats")
@@ -32,35 +35,60 @@ class SingleLimitOrderService(private val executionContextFactory: ExecutionCont
     private var logCount = 100
     private var totalTime: Double = 0.0
 
-    override fun processMessage(messageWrapper: MessageWrapper) {
-        val context = messageWrapper.context as SingleLimitOrderContext
+    override fun processMessage(genericMessageWrapper: MessageWrapper) {
+        val messageWrapper = genericMessageWrapper as SingleLimitOrderMessageWrapper
+        val context = messageWrapper.context
+        val parsedMessage = messageWrapper.parsedMessage
 
         val now = Date()
         LOGGER.info("Got limit order: $context")
 
+        val assetPair = context!!.assetPair!!
+
         val order = context.limitOrder
         order.register(now)
 
+        val actualWalletVersion = balancesHolder.getBalanceVersion(
+            order.clientId,
+            if (order.isBuySide()) assetPair.quotingAssetId else assetPair.quotingAssetId
+        )
+        if (parsedMessage.walletVersion >= 0 && actualWalletVersion != parsedMessage.walletVersion) {
+            LOGGER.error(
+                "Invalid wallet version: ${parsedMessage.walletVersion}, actual: $actualWalletVersion"
+            )
+            messageWrapper.writeResponse(
+                MessageStatus.INVALID_WALLET_VERSION,
+                order.id,
+                "Invalid wallet version",
+                actualWalletVersion
+            )
+            return
+        }
+
         val startTime = System.nanoTime()
         val executionContext = executionContextFactory.create(context.messageId,
-                messageWrapper.id!!,
-                MessageType.LIMIT_ORDER,
-                messageWrapper.processedMessage,
-                mapOf(Pair(context.assetPair!!.assetPairId, context.assetPair)),
-                now,
-                LOGGER,
-                mapOf(Pair(context.baseAsset!!.assetId, context.baseAsset),
-                        Pair(context.quotingAsset!!.assetId, context.quotingAsset)),
-                context.validationResult?.let { mapOf(Pair(order.id, it)) } ?: emptyMap())
+            messageWrapper.id,
+            MessageType.LIMIT_ORDER,
+            messageWrapper.processedMessage,
+            mapOf(Pair(context.assetPair!!.symbol, context.assetPair)),
+            now,
+            LOGGER,
+            mapOf(
+                Pair(context.baseAsset!!.symbol, context.baseAsset),
+                Pair(context.quotingAsset!!.symbol, context.quotingAsset)
+            ),
+            context.validationResult?.let { mapOf(Pair(order.id, it)) } ?: emptyMap())
 
-        previousLimitOrdersProcessor.cancelAndReplaceOrders(order.clientId,
-                order.assetPairId,
-                context.isCancelOrders,
-                order.isBuySide(),
-                !order.isBuySide(),
-                emptyMap(),
-                emptyMap(),
-                executionContext)
+        previousLimitOrdersProcessor.cancelAndReplaceOrders(
+            order.clientId,
+            order.assetPairId,
+            context.isCancelOrders,
+            order.isBuySide(),
+            !order.isBuySide(),
+            emptyMap(),
+            emptyMap(),
+            executionContext
+        )
         val processedOrder = genericLimitOrdersProcessor.processOrders(listOf(order), executionContext).single()
         stopOrderBookProcessor.checkAndExecuteStopLimitOrders(executionContext)
         val persisted = executionDataApplyService.persistAndSendEvents(messageWrapper, executionContext)
@@ -68,20 +96,28 @@ class SingleLimitOrderService(private val executionContextFactory: ExecutionCont
         if (!persisted) {
             val message = "Unable to save result data"
             LOGGER.error("$message (order external id: ${order.externalId})")
-            writeResponse(messageWrapper,
-                    MessageStatus.RUNTIME,
-                    processedOrder.order.id,
-                    message)
+            messageWrapper.writeResponse(
+                MessageStatus.RUNTIME,
+                processedOrder.order.id,
+                message
+            )
             return
         }
 
         if (processedOrder.accepted) {
-            writeResponse(messageWrapper, MessageStatus.OK, processedOrder.order.id)
+            messageWrapper.writeResponse(
+                MessageStatus.OK, processedOrder.order.id, null,
+                balancesHolder.getBalanceVersion(
+                    order.clientId,
+                    if (order.isBuySide()) assetPair.quotingAssetId else assetPair.quotingAssetId
+                )
+            )
         } else {
-            writeResponse(messageWrapper,
-                    MessageStatusUtils.toMessageStatus(processedOrder.order.status),
-                    processedOrder.order.id,
-                    processedOrder.reason)
+            messageWrapper.writeResponse(
+                MessageStatusUtils.toMessageStatus(processedOrder.order.status),
+                processedOrder.order.id,
+                processedOrder.reason
+            )
         }
 
         val endTime = System.nanoTime()
@@ -95,22 +131,9 @@ class SingleLimitOrderService(private val executionContextFactory: ExecutionCont
         }
     }
 
-    override fun parseMessage(messageWrapper: MessageWrapper) {
-        //do nothing
-    }
-
-    override fun writeResponse(messageWrapper: MessageWrapper, status: MessageStatus) {
-        writeResponse(messageWrapper, status, null)
-    }
-
-    private fun writeResponse(messageWrapper: MessageWrapper,
-                              status: MessageStatus,
-                              internalOrderId: String?,
-                              statusReason: String? = null) {
-        val builder = ProtocolMessages.NewResponse.newBuilder().setStatus(status.type)
-        internalOrderId?.let { builder.setMatchingEngineId(internalOrderId) }
-        statusReason?.let { builder.setStatusReason(it) }
-        messageWrapper.writeNewResponse(builder)
+    override fun writeResponse(genericMessageWrapper: MessageWrapper, status: MessageStatus) {
+        val messageWrapper = genericMessageWrapper as SingleLimitOrderMessageWrapper
+        messageWrapper.writeResponse(status)
     }
 }
 

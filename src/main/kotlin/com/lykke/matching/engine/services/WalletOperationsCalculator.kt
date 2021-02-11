@@ -7,18 +7,18 @@ import com.lykke.matching.engine.holders.AssetsPairsHolder
 import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.outgoing.messages.LimitOrderWithTrades
 import java.math.BigDecimal
-import java.util.LinkedList
+import java.util.*
 
 data class CancelledOrdersOperationsResult(
-        val walletOperations: List<WalletOperation> = LinkedList(),
-        val clientLimitOrderWithTrades: List<LimitOrderWithTrades> = LinkedList(),
-        val trustedClientLimitOrderWithTrades: List<LimitOrderWithTrades> = LinkedList()
+    val walletOperations: List<WalletOperation> = LinkedList(),
+    val clientLimitOrderWithTrades: List<LimitOrderWithTrades> = LinkedList(),
+    val trustedClientLimitOrderWithTrades: List<LimitOrderWithTrades> = LinkedList()
 )
 
 class WalletOperationsCalculator(
-        private val assetsPairsHolder: AssetsPairsHolder,
-        private val balancesHolder: BalancesHolder,
-        private val applicationSettingsHolder: ApplicationSettingsHolder
+    private val assetsPairsHolder: AssetsPairsHolder,
+    private val balancesHolder: BalancesHolder,
+    private val applicationSettingsHolder: ApplicationSettingsHolder
 ) {
 
     fun calculateForCancelledOrders(orders: List<LimitOrder>): CancelledOrdersOperationsResult {
@@ -32,12 +32,21 @@ class WalletOperationsCalculator(
             if (!isTrustedClientOrder) {
                 val assetPair = assetsPairsHolder.getAssetPair(order.assetPairId)
                 val limitAsset = if (order.isBuySide()) assetPair.quotingAssetId else assetPair.baseAssetId
-                val limitVolume = order.reservedLimitVolume ?: if (order.isBuySide()) order.getAbsRemainingVolume() * order.price else order.getAbsRemainingVolume()
-                val reservedBalance = balancesHolder.getReservedBalance(order.clientId, limitAsset)
+                val limitVolume = order.reservedLimitVolume
+                    ?: if (order.isBuySide()) order.getAbsRemainingVolume() * order.price else order.getAbsRemainingVolume()
+                val reservedBalance =
+                    balancesHolder.getReservedBalance(order.brokerId, order.accountId, order.clientId, limitAsset)
 
                 if (reservedBalance > BigDecimal.ZERO) {
                     walletOperation.add(
-                            WalletOperation(order.clientId, limitAsset, BigDecimal.ZERO, if (limitVolume > reservedBalance) -reservedBalance else -limitVolume)
+                        WalletOperation(
+                            order.brokerId,
+                            order.accountId,
+                            order.clientId,
+                            limitAsset,
+                            BigDecimal.ZERO,
+                            if (limitVolume > reservedBalance) -reservedBalance else -limitVolume
+                        )
                     )
                 }
             }
@@ -51,5 +60,4 @@ class WalletOperationsCalculator(
 
         return CancelledOrdersOperationsResult(walletOperation, trustedLimitOrderWithTrades, limitOrderWithTrades)
     }
-
 }

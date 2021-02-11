@@ -1,26 +1,29 @@
 package com.lykke.matching.engine.daos
 
 import com.lykke.matching.engine.daos.fee.NewLimitOrderFeeInstruction
-import com.lykke.matching.engine.messages.ProtocolMessages
+import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
+import java.math.BigDecimal
 
 class LimitOrderFeeInstruction(
-        type: FeeType,
-        takerSizeType: FeeSizeType?,
-        takerSize: Double?,
-        val makerSizeType: FeeSizeType?,
-        val makerSize: Double?,
-        sourceClientId: String?,
-        targetClientId: String?
-) : FeeInstruction(type, takerSizeType, takerSize, sourceClientId, targetClientId) {
+    type: FeeType,
+    takerSizeType: FeeSizeType?,
+    takerSize: BigDecimal?,
+    val makerSizeType: FeeSizeType?,
+    val makerSize: BigDecimal?,
+    sourceWalletId: String?,
+    targetWalletId: String?
+) : FeeInstruction(type, takerSizeType, takerSize, sourceWalletId, targetWalletId) {
 
     companion object {
-        fun create(fee: ProtocolMessages.LimitOrderFee?): LimitOrderFeeInstruction? {
+        fun create(fee: GrpcIncomingMessages.LimitOrderFee?): LimitOrderFeeInstruction? {
             if (fee == null) {
                 return null
             }
             val feeType = FeeType.getByExternalId(fee.type)
-            var takerSizeType: FeeSizeType? = if (fee.hasTakerSize()) FeeSizeType.getByExternalId(fee.takerSizeType) else null
-            var makerSizeType: FeeSizeType? = if (fee.hasMakerSizeType()) FeeSizeType.getByExternalId(fee.makerSizeType) else null
+            var takerSizeType: FeeSizeType? =
+                if (fee.takerSizeType != null) FeeSizeType.getByExternalId(fee.takerSizeType) else null
+            var makerSizeType: FeeSizeType? =
+                if (fee.makerSizeType != null) FeeSizeType.getByExternalId(fee.makerSizeType) else null
             if (feeType != FeeType.NO_FEE) {
                 if (takerSizeType == null) {
                     takerSizeType = FeeSizeType.PERCENTAGE
@@ -30,13 +33,14 @@ class LimitOrderFeeInstruction(
                 }
             }
             return LimitOrderFeeInstruction(
-                    feeType,
-                    takerSizeType,
-                    if (fee.hasTakerSize()) fee.takerSize else null,
-                    makerSizeType,
-                    if (fee.hasMakerSize()) fee.makerSize else null,
-                    if (fee.hasSourceClientId()) fee.sourceClientId else null,
-                    if (fee.hasTargetClientId()) fee.targetClientId else null)
+                feeType,
+                takerSizeType,
+                if (fee.hasTakerSize()) BigDecimal(fee.takerSize.value) else null,
+                makerSizeType,
+                if (fee.hasMakerSize()) BigDecimal(fee.makerSize.value) else null,
+                if (fee.hasSourceWalletId()) fee.sourceWalletId.value else null,
+                if (fee.hasTargetWalletId()) fee.targetAccountId.value else null
+            )
         }
     }
 
@@ -46,10 +50,20 @@ class LimitOrderFeeInstruction(
                 (if (size != null) ", takerSize=$size" else "") +
                 (if (makerSizeType != null) ", makerSizeType=$makerSizeType" else "") +
                 (if (makerSize != null) ", makerSize=$makerSize" else "") +
-                (if (sourceClientId?.isNotEmpty() == true) ", sourceClientId=$sourceClientId" else "") +
-                "${if (targetClientId?.isNotEmpty() == true) ", targetClientId=$targetClientId" else ""})"
+                (if (sourceWalletId?.isNotEmpty() == true) ", sourceWalletId=$sourceWalletId" else "") +
+                (if (targetWalletId?.isNotEmpty() == true) ", targetWalletId=$targetWalletId" else "")
     }
 
-    override fun toNewFormat() = NewLimitOrderFeeInstruction(type, sizeType, size, makerSizeType, makerSize, sourceClientId, targetClientId , emptyList(), null)
+    override fun toNewFormat() = NewLimitOrderFeeInstruction(
+        type,
+        sizeType,
+        size,
+        makerSizeType,
+        makerSize,
+        sourceWalletId,
+        targetWalletId,
+        emptyList(),
+        null
+    )
 
 }

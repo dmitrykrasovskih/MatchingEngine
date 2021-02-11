@@ -45,14 +45,14 @@ class ReservedCashOperationListener {
 
     @PostConstruct
     fun initRabbitMqPublisher() {
-        rabbitMqOldService.startPublisher(config.me.rabbitMqConfigs.reservedCashOperations,
+        rabbitMqOldService.startPublisher(config.matchingEngine.rabbitMqConfigs.reservedCashOperations,
                 ReservedCashOperationListener::class.java.simpleName,
                 reservedCashOperationQueue,
-                config.me.name,
+                config.matchingEngine.name,
                 AppVersion.VERSION,
                 BuiltinExchangeType.FANOUT,
                 DatabaseLogger(
-                        AzureMessageLogDatabaseAccessor(config.me.db.messageLogConnString,
+                        AzureMessageLogDatabaseAccessor(config.matchingEngine.db.messageLogConnString,
                                 logTable, logBlobName)))
     }
 

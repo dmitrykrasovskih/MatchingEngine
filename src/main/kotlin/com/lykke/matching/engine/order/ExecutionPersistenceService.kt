@@ -2,7 +2,7 @@ package com.lykke.matching.engine.order
 
 import com.lykke.matching.engine.database.PersistenceManager
 import com.lykke.matching.engine.database.common.entity.PersistenceData
-import com.lykke.matching.engine.messages.MessageWrapper
+import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.order.transaction.ExecutionContext
 import org.springframework.stereotype.Component
 

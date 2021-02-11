@@ -60,8 +60,8 @@ class DisabledFunctionalityRulesServiceImpl : DisabledFunctionalityRulesService 
         val result = ArrayList<DisabledFunctionalityRuleDto>()
         val settingsGroup = applicationSettingsService.getSettingsGroup(AvailableSettingGroup.DISABLED_FUNCTIONALITY_RULES, enabled)
 
-        settingsGroup?.let { settingsGroup ->
-            settingsGroup.settings.forEach { setting ->
+        settingsGroup?.let { localSettingsGroup ->
+            localSettingsGroup.settings.forEach { setting ->
                 result.add(toDisabledFunctionalityRuleDto(gson.fromJson(setting.value, DisabledFunctionalityRule::class.java), setting.name, setting.timestamp, setting.enabled))
             }
         }

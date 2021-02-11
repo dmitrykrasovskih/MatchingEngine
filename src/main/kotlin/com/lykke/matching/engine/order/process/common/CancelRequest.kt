@@ -3,7 +3,7 @@ package com.lykke.matching.engine.order.process.common
 import com.lykke.matching.engine.daos.LimitOrder
 import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.messages.MessageType
-import com.lykke.matching.engine.messages.MessageWrapper
+import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import org.apache.log4j.Logger
 import java.util.Date
 
@@ -15,4 +15,5 @@ class CancelRequest(val limitOrders: Collection<LimitOrder>,
                     val date: Date,
                     val processedMessage: ProcessedMessage?,
                     val messageWrapper: MessageWrapper?,
-                    val logger: Logger)
+                    val logger: Logger
+)

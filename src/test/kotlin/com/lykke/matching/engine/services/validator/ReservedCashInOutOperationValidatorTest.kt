@@ -3,11 +3,10 @@ package com.lykke.matching.engine.services.validator
 import com.lykke.matching.engine.balance.util.TestBalanceHolderWrapper
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.database.BackOfficeDatabaseAccessor
-import com.lykke.matching.engine.database.TestBackOfficeDatabaseAccessor
-import com.lykke.matching.engine.messages.ProtocolMessages
 import com.lykke.matching.engine.services.validators.ReservedCashInOutOperationValidator
 import com.lykke.matching.engine.services.validators.impl.ValidationException
+import com.lykke.matching.engine.utils.proto.createProtobufTimestampBuilder
+import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,6 +17,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
+import java.util.*
 import kotlin.test.assertEquals
 
 @RunWith(SpringRunner::class)
@@ -26,18 +26,18 @@ import kotlin.test.assertEquals
 class ReservedCashInOutOperationValidatorTest {
 
     companion object {
-        val CLIENT_NAME = "Client"
-        val ASSET_ID = "USD"
+        const val CLIENT_NAME = "Client"
+        const val ASSET_ID = "USD"
     }
 
     @TestConfiguration
-    open class Config {
+    class Config {
         @Bean
         @Primary
-        open fun testBackOfficeDatabaseAccessor(): BackOfficeDatabaseAccessor {
-            val testBackOfficeDatabaseAccessor = TestBackOfficeDatabaseAccessor()
-            testBackOfficeDatabaseAccessor.addAsset(Asset(ASSET_ID, 2))
-            return testBackOfficeDatabaseAccessor
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
+            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
+            testDictionariesDatabaseAccessor.addAsset(Asset("", ASSET_ID, 2))
+            return testDictionariesDatabaseAccessor
         }
     }
 
@@ -57,8 +57,8 @@ class ReservedCashInOutOperationValidatorTest {
     fun testVolumeAccuracyInvalid() {
         //given
         val message = getDefaultReservedOperationMessageBuilder()
-                .setReservedVolume(1.111)
-                .build()
+            .setReservedVolume("1.111")
+            .build()
 
         //when
         try {
@@ -73,8 +73,8 @@ class ReservedCashInOutOperationValidatorTest {
     fun testBalanceInvalid() {
         //given
         val message = getDefaultReservedOperationMessageBuilder()
-                .setReservedVolume(-550.0)
-                .build()
+            .setReservedVolume("-550.0")
+            .build()
 
 
         //when
@@ -90,8 +90,8 @@ class ReservedCashInOutOperationValidatorTest {
     fun testReservedBalanceInvalid() {
         //given
         val message = getDefaultReservedOperationMessageBuilder()
-                .setReservedVolume(51.0)
-                .build()
+            .setReservedVolume("51.0")
+            .build()
 
         //when
         try {
@@ -106,19 +106,19 @@ class ReservedCashInOutOperationValidatorTest {
     fun testValidData() {
         //given
         val message = getDefaultReservedOperationMessageBuilder()
-                .build()
+            .build()
 
         //when
         reservedCashInOutOperationValidator.performValidation(message)
     }
 
 
-    private fun getDefaultReservedOperationMessageBuilder(): ProtocolMessages.ReservedCashInOutOperation.Builder {
-        return ProtocolMessages.ReservedCashInOutOperation.newBuilder()
-                .setId("test")
-                .setClientId(CLIENT_NAME)
-                .setTimestamp(System.currentTimeMillis())
-                .setAssetId(ASSET_ID)
-                .setReservedVolume(0.0)
+    private fun getDefaultReservedOperationMessageBuilder(): GrpcIncomingMessages.ReservedCashInOutOperation.Builder {
+        return GrpcIncomingMessages.ReservedCashInOutOperation.newBuilder()
+            .setId("test")
+            .setWalletId(CLIENT_NAME)
+            .setTimestamp(Date().createProtobufTimestampBuilder())
+            .setAssetId(ASSET_ID)
+            .setReservedVolume("0.0")
     }
 }

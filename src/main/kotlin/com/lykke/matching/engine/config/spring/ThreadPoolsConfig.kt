@@ -78,7 +78,7 @@ class ThreadPoolsConfig : SchedulingConfigurer {
     @Bean
     open fun orderBookSubscribersThreadPool(@Value("\${concurrent.orderbook.subscribers.pool.core.pool.size}") corePoolSize: Int,
                                             @Value("#{Config.me.serverOrderBookMaxConnections}") maxPoolSize: Int?): ThreadPoolTaskExecutor? {
-        if (config.me.serverOrderBookPort == null) {
+        if (config.matchingEngine.serverOrderBookPort == null) {
             return null
         }
 

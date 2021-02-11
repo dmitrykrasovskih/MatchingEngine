@@ -3,9 +3,7 @@ package com.lykke.matching.engine.holders
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.daos.AssetPair
-import com.lykke.matching.engine.database.BackOfficeDatabaseAccessor
 import com.lykke.matching.engine.database.DictionariesDatabaseAccessor
-import com.lykke.matching.engine.database.TestBackOfficeDatabaseAccessor
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.services.DisabledFunctionalityRulesService
 import com.lykke.matching.engine.web.dto.DeleteSettingRequestDto
@@ -42,24 +40,17 @@ class DisabledFunctionalityRulesHolderTest {
 
     @TestConfiguration
     open class Config {
-        @Bean
-        @Primary
-        open fun testBackOfficeDatabaseAccessor(): BackOfficeDatabaseAccessor {
-            val testBackOfficeDatabaseAccessor = TestBackOfficeDatabaseAccessor()
-            testBackOfficeDatabaseAccessor.addAsset(Asset("BTC", 8))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("USD", 4))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("EUR", 4))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("JPY", 4))
-
-            return testBackOfficeDatabaseAccessor
-        }
 
         @Bean
         @Primary
         open fun testDictionariesDatabaseAccessor(): DictionariesDatabaseAccessor {
             val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
-            testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCUSD", "BTC", "USD", 2))
-            testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURJPY", "EUR", "JPY", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 8))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 4))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 4))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "JPY", 4))
+            testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 2))
+            testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURJPY", "EUR", "JPY", 2))
             return testDictionariesDatabaseAccessor
         }
     }

@@ -10,7 +10,8 @@ import org.springframework.stereotype.Component
 import java.math.BigDecimal
 
 @Component("CashInOutOperationBusinessValidator")
-class CashInOutOperationBusinessValidatorImpl(private val balancesHolder: BalancesHolder) : CashInOutOperationBusinessValidator {
+class CashInOutOperationBusinessValidatorImpl(private val balancesHolder: BalancesHolder) :
+    CashInOutOperationBusinessValidator {
     companion object {
         private val LOGGER = Logger.getLogger(CashInOutOperationBusinessValidatorImpl::class.java.name)
     }
@@ -23,13 +24,20 @@ class CashInOutOperationBusinessValidatorImpl(private val balancesHolder: Balanc
         val amount = cashInOutContext.cashInOutOperation.amount
         if (amount < BigDecimal.ZERO) {
             val asset = cashInOutContext.cashInOutOperation.asset
-            val balance = balancesHolder.getBalance(cashInOutContext.cashInOutOperation.clientId, asset!!.assetId)
-            val reservedBalance = balancesHolder.getReservedBalance(cashInOutContext.cashInOutOperation.clientId, asset.assetId)
+            val balance = balancesHolder.getBalance(cashInOutContext.cashInOutOperation.clientId, asset!!.symbol)
+            val reservedBalance = balancesHolder.getReservedBalance(
+                cashInOutContext.cashInOutOperation.brokerId,
+                cashInOutContext.cashInOutOperation.accountId,
+                cashInOutContext.cashInOutOperation.clientId,
+                asset.symbol
+            )
             if (NumberUtils.setScaleRoundHalfUp(balance - reservedBalance + amount, asset.accuracy) < BigDecimal.ZERO) {
-                LOGGER.info("Cash out operation (${cashInOutContext.cashInOutOperation.externalId}) " +
-                        "for client ${cashInOutContext.cashInOutOperation.clientId} asset ${asset.assetId}, " +
-                        "volume: ${NumberUtils.roundForPrint(amount)}: low balance $balance, " +
-                        "reserved balance $reservedBalance")
+                LOGGER.info(
+                    "Cash out operation (${cashInOutContext.cashInOutOperation.externalId}) " +
+                            "for client ${cashInOutContext.cashInOutOperation.clientId} asset ${asset.symbol}, " +
+                            "volume: ${NumberUtils.roundForPrint(amount)}: low balance $balance, " +
+                            "reserved balance $reservedBalance"
+                )
                 throw ValidationException(ValidationException.Validation.LOW_BALANCE)
             }
         }

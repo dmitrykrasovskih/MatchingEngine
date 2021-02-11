@@ -6,9 +6,9 @@ import com.lykke.matching.engine.services.events.ApplicationSettingDeletedEvent
 import com.lykke.matching.engine.services.events.ApplicationGroupDeletedEvent
 import com.lykke.matching.engine.services.events.ApplicationSettingCreatedOrUpdatedEvent
 import com.lykke.utils.logging.MetricsLogger
+import org.apache.log4j.Logger
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
-import java.util.logging.Logger
 import javax.annotation.PostConstruct
 
 @Component

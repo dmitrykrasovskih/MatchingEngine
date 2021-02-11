@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.myjetwallet.messages.incoming.grpc";
+option java_outer_classname = "GrpcIncomingApi";
+option objc_class_prefix = "API";
+option csharp_namespace = "Antares.ME.Contracts.Api";
+
+package com.myjetwallet.messages.incoming.grpc;
+
+import "GrpcIncomingMessages.proto";
+
+service CashService {
+    rpc CashInOut(com.myjetwallet.messages.incoming.grpc.CashInOutOperation) returns (com.myjetwallet.messages.incoming.grpc.CashInOutOperationResponse) {}
+    rpc CashTransfer(com.myjetwallet.messages.incoming.grpc.CashTransferOperation) returns (com.myjetwallet.messages.incoming.grpc.CashTransferOperationResponse) {}
+    rpc ReservedCashInOut(com.myjetwallet.messages.incoming.grpc.ReservedCashInOutOperation) returns (com.myjetwallet.messages.incoming.grpc.ReservedCashInOutOperationResponse) {}
+}
+
+service TradingService {
+    rpc MarketOrder(com.myjetwallet.messages.incoming.grpc.MarketOrder) returns (com.myjetwallet.messages.incoming.grpc.MarketOrderResponse) {}
+    rpc LimitOrder(com.myjetwallet.messages.incoming.grpc.LimitOrder) returns (com.myjetwallet.messages.incoming.grpc.LimitOrderResponse) {}
+    rpc CancelLimitOrder(com.myjetwallet.messages.incoming.grpc.LimitOrderCancel) returns (com.myjetwallet.messages.incoming.grpc.LimitOrderCancelResponse) {}
+    rpc MultiLimitOrder(com.myjetwallet.messages.incoming.grpc.MultiLimitOrder) returns (com.myjetwallet.messages.incoming.grpc.MultiLimitOrderResponse) {}
+}

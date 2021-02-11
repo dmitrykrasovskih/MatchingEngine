@@ -22,7 +22,7 @@ class OrdersPersistInSecondaryDbStrategyFactory() : FactoryBean<OrdersPersistInS
     private lateinit var config: Config
 
     override fun getObject(): OrdersPersistInSecondaryDbStrategy? {
-        if (config.me.storage == Storage.Redis) {
+        if (config.matchingEngine.storage == Storage.Redis) {
             return FilesSecondaryDbOrderPersistStrategy(persistedOrdersApplicationEventPublisher, persistedStopApplicationEventPublisher)
         }
 

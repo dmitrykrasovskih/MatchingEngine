@@ -31,7 +31,7 @@ class RedisPersistOrdersStrategy(private val ordersDatabaseAccessorsHolder: Orde
         if (data.ordersToSave.isEmpty() && data.ordersToRemove.isEmpty()) {
             return
         }
-        transaction.select(config.me.redis.ordersDatabase)
+        transaction.select(config.matchingEngine.redis.ordersDatabase)
         primaryAccessor.updateOrders(transaction, data.ordersToSave, data.ordersToRemove)
     }
 
@@ -40,7 +40,7 @@ class RedisPersistOrdersStrategy(private val ordersDatabaseAccessorsHolder: Orde
         if (data.ordersToSave.isEmpty() && data.ordersToRemove.isEmpty()) {
             return
         }
-        transaction.select(config.me.redis.ordersDatabase)
+        transaction.select(config.matchingEngine.redis.ordersDatabase)
         primaryStopOrdersAccessor.updateOrders(transaction, data.ordersToSave, data.ordersToRemove)
     }
 }

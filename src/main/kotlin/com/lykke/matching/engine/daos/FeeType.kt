@@ -1,18 +1,20 @@
 package com.lykke.matching.engine.daos
 
-enum class FeeType constructor(val externalId: Int) {
+import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
 
-    NO_FEE(0),
-    CLIENT_FEE(1),
-    EXTERNAL_FEE(2);
+
+enum class FeeType constructor(val externalId: GrpcIncomingMessages.FeeType) {
+
+    NO_FEE(GrpcIncomingMessages.FeeType.NO_FEE),
+    CLIENT_FEE(GrpcIncomingMessages.FeeType.CLIENT_FEE),
+    EXTERNAL_FEE(GrpcIncomingMessages.FeeType.EXTERNAL_FEE);
 
     companion object {
-        fun getByExternalId(externalId: Int): FeeType {
-            FeeType.values()
-                    .filter { it.externalId == externalId }
-                    .forEach { return it }
+        fun getByExternalId(externalId: GrpcIncomingMessages.FeeType): FeeType {
+            values()
+                .filter { it.externalId == externalId }
+                .forEach { return it }
             throw IllegalArgumentException("FeeType (externalId=$externalId) is not found")
         }
     }
-
 }

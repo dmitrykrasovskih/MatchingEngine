@@ -6,6 +6,7 @@ import "google/protobuf/timestamp.proto";
 
 option java_package = "com.lykke.matching.engine.messages.outgoing";
 option java_outer_classname = "OutgoingMessages";
+option csharp_namespace = "Antares.ME.Contracts.OutgoingMessages";
 
 message Header {
     enum MessageType {
@@ -32,6 +33,9 @@ message BalanceUpdate {
     string newBalance = 4;
     string oldReserved = 5;
     string newReserved = 6;
+    string brokerId = 7;
+    string accountId = 8;
+    uint64 walletVersion = 9;
 }
 
 message Fee {
@@ -80,6 +84,9 @@ message CashInEvent {
         string assetId = 2;
         string volume = 3;
         repeated Fee fees = 4;
+        string brokerId = 5;
+        string accountId = 6;
+        uint64 walletVersion = 7;
     }
     Header header = 1;
     repeated BalanceUpdate balanceUpdates = 2;
@@ -92,6 +99,9 @@ message CashOutEvent {
         string assetId = 2;
         string volume = 3;
         repeated Fee fees = 4;
+        string brokerId = 5;
+        string accountId = 6;
+        uint64 walletVersion = 7;
     }
     Header header = 1;
     repeated BalanceUpdate balanceUpdates = 2;
@@ -106,6 +116,9 @@ message CashTransferEvent {
         string overdraftLimit = 4;
         string assetId = 5;
         repeated Fee fees = 6;
+        string brokerId = 7;
+        string accountId = 8;
+        uint64 walletVersion = 9;
     }
     Header header = 1;
     repeated BalanceUpdate balanceUpdates = 2;
@@ -200,8 +213,27 @@ message ExecutionEvent {
         google.protobuf.Timestamp expiryTime = 24;
         string parentExternalId = 25;
         string childExternalId = 26;
+        string brokerId = 27;
+        string accountId = 28;
+        uint64 walletVersion = 29;
     }
     Header header = 1;
     repeated BalanceUpdate balanceUpdates = 2;
     repeated Order orders = 3;
+}
+
+message OrderBookSnapshot {
+  string asset = 1;
+  bool isBuy = 2;
+  google.protobuf.Timestamp timestamp = 3;
+
+  message OrderBookLevel {
+    string price = 1;
+    string volume = 2;
+    string walletId = 3;
+    string orderId = 4;
+  }
+
+  repeated OrderBookLevel levels = 4;
+  string brokerId = 5;
 }

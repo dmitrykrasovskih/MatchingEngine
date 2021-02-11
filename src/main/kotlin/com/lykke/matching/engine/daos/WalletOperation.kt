@@ -3,7 +3,9 @@ package com.lykke.matching.engine.daos
 import com.lykke.matching.engine.utils.NumberUtils
 import java.math.BigDecimal
 
-data class WalletOperation(val clientId: String,
+data class WalletOperation(val brokerId: String,
+                           val accountId: String,
+                           val clientId: String,
                            val assetId: String,
                            val amount: BigDecimal,
                            val reservedAmount: BigDecimal = BigDecimal.ZERO) {
@@ -13,6 +15,8 @@ data class WalletOperation(val clientId: String,
 
         other as WalletOperation
 
+        if (brokerId != other.brokerId) return false
+        if (accountId != other.accountId) return false
         if (clientId != other.clientId) return false
         if (assetId != other.assetId) return false
         if (!NumberUtils.equalsIgnoreScale(amount, other.amount)) return false
@@ -22,7 +26,9 @@ data class WalletOperation(val clientId: String,
     }
 
     override fun hashCode(): Int {
-        var result = clientId.hashCode()
+        var result = brokerId.hashCode()
+        result = 31 * result + accountId.hashCode()
+        result = 31 * result + clientId.hashCode()
         result = 31 * result + assetId.hashCode()
         result = 31 * result + amount.stripTrailingZeros().hashCode()
         result = 31 * result + reservedAmount.stripTrailingZeros().hashCode()

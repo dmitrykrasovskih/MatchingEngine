@@ -4,18 +4,16 @@ import com.lykke.matching.engine.balance.util.TestBalanceHolderWrapper
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.daos.FeeType
-import com.lykke.matching.engine.daos.fee.v2.NewFeeInstruction
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
-import com.lykke.matching.engine.database.BackOfficeDatabaseAccessor
-import com.lykke.matching.engine.database.TestBackOfficeDatabaseAccessor
 import com.lykke.matching.engine.database.cache.ApplicationSettingsCache
+import com.lykke.matching.engine.grpc.TestStreamObserver
 import com.lykke.matching.engine.incoming.parsers.data.CashInOutParsedData
 import com.lykke.matching.engine.incoming.parsers.impl.CashInOutContextParser
-import com.lykke.matching.engine.messages.MessageType
-import com.lykke.matching.engine.messages.MessageWrapper
-import com.lykke.matching.engine.messages.ProtocolMessages
-import com.lykke.matching.engine.services.validators.input.CashInOutOperationInputValidator
+import com.lykke.matching.engine.messages.wrappers.CashInOutOperationMessageWrapper
 import com.lykke.matching.engine.services.validators.impl.ValidationException
+import com.lykke.matching.engine.services.validators.input.CashInOutOperationInputValidator
+import com.lykke.matching.engine.utils.proto.createProtobufTimestampBuilder
+import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,18 +33,18 @@ import kotlin.test.assertEquals
 class CashInOutOperationInputValidatorTest {
 
     companion object {
-        val CLIENT_ID = "Client1"
-        val ASSET_ID = "USD"
+        const val CLIENT_ID = "Client1"
+        const val ASSET_ID = "USD"
     }
 
     @TestConfiguration
-    open class Config {
+    class Config {
         @Bean
         @Primary
-        open fun testBackOfficeDatabaseAccessor(): BackOfficeDatabaseAccessor {
-            val testBackOfficeDatabaseAccessor = TestBackOfficeDatabaseAccessor()
-            testBackOfficeDatabaseAccessor.addAsset(Asset(ASSET_ID, 2))
-            return testBackOfficeDatabaseAccessor
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
+            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
+            testDictionariesDatabaseAccessor.addAsset(Asset("", ASSET_ID, 2))
+            return testDictionariesDatabaseAccessor
         }
     }
 
@@ -71,13 +69,13 @@ class CashInOutOperationInputValidatorTest {
     @Test(expected = ValidationException::class)
     fun assetDoesNotExist() {
         //given
-    val cashInOutOperationBuilder = getDefaultCashInOutOperationBuilder()
-        cashInOutOperationBuilder.setAssetId("UNKNOWN")
+        val cashInOutOperationBuilder = getDefaultCashInOutOperationBuilder()
+        cashInOutOperationBuilder.assetId = "UNKNOWN"
 
         try {
             //when
             cashInOutOperationInputValidator
-                    .performValidation(getParsedData(cashInOutOperationBuilder.build()))
+                .performValidation(getParsedData(cashInOutOperationBuilder.build()))
         } catch (e: ValidationException) {
             //then
             assertEquals(ValidationException.Validation.UNKNOWN_ASSET, e.validationType)
@@ -92,14 +90,13 @@ class CashInOutOperationInputValidatorTest {
 
         //when
         try {
-            val fee = ProtocolMessages.Fee.newBuilder()
-                    .setType(FeeType.EXTERNAL_FEE.externalId).build()
+            val fee = GrpcIncomingMessages.Fee.newBuilder()
+                .setType(FeeType.EXTERNAL_FEE.externalId).build()
             cashInOutOperationBuilder.addFees(fee)
-            val feeInstructions = NewFeeInstruction.create(Arrays.asList(fee))
 
             val cashInOutContext = getParsedData(cashInOutOperationBuilder.build())
             cashInOutOperationInputValidator
-                    .performValidation(cashInOutContext)
+                .performValidation(cashInOutContext)
         } catch (e: ValidationException) {
             assertEquals(ValidationException.Validation.INVALID_FEE, e.validationType)
             throw e
@@ -110,12 +107,17 @@ class CashInOutOperationInputValidatorTest {
     @Test(expected = ValidationException::class)
     fun testAssetEnabled() {
         //given
-        applicationSettingsCache.createOrUpdateSettingValue(AvailableSettingGroup.DISABLED_ASSETS, ASSET_ID, ASSET_ID, true)
+        applicationSettingsCache.createOrUpdateSettingValue(
+            AvailableSettingGroup.DISABLED_ASSETS,
+            ASSET_ID,
+            ASSET_ID,
+            true
+        )
 
         //when
         try {
             val cashInOutOperationBuilder = getDefaultCashInOutOperationBuilder()
-            cashInOutOperationBuilder.volume = -1.0
+            cashInOutOperationBuilder.volume = "-1.0"
             cashInOutOperationInputValidator.performValidation(getParsedData(cashInOutOperationBuilder.build()))
         } catch (e: ValidationException) {
             assertEquals(ValidationException.Validation.DISABLED_ASSET, e.validationType)
@@ -127,7 +129,7 @@ class CashInOutOperationInputValidatorTest {
     fun testVolumeAccuracy() {
         //given
         val cashInOutOperationBuilder = getDefaultCashInOutOperationBuilder()
-        cashInOutOperationBuilder.volume = 10.001
+        cashInOutOperationBuilder.volume = "10.001"
 
         //when
         try {
@@ -143,25 +145,24 @@ class CashInOutOperationInputValidatorTest {
         cashInOutOperationInputValidator.performValidation(getParsedData(getDefaultCashInOutOperationBuilder().build()))
     }
 
-    private fun getDefaultCashInOutOperationBuilder(): ProtocolMessages.CashInOutOperation.Builder {
-        return ProtocolMessages.CashInOutOperation.newBuilder()
-                .setId("test")
-                .setClientId(CLIENT_ID)
-                .setAssetId(ASSET_ID)
-                .setVolume(0.0)
-                .setTimestamp(System.currentTimeMillis())
-                .addFees(ProtocolMessages.Fee.newBuilder()
-                        .setType(FeeType.NO_FEE.externalId))
+    private fun getDefaultCashInOutOperationBuilder(): GrpcIncomingMessages.CashInOutOperation.Builder {
+        return GrpcIncomingMessages.CashInOutOperation.newBuilder()
+            .setId("test")
+            .setWalletId(CLIENT_ID)
+            .setAssetId(ASSET_ID)
+            .setVolume("0.0")
+            .setTimestamp(Date().createProtobufTimestampBuilder())
+            .addFees(
+                GrpcIncomingMessages.Fee.newBuilder()
+                    .setType(FeeType.NO_FEE.externalId)
+            )
     }
 
-    private fun getMessageWrapper(cashInOutOperation: ProtocolMessages.CashInOutOperation): MessageWrapper {
-        return MessageWrapper("",
-                MessageType.CASH_IN_OUT_OPERATION.type,
-                cashInOutOperation.toByteArray(),
-                clientHandler = null)
+    private fun getMessageWrapper(cashInOutOperation: GrpcIncomingMessages.CashInOutOperation): CashInOutOperationMessageWrapper {
+        return CashInOutOperationMessageWrapper(cashInOutOperation, TestStreamObserver())
     }
 
-    private fun getParsedData(cashInOutOperation: ProtocolMessages.CashInOutOperation): CashInOutParsedData {
+    private fun getParsedData(cashInOutOperation: GrpcIncomingMessages.CashInOutOperation): CashInOutParsedData {
         return cashInOutContextInitializer.parse(getMessageWrapper(cashInOutOperation))
     }
 }

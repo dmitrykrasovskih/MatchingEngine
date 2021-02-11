@@ -1,7 +1,6 @@
 package com.lykke.matching.engine.socket
 
 import com.lykke.matching.engine.AppInitialData
-import com.lykke.matching.engine.incoming.MessageRouter
 import com.lykke.matching.engine.messages.MessageProcessor
 import com.lykke.matching.engine.socket.impl.ClientHandlerImpl
 import com.lykke.matching.engine.utils.config.Config
@@ -26,9 +25,6 @@ class ClientsRequestsSocketServer(private val messageProcessor: MessageProcessor
     @Autowired
     private lateinit var config: Config
 
-    @Autowired
-    private lateinit var messageRouter: MessageRouter
-
     companion object {
         private val LOGGER = ThrottlingLogger.getLogger(ClientsRequestsSocketServer::class.java.name)
         private val METRICS_LOGGER = MetricsLogger.getLogger()
@@ -40,12 +36,12 @@ class ClientsRequestsSocketServer(private val messageProcessor: MessageProcessor
     override fun run() {
         messageProcessor.start()
 
-        MetricsLogger.getLogger().logWarning("Spot.${config.me.name} ${AppVersion.VERSION} : " +
+        MetricsLogger.getLogger().logWarning("Spot.${config.matchingEngine.name} ${AppVersion.VERSION} : " +
                 "Started : ${appInitialData.ordersCount} orders, ${appInitialData.stopOrdersCount} " +
                 "stop orders,${appInitialData.balancesCount} " +
                 "balances for ${appInitialData.clientsCount} clients")
 
-        val port = config.me.socket.port
+        val port = config.matchingEngine.socket.port
         val socket = ServerSocket(port)
         LOGGER.info("Waiting connection on port: $port.")
         try {
@@ -62,10 +58,9 @@ class ClientsRequestsSocketServer(private val messageProcessor: MessageProcessor
 
     fun submitClientConnection(clientConnection: Socket) {
         if (isConnectionAllowed(getWhiteList(), clientConnection.inetAddress.hostAddress)) {
-            val handler = ClientHandlerImpl(messageRouter,
-                    clientConnection,
+            val handler = ClientHandlerImpl(clientConnection,
                     this,
-                    config.me.socket.lifeTimeMinutes ?: DEFAULT_LIFE_TIME_MINUTES)
+                    config.matchingEngine.socket.lifeTimeMinutes ?: DEFAULT_LIFE_TIME_MINUTES)
             try {
                 clientRequestThreadPool.submit(handler)
             } catch (e: RejectedExecutionException) {
@@ -112,7 +107,7 @@ class ClientsRequestsSocketServer(private val messageProcessor: MessageProcessor
     }
 
     private fun getWhiteList(): List<String>? {
-        return config.me.whiteList?.split(";")
+        return config.matchingEngine.whiteList?.split(";")
     }
 
     private fun connect(handler: ClientHandler) {

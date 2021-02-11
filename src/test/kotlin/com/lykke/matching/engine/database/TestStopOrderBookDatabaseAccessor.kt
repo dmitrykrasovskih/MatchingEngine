@@ -1,11 +1,10 @@
 package com.lykke.matching.engine.database
 
 import com.lykke.matching.engine.daos.LimitOrder
-import java.util.ArrayList
-import java.util.HashMap
-import java.util.LinkedList
+import java.util.*
 
-class TestStopOrderBookDatabaseAccessor(private val secondaryDbAccessor: TestFileStopOrderDatabaseAccessor): StopOrderBookDatabaseAccessor {
+class TestStopOrderBookDatabaseAccessor(private val secondaryDbAccessor: TestFileStopOrderDatabaseAccessor) :
+    StopOrderBookDatabaseAccessor {
 
     private val stopOrders = HashMap<String, LimitOrder>()
 

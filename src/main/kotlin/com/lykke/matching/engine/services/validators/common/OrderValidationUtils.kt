@@ -12,7 +12,7 @@ class OrderValidationUtils {
     companion object {
         fun checkMinVolume(order: Order, assetPair: AssetPair): Boolean {
             val volume = order.getAbsVolume()
-            val minVolume = if (order.isStraight()) assetPair.minVolume else assetPair.minInvertedVolume
+            val minVolume = if (order.isStraight()) assetPair.minVolume else null
             return minVolume == null || volume >= minVolume
         }
 

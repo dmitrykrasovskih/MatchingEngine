@@ -1,7 +1,8 @@
 package com.lykke.matching.engine.services.validators
 
-import com.lykke.matching.engine.messages.ProtocolMessages
+import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
+
 
 interface ReservedCashInOutOperationValidator {
-    fun performValidation(message: ProtocolMessages.ReservedCashInOutOperation)
+    fun performValidation(message: GrpcIncomingMessages.ReservedCashInOutOperation)
 }

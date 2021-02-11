@@ -5,6 +5,7 @@ import java.math.BigDecimal
 import java.util.*
 
 
+@Suppress("UNCHECKED_CAST")
 class TickBlobHolder(val assetPair: String,
                      val tickUpdateInterval: TickUpdateInterval,
                      val askTicks: LinkedList<BigDecimal>,

@@ -4,7 +4,7 @@ import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.daos.AssetPair
-import com.lykke.matching.engine.database.TestBackOfficeDatabaseAccessor
+import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.outgoing.messages.BalanceUpdate
@@ -34,15 +34,15 @@ import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderStatus as Outgo
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class LimitOrderCancelServiceTest : AbstractTest() {
     @TestConfiguration
-    open class Config {
+    class Config {
         @Bean
         @Primary
-        open fun testBackOfficeDatabaseAccessor(): TestBackOfficeDatabaseAccessor {
-            val testBackOfficeDatabaseAccessor = TestBackOfficeDatabaseAccessor()
-            testBackOfficeDatabaseAccessor.addAsset(Asset("USD", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("EUR", 2))
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
+            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
 
-            return testBackOfficeDatabaseAccessor
+            return testDictionariesDatabaseAccessor
         }
     }
 
@@ -57,11 +57,11 @@ class LimitOrderCancelServiceTest : AbstractTest() {
         testOrderBookWrapper.addLimitOrder(buildLimitOrder(uid = "7", price = 300.0))
         testOrderBookWrapper.addLimitOrder(buildLimitOrder(uid = "8", price = 400.0))
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURUSD", "EUR", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURCHF", "EUR", "CHF", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURCHF", "EUR", "CHF", 5))
 
         testBalanceHolderWrapper.updateBalance("Client1", "EUR", 1000.0)
-        testBalanceHolderWrapper.updateReservedBalance("Client1", "EUR",  1.0)
+        testBalanceHolderWrapper.updateReservedBalance("Client1", "EUR", 1.0)
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 1000.0)
         initServices()
     }
@@ -74,19 +74,22 @@ class LimitOrderCancelServiceTest : AbstractTest() {
         assertEquals(1, testRabbitOrderBookListener.getCount())
 
         assertEquals(1, testClientLimitOrderListener.getCount())
-        assertEquals(OrderStatus.Cancelled.name, (testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport).orders.first().order.status)
+        assertEquals(
+            OrderStatus.Cancelled.name,
+            (testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport).orders.first().order.status
+        )
         assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
 
         val balanceUpdate = balanceUpdateHandlerTest.balanceUpdateQueue.poll() as BalanceUpdate
         assertEquals(1, balanceUpdate.balances.size)
-        assertEquals("Client1", balanceUpdate.balances.first().id)
+        assertEquals("Client1", balanceUpdate.balances.first().walletId)
         assertEquals("EUR", balanceUpdate.balances.first().asset)
         assertEquals(BigDecimal.valueOf(1000.0), balanceUpdate.balances.first().oldBalance)
         assertEquals(BigDecimal.valueOf(1000.0), balanceUpdate.balances.first().newBalance)
         assertEquals(BigDecimal.valueOf(1.0), balanceUpdate.balances.first().oldReserved)
         assertEquals(BigDecimal.ZERO, balanceUpdate.balances.first().newReserved)
 
-        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("Client1", "EUR"))
+        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client1", "EUR"))
 
         val order = testOrderDatabaseAccessor.loadLimitOrders().find { it.id == "3" }
         assertNull(order)
@@ -111,15 +114,55 @@ class LimitOrderCancelServiceTest : AbstractTest() {
 
     @Test
     fun testMultiCancel() {
-        testBackOfficeDatabaseAccessor.addAsset(Asset("BTC", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCUSD", "BTC", "USD", 5))
+        testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 5))
         testBalanceHolderWrapper.updateBalance("Client2", "BTC", 1.0)
         initServices()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(uid = "10", clientId = "Client2", assetId = "BTCUSD", price = 9000.0, volume = -0.5)))
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(uid = "11", clientId = "Client2", assetId = "BTCUSD", price = 9100.0, volume = -0.3)))
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(uid = "12", clientId = "Client2", assetId = "BTCUSD", price = 9200.0, volume = -0.2)))
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(uid = "13", clientId = "Client2", assetId = "BTCUSD", price = 8000.0, volume = 0.1)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "10",
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    price = 9000.0,
+                    volume = -0.5
+                )
+            )
+        )
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "11",
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    price = 9100.0,
+                    volume = -0.3
+                )
+            )
+        )
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "12",
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    price = 9200.0,
+                    volume = -0.2
+                )
+            )
+        )
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "13",
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    price = 8000.0,
+                    volume = 0.1
+                )
+            )
+        )
         clearMessageQueues()
 
         limitOrderCancelService.processMessage(messageBuilder.buildLimitOrderCancelWrapper(listOf("10", "11", "13")))
@@ -146,12 +189,12 @@ class LimitOrderCancelServiceTest : AbstractTest() {
         assertEquals(2, balanceUpdate.balances.size)
 
         val btc = balanceUpdate.balances.first { it.asset == "BTC" }
-        assertEquals("Client2", btc.id)
+        assertEquals("Client2", btc.walletId)
         assertEquals(BigDecimal.valueOf(1.0), btc.oldReserved)
         assertEquals(BigDecimal.valueOf(0.2), btc.newReserved)
 
         val usd = balanceUpdate.balances.first { it.asset == "USD" }
-        assertEquals("Client2", usd.id)
+        assertEquals("Client2", usd.walletId)
         assertEquals(BigDecimal.valueOf(800.0), usd.oldReserved)
         assertEquals(BigDecimal.ZERO, usd.newReserved)
 

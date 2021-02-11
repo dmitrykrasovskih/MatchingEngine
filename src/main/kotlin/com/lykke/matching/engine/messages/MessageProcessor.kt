@@ -1,12 +1,13 @@
 package com.lykke.matching.engine.messages
 
-import com.lykke.matching.engine.database.*
+import com.lykke.matching.engine.database.PersistenceManager
 import com.lykke.matching.engine.database.common.entity.PersistenceData
 import com.lykke.matching.engine.deduplication.ProcessedMessagesCache
 import com.lykke.matching.engine.holders.CurrentTransactionDataHolder
 import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
 import com.lykke.matching.engine.holders.MessageSequenceNumberHolder
 import com.lykke.matching.engine.incoming.MessageRouter
+import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.outgoing.database.TransferOperationSaveService
 import com.lykke.matching.engine.performance.PerformanceStatsHolder
 import com.lykke.matching.engine.services.*
@@ -15,6 +16,7 @@ import com.lykke.utils.logging.ThrottlingLogger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.util.*
+import java.util.concurrent.BlockingQueue
 import javax.annotation.PostConstruct
 
 @Component
@@ -28,6 +30,9 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
 
     @Autowired
     private lateinit var messageRouter: MessageRouter
+
+    @Autowired
+    private lateinit var preProcessedMessageQueue: BlockingQueue<MessageWrapper>
 
     @Autowired
     private lateinit var persistenceManager: PersistenceManager
@@ -88,16 +93,16 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
         transferOperationSaveService.start()
 
         while (true) {
-            processMessage(messageRouter.preProcessedMessageQueue.take())
+            processMessage(preProcessedMessageQueue.take())
         }
     }
 
     private fun processMessage(message: MessageWrapper) {
         val startTime = System.nanoTime()
         try {
-            val messageType = MessageType.valueOf(message.type)
+            val messageType = MessageType.valueOf(message.type.type)
             if (messageType == null) {
-                LOGGER.error("[${message.sourceIp}]: Unknown message type: ${message.type}")
+                LOGGER.error("Unknown message type: ${message.type}")
                 METRICS_LOGGER.logError("Unknown message type: ${message.type}")
                 return
             }
@@ -107,13 +112,9 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
             val service = servicesMap[messageType]
 
             if (service == null) {
-                LOGGER.error("[${message.sourceIp}]: Unknown message type: ${message.type}")
+                LOGGER.error("Unknown message type: ${message.type}")
                 METRICS_LOGGER.logError("Unknown message type: ${message.type}")
                 return
-            }
-
-            if (message.parsedMessage == null) {
-                service.parseMessage(message)
             }
 
             if (!messageProcessingStatusHolder.isMessageProcessingEnabled()) {
@@ -130,10 +131,14 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
             }
 
             val processedMessage = message.processedMessage
-            if (processedMessage != null && processedMessagesCache.isProcessed(processedMessage.type, processedMessage.messageId)) {
+            if (processedMessage != null && processedMessagesCache.isProcessed(
+                    processedMessage.type,
+                    processedMessage.messageId
+                )
+            ) {
                 service.writeResponse(message, MessageStatus.DUPLICATE)
-                LOGGER.error("Message already processed: ${message.type}: ${message.messageId!!}")
-                METRICS_LOGGER.logError("Message already processed: ${message.type}: ${message.messageId!!}")
+                LOGGER.error("Message already processed: ${message.type}: ${message.messageId}")
+                METRICS_LOGGER.logError("Message already processed: ${message.type}: ${message.messageId}")
                 return
             }
 
@@ -141,7 +146,8 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
 
             processedMessage?.let {
                 if (!message.triedToPersist) {
-                    message.persisted = persistenceManager.persist(PersistenceData(it, messageSequenceNumberHolder.getValueToPersist()))
+                    message.persisted =
+                        persistenceManager.persist(PersistenceData(it, messageSequenceNumberHolder.getValueToPersist()))
                 }
                 if (message.persisted) {
                     processedMessagesCache.addMessage(it)
@@ -151,21 +157,24 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
             val endTime = System.nanoTime()
 
             if (message.writeResponseTime == null) {
-                val errorMessage = "There was no write response to socket time recorded, response to socket is not written, messageId: ${message.messageId}"
+                val errorMessage =
+                    "There was no write response to socket time recorded, response to socket is not written, messageId: ${message.messageId}"
                 LOGGER.error(errorMessage)
                 METRICS_LOGGER.logError(errorMessage)
             }
 
-            performanceStatsHolder.addMessage(type = message.type,
-                    writeResponseTime = message.writeResponseTime,
-                    startTimestamp = message.startTimestamp,
-                    messagePreProcessorStartTimestamp = message.messagePreProcessorStartTimestamp,
-                    messagePreProcessorEndTimestamp = message.messagePreProcessorEndTimestamp,
-                    startMessageProcessingTime = startTime,
-                    endMessageProcessingTime = endTime)
+            performanceStatsHolder.addMessage(
+                type = message.type.type,
+                writeResponseTime = message.writeResponseTime,
+                startTimestamp = message.startTimestamp,
+                messagePreProcessorStartTimestamp = message.messagePreProcessorStartTimestamp,
+                messagePreProcessorEndTimestamp = message.messagePreProcessorEndTimestamp,
+                startMessageProcessingTime = startTime,
+                endMessageProcessingTime = endTime
+            )
         } catch (exception: Exception) {
-            LOGGER.error("[${message.sourceIp}]: Got error during message processing: ${exception.message}", exception)
-            METRICS_LOGGER.logError("[${message.sourceIp}]: Got error during message processing", exception)
+            LOGGER.error("Got error during message processing: ${exception.message}", exception)
+            METRICS_LOGGER.logError("Got error during message processing", exception)
         }
     }
 

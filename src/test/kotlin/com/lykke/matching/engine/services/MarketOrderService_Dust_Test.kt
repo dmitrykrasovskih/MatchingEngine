@@ -4,8 +4,7 @@ import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.daos.AssetPair
-import com.lykke.matching.engine.database.BackOfficeDatabaseAccessor
-import com.lykke.matching.engine.database.TestBackOfficeDatabaseAccessor
+import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
 import com.lykke.matching.engine.outgoing.messages.MarketOrderWithTrades
@@ -42,37 +41,37 @@ class MarketOrderService_Dust_Test: AbstractTest() {
     open class Config {
         @Bean
         @Primary
-        open fun testBackOfficeDatabaseAccessor(): BackOfficeDatabaseAccessor {
-            val testBackOfficeDatabaseAccessor = TestBackOfficeDatabaseAccessor()
+        open fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
+            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
 
-            testBackOfficeDatabaseAccessor.addAsset(Asset("LKK", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("SLR", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("EUR", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("GBP", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("CHF", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("USD", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("JPY", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("BTC", 8))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("BTC1", 8))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "LKK", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "SLR", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "GBP", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "CHF", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "JPY", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 8))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC1", 8))
 
-            return testBackOfficeDatabaseAccessor
+            return testDictionariesDatabaseAccessor
         }
     }
 
     @Before
     fun setUp() {
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURUSD", "EUR", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURJPY", "EUR", "JPY", 3))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCUSD", "BTC", "USD", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCLKK", "BTC", "LKK", 6))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTC1USD", "BTC1", "USD", 3))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTC1LKK", "BTC1", "LKK", 6))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCCHF", "BTC", "CHF", 3))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("SLRBTC", "SLR", "BTC", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("SLRBTC1", "SLR", "BTC1", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("LKKEUR", "LKK", "EUR", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("LKKGBP", "LKK", "GBP", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURJPY", "EUR", "JPY", 3))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCLKK", "BTC", "LKK", 6))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTC1USD", "BTC1", "USD", 3))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTC1LKK", "BTC1", "LKK", 6))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCCHF", "BTC", "CHF", 3))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "SLRBTC", "SLR", "BTC", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "SLRBTC1", "SLR", "BTC1", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "LKKEUR", "LKK", "EUR", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "LKKGBP", "LKK", "GBP", 5))
         initServices()
     }
 

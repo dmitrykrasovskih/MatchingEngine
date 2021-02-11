@@ -84,6 +84,7 @@ class OrderBooksController {
     @ExceptionHandler(Exception::class)
     private fun handleException (request: HttpServletRequest, ex: Exception): ResponseEntity<*> {
         LOGGER.error("Unable to write order book snapshot request to ${request.remoteAddr}", ex)
+        @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
         return ResponseEntity<Any>(null, HttpStatus.INTERNAL_SERVER_ERROR)
     }
 }

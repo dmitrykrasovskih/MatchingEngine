@@ -5,18 +5,15 @@ import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.daos.FeeType
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
-import com.lykke.matching.engine.database.BackOfficeDatabaseAccessor
-import com.lykke.matching.engine.database.TestBackOfficeDatabaseAccessor
-import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
 import com.lykke.matching.engine.database.cache.ApplicationSettingsCache
+import com.lykke.matching.engine.grpc.TestStreamObserver
 import com.lykke.matching.engine.incoming.parsers.data.CashTransferParsedData
 import com.lykke.matching.engine.incoming.parsers.impl.CashTransferContextParser
-import com.lykke.matching.engine.messages.MessageType
-import com.lykke.matching.engine.messages.MessageWrapper
-import com.lykke.matching.engine.messages.ProtocolMessages
-import com.lykke.matching.engine.services.validators.input.CashTransferOperationInputValidator
+import com.lykke.matching.engine.messages.wrappers.CashTransferOperationMessageWrapper
 import com.lykke.matching.engine.services.validators.impl.ValidationException
-import junit.framework.Assert.assertEquals
+import com.lykke.matching.engine.services.validators.input.CashTransferOperationInputValidator
+import com.lykke.matching.engine.utils.proto.createProtobufTimestampBuilder
+import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,6 +24,8 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
+import java.util.*
+import kotlin.test.assertEquals
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [(TestApplicationContext::class), (CashTransferOperationInputValidatorTest.Config::class)])
@@ -34,28 +33,25 @@ import org.springframework.test.context.junit4.SpringRunner
 class CashTransferOperationInputValidatorTest {
 
     companion object {
-        val CLIENT_NAME1 = "Client1"
-        val CLIENT_NAME2 = "Client2"
-        val ASSET_ID = "USD"
+        const val CLIENT_NAME1 = "Client1"
+        const val CLIENT_NAME2 = "Client2"
+        const val ASSET_ID = "USD"
     }
 
     @TestConfiguration
-    open class Config {
+    class Config {
 
         @Bean
         @Primary
-        open fun testBackOfficeDatabaseAccessor(): BackOfficeDatabaseAccessor {
-            val testBackOfficeDatabaseAccessor = TestBackOfficeDatabaseAccessor()
-            testBackOfficeDatabaseAccessor.addAsset(Asset(ASSET_ID, 2))
-            return testBackOfficeDatabaseAccessor
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
+            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
+            testDictionariesDatabaseAccessor.addAsset(Asset("", ASSET_ID, 2))
+            return testDictionariesDatabaseAccessor
         }
     }
 
     @Autowired
-    private lateinit var cashTransferParser: CashTransferContextParser
-
-    @Autowired
-    private lateinit var testSettingsDatabaseAccessor: TestSettingsDatabaseAccessor
+    private lateinit var cashTransferContextParser: CashTransferContextParser
 
     @Autowired
     private lateinit var applicationSettingsCache: ApplicationSettingsCache
@@ -91,8 +87,13 @@ class CashTransferOperationInputValidatorTest {
     fun testAssetEnabled() {
         //given
         val cashTransferOperationBuilder = getCashTransferOperationBuilder()
-        applicationSettingsCache.createOrUpdateSettingValue(AvailableSettingGroup.DISABLED_ASSETS, ASSET_ID, ASSET_ID, true)
-        cashTransferOperationBuilder.volume = -1.0
+        applicationSettingsCache.createOrUpdateSettingValue(
+            AvailableSettingGroup.DISABLED_ASSETS,
+            ASSET_ID,
+            ASSET_ID,
+            true
+        )
+        cashTransferOperationBuilder.volume = "-1.0"
 
         //when
         try {
@@ -110,8 +111,8 @@ class CashTransferOperationInputValidatorTest {
 
         //when
         try {
-            val invalidFee = ProtocolMessages.Fee.newBuilder()
-                    .setType(FeeType.EXTERNAL_FEE.externalId).build()
+            val invalidFee = GrpcIncomingMessages.Fee.newBuilder()
+                .setType(FeeType.EXTERNAL_FEE.externalId).build()
 
 
             cashTransferOperationBuilder.addFees(invalidFee)
@@ -126,7 +127,7 @@ class CashTransferOperationInputValidatorTest {
     fun testVolumeAccuracy() {
         //given
         val cashTransferOperationBuilder = getCashTransferOperationBuilder()
-        cashTransferOperationBuilder.volume = 10.001
+        cashTransferOperationBuilder.volume = "10.001"
 
         //when
         try {
@@ -143,21 +144,21 @@ class CashTransferOperationInputValidatorTest {
         cashTransferOperationInputValidator.performValidation(getParsedData(getCashTransferOperationBuilder().build()))
     }
 
-    fun getCashTransferOperationBuilder(): ProtocolMessages.CashTransferOperation.Builder {
-        return ProtocolMessages.CashTransferOperation
-                .newBuilder()
-                .setId("test")
-                .setAssetId(ASSET_ID)
-                .setTimestamp(System.currentTimeMillis())
-                .setFromClientId(CLIENT_NAME1)
-                .setToClientId(CLIENT_NAME2).setVolume(0.0)
+    fun getCashTransferOperationBuilder(): GrpcIncomingMessages.CashTransferOperation.Builder {
+        return GrpcIncomingMessages.CashTransferOperation
+            .newBuilder()
+            .setId("test")
+            .setAssetId(ASSET_ID)
+            .setTimestamp(Date().createProtobufTimestampBuilder())
+            .setFromWalletId(CLIENT_NAME1)
+            .setToWalletId(CLIENT_NAME2).setVolume("0.0")
     }
 
-    private fun getMessageWrapper(message: ProtocolMessages.CashTransferOperation): MessageWrapper {
-        return MessageWrapper("test", MessageType.CASH_TRANSFER_OPERATION.type, message.toByteArray(), null)
+    private fun getMessageWrapper(message: GrpcIncomingMessages.CashTransferOperation): CashTransferOperationMessageWrapper {
+        return CashTransferOperationMessageWrapper(message, TestStreamObserver())
     }
 
-    private fun getParsedData(message: ProtocolMessages.CashTransferOperation): CashTransferParsedData{
-        return cashTransferParser.parse(getMessageWrapper(message))
+    private fun getParsedData(message: GrpcIncomingMessages.CashTransferOperation): CashTransferParsedData {
+        return cashTransferContextParser.parse(getMessageWrapper(message))
     }
 }

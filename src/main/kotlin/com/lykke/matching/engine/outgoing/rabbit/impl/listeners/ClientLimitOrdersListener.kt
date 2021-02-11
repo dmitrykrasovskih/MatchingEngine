@@ -45,14 +45,14 @@ class ClientLimitOrdersListener {
 
     @PostConstruct
     fun initRabbitMqPublisher() {
-        rabbitMqOldService.startPublisher(config.me.rabbitMqConfigs.trustedLimitOrders,
+        rabbitMqOldService.startPublisher(config.matchingEngine.rabbitMqConfigs.trustedLimitOrders,
                 ClientLimitOrdersListener::class.java.simpleName,
                 clientLimitOrdersQueue,
-                config.me.name,
+                config.matchingEngine.name,
                 AppVersion.VERSION,
                 BuiltinExchangeType.FANOUT,
                 DatabaseLogger(
-                        AzureMessageLogDatabaseAccessor(config.me.db.messageLogConnString,
+                        AzureMessageLogDatabaseAccessor(config.matchingEngine.db.messageLogConnString,
                                 logTable, logBlobName)))
     }
 

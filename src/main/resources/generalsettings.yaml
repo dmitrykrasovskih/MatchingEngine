@@ -1,0 +1,114 @@
+matchingEngine:
+  db:
+    hBlobConnString: ""
+    hBestPriceConnString: ""
+    hCandlesConnString: ""
+    hHourCandlesConnString: ""
+    balancesInfoConnString: ""
+    hTradesConnString: ""
+    dictsConnString: ""
+    sharedStorageConnString: ""
+    messageLogConnString: ""
+    matchingEngineConnString: ""
+    monitoringConnString: ""
+    reservedVolumesConnString: ""
+    accountsTableName: ""
+    newAccountsTableName: ""
+  redis:
+    host: testHost
+    port: 90
+    timeout: 1000
+    useSsl: true
+    password: testPassword
+    balanceDatabase: 0
+    processedMessageDatabase: 1
+    processedCashMessageDatabase: 2
+    ordersDatabase: 3
+    pingDatabase: 4
+    sequenceNumberDatabase: 5
+  grpcEndpoints:
+    cashApiServicePort: 111
+    dictionariesConnection: dictionariesConnection
+  socket:
+    port: 9090
+    maxConnections: 100
+    lifeTimeMinutes: 60
+  serverOrderBookPort: 9091
+  serverOrderBookMaxConnections: 10
+  httpOrderBookPort: 9050
+  httpApiPort: 9051
+  rabbitMqConfigs:
+    orderBooks:
+      uri: orderBooksUri
+      exchange: orderBooksExchange
+    cashOperations:
+      uri: cashOperationsUri
+      exchange: cashOperationsExchange
+    reservedCashOperations:
+      uri: reservedCashOperationsUri
+      exchange: reservedCashOperationsExchange
+    transfers:
+      uri: transfersUri
+      exchange: transfersExchange
+    swapOperations:
+      uri: swapOperationsUri
+      exchange: swapOperationsExchange
+    balanceUpdates:
+      uri: balanceUpdatesUri
+      exchange: balanceUpdatesExchange
+    marketOrders:
+      uri: marketOrdersUri
+      exchange: marketOrdersExchange
+    limitOrders:
+      uri: limitOrdersUri
+      exchange: limitOrdersExchange
+    trustedLimitOrders:
+      uri: trustedLimitOrdersUri
+      exchange: trustedLimitOrdersExchange
+    events:
+      - uri: eventsUri
+        exchange: eventsExchange
+    trustedClientsEvents:
+      - uri: trustedClientsEventsUri
+        exchange: trustedClientsEventsExchange
+  bestPricesInterval: 1000
+  candleSaverInterval: 1000
+  hoursCandleSaverInterval: 1000
+  correctReservedVolumes: false
+  cancelMinVolumeOrders: false
+  cancelAllOrders: false
+  orderBookPath: orderbooks
+  secondaryStopOrderBookPath: secondaryStopOrderBookPath
+  secondaryOrderBookPath: secondaryOrderBookPath
+  stopOrderBookPath: stopOrderBookPath
+  queueConfig:
+    queueSizeHealthCheckInterval: 1000
+    queueSizeLoggerInterval: 1000
+    queueSizeLimit: 50000
+    maxQueueSizeLimit: 100000
+    recoverQueueSizeLimit: 20000
+    rabbitMaxQueueSizeLimit: 50000
+    rabbitRecoverQueueSizeLimit: 20000
+  name: TestName
+  aliveStatus:
+    updatePeriod: 10000
+    lifeTime: 100000
+  processedMessagesPath: processedMessagesPath
+  processedMessagesInterval: 1000
+  performanceStatsInterval: 1000
+  keepAlive:
+    passive: true
+    name: Spot.MatchingEngine
+  logFilesCleaner:
+    enabled: false
+  storage: Redis
+  walletsMigration: false
+  writeBalancesToSecondaryDb: true
+  ordersMigration: false
+  writeOrdersToSecondaryDb: true
+slackNotifications:
+  azureQueue:
+    connectionString: TestString
+    queueName: TestQueue
+throttlingLogger:
+  limitSeconds: 5

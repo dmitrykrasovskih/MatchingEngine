@@ -11,8 +11,7 @@ import com.lykke.matching.engine.incoming.parsers.impl.CashTransferContextParser
 import com.lykke.matching.engine.incoming.preprocessor.AbstractMessagePreprocessor
 import com.lykke.matching.engine.messages.MessageStatus
 import com.lykke.matching.engine.messages.MessageStatus.DUPLICATE
-import com.lykke.matching.engine.messages.MessageWrapper
-import com.lykke.matching.engine.messages.ProtocolMessages
+import com.lykke.matching.engine.messages.wrappers.CashTransferOperationMessageWrapper
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.services.validators.input.CashTransferOperationInputValidator
 import com.lykke.matching.engine.utils.NumberUtils
@@ -26,18 +25,22 @@ import org.springframework.stereotype.Component
 import java.util.concurrent.BlockingQueue
 
 @Component
-class CashTransferPreprocessor(contextParser: CashTransferContextParser,
-                               preProcessedMessageQueue: BlockingQueue<MessageWrapper>,
-                               private val cashOperationIdDatabaseAccessor: CashOperationIdDatabaseAccessor,
-                               private val cashTransferPreprocessorPersistenceManager: PersistenceManager,
-                               private val processedMessagesCache: ProcessedMessagesCache,
-                               private val messageProcessingStatusHolder: MessageProcessingStatusHolder,
-                               @Qualifier("cashTransferPreProcessingLogger")
-                               private val logger: ThrottlingLogger) :
-        AbstractMessagePreprocessor<CashTransferParsedData>(contextParser,
-                messageProcessingStatusHolder,
-                preProcessedMessageQueue,
-                logger) {
+class CashTransferPreprocessor(
+    contextParser: CashTransferContextParser,
+    preProcessedMessageQueue: BlockingQueue<CashTransferOperationMessageWrapper>,
+    private val cashOperationIdDatabaseAccessor: CashOperationIdDatabaseAccessor,
+    private val cashTransferPreprocessorPersistenceManager: PersistenceManager,
+    private val processedMessagesCache: ProcessedMessagesCache,
+    private val messageProcessingStatusHolder: MessageProcessingStatusHolder,
+    @Qualifier("cashTransferPreProcessingLogger")
+    private val logger: ThrottlingLogger
+) :
+    AbstractMessagePreprocessor<CashTransferParsedData, CashTransferOperationMessageWrapper>(
+        contextParser,
+        messageProcessingStatusHolder,
+        preProcessedMessageQueue,
+        logger
+    ) {
 
     companion object {
         private val METRICS_LOGGER = MetricsLogger.getLogger()
@@ -47,7 +50,7 @@ class CashTransferPreprocessor(contextParser: CashTransferContextParser,
     private lateinit var cashTransferOperationInputValidator: CashTransferOperationInputValidator
 
     override fun preProcessParsedData(parsedData: CashTransferParsedData): Boolean {
-        val parsedMessageWrapper = parsedData.messageWrapper
+        val parsedMessageWrapper = parsedData.messageWrapper as CashTransferOperationMessageWrapper
         val context = parsedMessageWrapper.context as CashTransferContext
         if (messageProcessingStatusHolder.isCashTransferDisabled(context.transferOperation.asset)) {
             writeResponse(parsedMessageWrapper, MessageStatus.MESSAGE_PROCESSING_DISABLED)
@@ -80,14 +83,17 @@ class CashTransferPreprocessor(contextParser: CashTransferContextParser,
         return true
     }
 
-    private fun processInvalidData(cashTransferParsedData: CashTransferParsedData,
-                                   validationType: ValidationException.Validation,
-                                   message: String) {
-        val messageWrapper = cashTransferParsedData.messageWrapper
+    private fun processInvalidData(
+        cashTransferParsedData: CashTransferParsedData,
+        validationType: ValidationException.Validation,
+        message: String
+    ) {
+        val messageWrapper = cashTransferParsedData.messageWrapper as CashTransferOperationMessageWrapper
         val context = messageWrapper.context as CashTransferContext
         logger.info("Input validation failed messageId: ${context.messageId}, details: $message")
 
-        val persistSuccess = cashTransferPreprocessorPersistenceManager.persist(PersistenceData(context.processedMessage))
+        val persistSuccess =
+            cashTransferPreprocessorPersistenceManager.persist(PersistenceData(context.processedMessage))
         if (!persistSuccess) {
             throw Exception("Persistence error")
         }
@@ -102,21 +108,39 @@ class CashTransferPreprocessor(contextParser: CashTransferContextParser,
     }
 
     private fun isMessageDuplicated(cashTransferParsedData: CashTransferParsedData): Boolean {
-        val parsedMessageWrapper = cashTransferParsedData.messageWrapper
-        val context = parsedMessageWrapper.context as CashTransferContext
-        return cashOperationIdDatabaseAccessor.isAlreadyProcessed(parsedMessageWrapper.type.toString(), context.messageId)
+        val parsedMessageWrapper = cashTransferParsedData.messageWrapper as CashTransferOperationMessageWrapper
+        val context = parsedMessageWrapper.context!!
+        return cashOperationIdDatabaseAccessor.isAlreadyProcessed(
+            parsedMessageWrapper.type.toString(),
+            context.messageId
+        )
     }
 
-    private fun writeErrorResponse(messageWrapper: MessageWrapper,
-                                   context: CashTransferContext,
-                                   status: MessageStatus,
-                                   errorMessage: String = StringUtils.EMPTY) {
-        messageWrapper.writeNewResponse(ProtocolMessages.NewResponse.newBuilder()
-                .setMatchingEngineId(context.transferOperation.matchingEngineOperationId)
-                .setStatus(status.type)
-                .setStatusReason(errorMessage))
-        logger.info("Cash transfer operation (${context.transferOperation.externalId}) from client ${context.transferOperation.fromClientId} " +
-                "to client ${context.transferOperation.toClientId}, asset ${context.transferOperation.asset}," +
-                " volume: ${NumberUtils.roundForPrint(context.transferOperation.volume)}: $errorMessage")
+    private fun writeErrorResponse(
+        messageWrapper: CashTransferOperationMessageWrapper,
+        context: CashTransferContext,
+        status: MessageStatus,
+        errorMessage: String = StringUtils.EMPTY
+    ) {
+        messageWrapper.writeResponse(context.transferOperation.matchingEngineOperationId, status, errorMessage)
+        logger.info(
+            "Cash transfer operation (${context.transferOperation.externalId}) from client ${context.transferOperation.fromClientId} " +
+                    "to client ${context.transferOperation.toClientId}, asset ${context.transferOperation.asset}," +
+                    " volume: ${NumberUtils.roundForPrint(context.transferOperation.volume)}: $errorMessage"
+        )
+    }
+
+    override fun writeResponse(
+        messageWrapper: CashTransferOperationMessageWrapper,
+        status: MessageStatus,
+        message: String?
+    ) {
+        val context = messageWrapper.context!!
+        messageWrapper.writeResponse(context.transferOperation.matchingEngineOperationId, status, message)
+        logger.info(
+            "Cash transfer operation (${context.transferOperation.externalId}) from client ${context.transferOperation.fromClientId} " +
+                    "to client ${context.transferOperation.toClientId}, asset ${context.transferOperation.asset}," +
+                    " volume: ${NumberUtils.roundForPrint(context.transferOperation.volume)}: $message"
+        )
     }
 }

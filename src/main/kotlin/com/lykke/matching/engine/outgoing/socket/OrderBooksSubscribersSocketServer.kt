@@ -31,7 +31,7 @@ class OrderBooksSubscribersSocketServer(val config: Config,
 
     @PostConstruct
     private fun init() {
-        if (config.me.serverOrderBookPort == null) {
+        if (config.matchingEngine.serverOrderBookPort == null) {
             return
         }
 
@@ -39,7 +39,7 @@ class OrderBooksSubscribersSocketServer(val config: Config,
     }
 
     override fun run() {
-        val port = config.me.serverOrderBookPort
+        val port = config.matchingEngine.serverOrderBookPort
         val socket = ServerSocket(port!!)
         LOGGER.info("Waiting connection on port: $port.")
         try {

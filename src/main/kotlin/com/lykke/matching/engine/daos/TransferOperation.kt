@@ -8,6 +8,8 @@ import java.util.Date
 data class TransferOperation(
         val matchingEngineOperationId: String,
         val externalId: String,
+        val brokerId: String,
+        val accountId: String,
         val fromClientId: String,
         val toClientId: String,
         val asset: Asset?,
@@ -24,6 +26,8 @@ data class TransferOperation(
 
         if (matchingEngineOperationId != other.matchingEngineOperationId) return false
         if (externalId != other.externalId) return false
+        if (brokerId != other.brokerId) return false
+        if (accountId != other.accountId) return false
         if (fromClientId != other.fromClientId) return false
         if (toClientId != other.toClientId) return false
         if (asset != other.asset) return false
@@ -38,6 +42,8 @@ data class TransferOperation(
     override fun hashCode(): Int {
         var result = matchingEngineOperationId.hashCode()
         result = 31 * result + externalId.hashCode()
+        result = 31 * result + brokerId.hashCode()
+        result = 31 * result + accountId.hashCode()
         result = 31 * result + fromClientId.hashCode()
         result = 31 * result + toClientId.hashCode()
         result = 31 * result + (asset?.hashCode() ?: 0)

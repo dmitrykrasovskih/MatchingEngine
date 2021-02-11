@@ -76,14 +76,14 @@ class ProcessedMessagesCacheImpl @Autowired constructor(
                     clean()
                 },
                 getStarCleaningTime(),
-                Duration.ofMillis(config.me.processedMessagesInterval))
+                Duration.ofMillis(config.matchingEngine.processedMessagesInterval))
     }
 
     private fun getStarCleaningTime(): Instant {
-        return ZonedDateTime.now().toInstant().plusMillis(config.me.processedMessagesInterval)
+        return ZonedDateTime.now().toInstant().plusMillis(config.matchingEngine.processedMessagesInterval)
     }
 
     private fun getCutoffTime(): Long {
-        return Date().time - config.me.processedMessagesInterval
+        return Date().time - config.matchingEngine.processedMessagesInterval
     }
 }

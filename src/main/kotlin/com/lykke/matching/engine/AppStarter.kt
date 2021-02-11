@@ -19,7 +19,7 @@ fun main(args: Array<String>) {
         val context = SpringApplicationBuilder(AppStarter::class.java)
                 .initializers(ApplicationStatusContextInitializer())
                 .run(*args)
-        val spotName = context.getBean(Config::class.java).me.name
+        val spotName = context.getBean(Config::class.java).matchingEngine.name
         Runtime.getRuntime().addShutdownHook(ShutdownHook(spotName))
         addCommandLinePropertySource(args, context)
         context.getBean(Application::class.java).run()

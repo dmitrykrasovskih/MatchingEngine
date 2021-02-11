@@ -25,7 +25,7 @@ class PersistOrdersStrategyFactory() : FactoryBean<PersistOrdersDuringRedisTrans
     }
 
     override fun getObject(): PersistOrdersDuringRedisTransactionStrategy? {
-        return when (config.me.storage) {
+        return when (config.matchingEngine.storage) {
             Storage.Redis -> RedisPersistOrdersStrategy(ordersDatabaseAccessorsHolder, stopOrdersDatabaseAccessorsHolder, config)
             Storage.RedisWithoutOrders -> FilesPersistOrdersStrategy(ordersDatabaseAccessorsHolder, stopOrdersDatabaseAccessorsHolder)
             else -> null

@@ -23,7 +23,8 @@ class ExecutionContext(val messageId: String,
                        val orderBooksHolder: CurrentTransactionOrderBooksHolder,
                        val stopOrderBooksHolder: CurrentTransactionStopOrderBooksHolder,
                        val date: Date,
-                       val logger: Logger) {
+                       val logger: Logger
+) {
 
     var tradeIndex: Long = 0
 

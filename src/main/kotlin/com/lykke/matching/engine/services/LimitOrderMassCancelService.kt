@@ -1,28 +1,33 @@
 package com.lykke.matching.engine.services
 
-import com.lykke.matching.engine.daos.context.LimitOrderMassCancelOperationContext
 import com.lykke.matching.engine.messages.MessageStatus
-import com.lykke.matching.engine.messages.MessageWrapper
-import com.lykke.matching.engine.messages.ProtocolMessages
+import com.lykke.matching.engine.messages.wrappers.MessageWrapper
+import com.lykke.matching.engine.messages.wrappers.socket.LimitOrderMassCancelMessageWrapper
 import com.lykke.matching.engine.order.process.common.CancelRequest
+import com.lykke.matching.engine.order.process.common.LimitOrdersCancelExecutor
 import org.apache.log4j.Logger
 import org.springframework.stereotype.Service
 import java.util.*
 
 @Service
-class LimitOrderMassCancelService(private val genericLimitOrderService: GenericLimitOrderService,
-                                  private val genericStopLimitOrderService: GenericStopLimitOrderService,
-                                  private val limitOrdersCancelServiceHelper: LimitOrdersCancelServiceHelper) : AbstractService {
+class LimitOrderMassCancelService(
+    private val genericLimitOrderService: GenericLimitOrderService,
+    private val genericStopLimitOrderService: GenericStopLimitOrderService,
+    private val limitOrdersCancelExecutor: LimitOrdersCancelExecutor
+) : AbstractService {
     companion object {
         private val LOGGER = Logger.getLogger(LimitOrderMassCancelService::class.java.name)
     }
 
-    override fun processMessage(messageWrapper: MessageWrapper) {
+    override fun processMessage(genericMessageWrapper: MessageWrapper) {
         val now = Date()
-        val context = messageWrapper.context as LimitOrderMassCancelOperationContext
-        LOGGER.debug("Got mass limit order cancel request id: ${context.uid}, clientId: ${context.clientId}, assetPairId: ${context.assetPairId}, isBuy: ${context.isBuy}")
+        val messageWrapper = genericMessageWrapper as LimitOrderMassCancelMessageWrapper
+        val context = messageWrapper.context
+        LOGGER.debug("Got mass limit order cancel request id: ${context!!.uid}, clientId: ${context.clientId}, assetPairId: ${context.assetPairId}, isBuy: ${context.isBuy}")
 
-        limitOrdersCancelServiceHelper.cancelOrdersAndWriteResponse(CancelRequest(genericLimitOrderService.searchOrders(context.clientId, context.assetPairId, context.isBuy),
+        val updateSuccessful = limitOrdersCancelExecutor.cancelOrdersAndApply(
+            CancelRequest(
+                genericLimitOrderService.searchOrders(context.clientId, context.assetPairId, context.isBuy),
                 genericStopLimitOrderService.searchOrders(context.clientId, context.assetPairId, context.isBuy),
                 context.messageId,
                 context.uid,
@@ -30,14 +35,21 @@ class LimitOrderMassCancelService(private val genericLimitOrderService: GenericL
                 now,
                 context.processedMessage,
                 messageWrapper,
-                LOGGER))
+                LOGGER
+            )
+        )
+
+        if (updateSuccessful) {
+            messageWrapper.writeResponse(MessageStatus.OK)
+        } else {
+            val message = "Unable to save result"
+            messageWrapper.writeResponse(MessageStatus.RUNTIME, message)
+            LOGGER.info("$message for operation ${context.messageId}")
+        }
     }
 
-    override fun parseMessage(messageWrapper: MessageWrapper) {
-        // do nothing
-    }
-
-    override fun writeResponse(messageWrapper: MessageWrapper, status: MessageStatus) {
-        messageWrapper.writeNewResponse(ProtocolMessages.NewResponse.newBuilder().setStatus(status.type))
+    override fun writeResponse(genericMessageWrapper: MessageWrapper, status: MessageStatus) {
+        val messageWrapper = genericMessageWrapper as LimitOrderMassCancelMessageWrapper
+        messageWrapper.writeResponse(status)
     }
 }

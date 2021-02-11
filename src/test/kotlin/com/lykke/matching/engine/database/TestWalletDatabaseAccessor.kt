@@ -4,7 +4,7 @@ import com.lykke.matching.engine.daos.wallet.AssetBalance
 import com.lykke.matching.engine.daos.wallet.Wallet
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
-import java.util.HashMap
+import java.util.*
 
 @Component
 class TestWalletDatabaseAccessor : WalletDatabaseAccessor {
@@ -14,7 +14,7 @@ class TestWalletDatabaseAccessor : WalletDatabaseAccessor {
     override fun loadWallets(): HashMap<String, Wallet> {
         return wallets.mapValues { walletEntry ->
             val wallet = walletEntry.value
-            Wallet(wallet.clientId, wallet.balances.map { assetBalanceEntry ->
+            Wallet("", "", wallet.clientId, wallet.balances.map { assetBalanceEntry ->
                 val assetId = assetBalanceEntry.key
                 val assetBalance = assetBalanceEntry.value
                 AssetBalance(wallet.clientId, assetId, assetBalance.balance, assetBalance.reserved)
@@ -29,7 +29,7 @@ class TestWalletDatabaseAccessor : WalletDatabaseAccessor {
         }
 
         wallets.forEach { wallet ->
-            val updatedWallet = this.wallets.getOrPut(wallet.clientId) { Wallet(wallet.clientId) }
+            val updatedWallet = this.wallets.getOrPut(wallet.clientId) { Wallet("", "", wallet.clientId) }
             wallet.balances.values.forEach {
                 updatedWallet.setBalance(it.asset, it.balance)
                 updatedWallet.setReservedBalance(it.asset, it.reserved)

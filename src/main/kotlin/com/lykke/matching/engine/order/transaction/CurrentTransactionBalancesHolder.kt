@@ -22,7 +22,9 @@ class CurrentTransactionBalancesHolder(private val balancesHolder: BalancesHolde
     }
 
     fun persistenceData(): BalancesData {
-        return BalancesData(changedWalletsByClientId.values, changedBalancesByClientIdAndAssetId.flatMap { it.value.values })
+        return BalancesData(
+            changedWalletsByClientId.values,
+            changedBalancesByClientIdAndAssetId.flatMap { it.value.values })
     }
 
     fun apply() {
@@ -31,35 +33,50 @@ class CurrentTransactionBalancesHolder(private val balancesHolder: BalancesHolde
 
     fun getWalletAssetBalance(clientId: String, assetId: String): WalletAssetBalance {
         val wallet = changedWalletsByClientId.getOrPut(clientId) {
-            copyWallet(balancesHolder.wallets[clientId]) ?: Wallet(clientId)
+            copyWallet(balancesHolder.wallets[clientId]) ?: Wallet("", "", clientId)
         }
         val assetBalance = changedBalancesByClientIdAndAssetId
-                .getOrPut(clientId) {
-                    mutableMapOf()
-                }
-                .getOrPut(assetId) {
-                    wallet.balances.getOrPut(assetId) { AssetBalance(clientId, assetId) }
-                }
+            .getOrPut(clientId) {
+                mutableMapOf()
+            }
+            .getOrPut(assetId) {
+                wallet.balances.getOrPut(assetId) { AssetBalance(clientId, assetId) }
+            }
         return WalletAssetBalance(wallet, assetBalance)
     }
 
-    fun getChangedCopyOrOriginalAssetBalance(clientId: String, assetId: String): AssetBalance {
-        return (changedWalletsByClientId[clientId] ?: balancesHolder.wallets[clientId] ?: Wallet(clientId)).balances[assetId]
-                ?: AssetBalance(clientId, assetId)
+    fun getChangedCopyOrOriginalAssetBalance(
+        brokerId: String,
+        accountId: String,
+        clientId: String,
+        assetId: String
+    ): AssetBalance {
+        return (changedWalletsByClientId[clientId] ?: balancesHolder.wallets[clientId] ?: Wallet(
+            brokerId,
+            accountId,
+            clientId
+        )).balances[assetId]
+            ?: AssetBalance(clientId, assetId)
     }
 
     private fun copyWallet(wallet: Wallet?): Wallet? {
         if (wallet == null) {
             return null
         }
-        return Wallet(wallet.clientId, wallet.balances.values.map { copyAssetBalance(it) })
+        return Wallet(
+            wallet.brokerId,
+            wallet.accountId,
+            wallet.clientId,
+            wallet.balances.values.map { copyAssetBalance(it) })
     }
 
     private fun copyAssetBalance(assetBalance: AssetBalance): AssetBalance {
-        return AssetBalance(assetBalance.clientId,
-                assetBalance.asset,
-                assetBalance.balance,
-                assetBalance.reserved)
+        return AssetBalance(
+            assetBalance.clientId,
+            assetBalance.asset,
+            assetBalance.balance,
+            assetBalance.reserved
+        )
     }
 }
 

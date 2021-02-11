@@ -44,14 +44,14 @@ class MarketOrderWithTradesEventListener {
 
     @PostConstruct
     fun initRabbitMqPublisher() {
-        rabbitMqOldService.startPublisher(config.me.rabbitMqConfigs.marketOrders,
+        rabbitMqOldService.startPublisher(config.matchingEngine.rabbitMqConfigs.marketOrders,
                 MarketOrderWithTradesEventListener::class.java.simpleName,
                 marketOrderWithTrades,
-                config.me.name,
+                config.matchingEngine.name,
                 AppVersion.VERSION,
                 BuiltinExchangeType.FANOUT,
                 DatabaseLogger(
-                        AzureMessageLogDatabaseAccessor(config.me.db.messageLogConnString,
+                        AzureMessageLogDatabaseAccessor(config.matchingEngine.db.messageLogConnString,
                                 logTable, logBlobName)))
     }
 

@@ -1,13 +1,21 @@
 package com.lykke.matching.engine.incoming.preprocessor
 
+import com.lykke.matching.engine.daos.LimitOrder
+import com.lykke.matching.engine.daos.context.SingleLimitOrderContext
+import com.lykke.matching.engine.grpc.TestStreamObserver
 import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
 import com.lykke.matching.engine.incoming.parsers.ContextParser
+import com.lykke.matching.engine.incoming.parsers.data.LimitOrderCancelOperationParsedData
 import com.lykke.matching.engine.incoming.parsers.data.ParsedData
+import com.lykke.matching.engine.incoming.parsers.data.SingleLimitOrderParsedData
+import com.lykke.matching.engine.incoming.parsers.impl.SingleLimitOrderContextParser
+import com.lykke.matching.engine.incoming.preprocessor.impl.SingleLimitOrderPreprocessor
 import com.lykke.matching.engine.messages.MessageStatus
-import com.lykke.matching.engine.messages.MessageWrapper
-import com.lykke.matching.engine.messages.ProtocolMessages
-import com.lykke.matching.engine.socket.TestClientHandler
+import com.lykke.matching.engine.messages.wrappers.MessageWrapper
+import com.lykke.matching.engine.messages.wrappers.SingleLimitOrderMessageWrapper
+import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.utils.logging.ThrottlingLogger
+import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
@@ -15,56 +23,74 @@ import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingQueue
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 class AbstractMessagePreprocessorTest {
 
-    class TestParsedData(messageWrapper: MessageWrapper) : ParsedData(messageWrapper)
+//    class TestParsedData(messageWrapper: MessageWrapper) : ParsedData(messageWrapper)
 
-    class TestMessagePreprocessor(contextParser: ContextParser<TestParsedData>,
-                                  messageProcessingStatusHolder: MessageProcessingStatusHolder,
-                                  preProcessedMessageQueue: BlockingQueue<MessageWrapper>,
-                                  private val preProcessSuccess: Boolean) :
-            AbstractMessagePreprocessor<TestParsedData>(contextParser,
-                    messageProcessingStatusHolder,
-                    preProcessedMessageQueue,
-                    ThrottlingLogger.getLogger(TestMessagePreprocessor::class.java.name)) {
+    class TestMessagePreprocessor(
+        contextParser: ContextParser<SingleLimitOrderParsedData, SingleLimitOrderMessageWrapper>,
+        messageProcessingStatusHolder: MessageProcessingStatusHolder,
+        preProcessedMessageQueue: BlockingQueue<SingleLimitOrderMessageWrapper>,
+        private val preProcessSuccess: Boolean
+    ) :
+        AbstractMessagePreprocessor<SingleLimitOrderParsedData, SingleLimitOrderMessageWrapper>(
+            contextParser,
+            messageProcessingStatusHolder,
+            preProcessedMessageQueue,
+            ThrottlingLogger.getLogger(TestMessagePreprocessor::class.java.name)
+        ) {
 
-        override fun preProcessParsedData(parsedData: TestParsedData): Boolean {
+        override fun preProcessParsedData(parsedData: SingleLimitOrderParsedData): Boolean {
             return preProcessSuccess
         }
 
+        override fun writeResponse(messageWrapper: SingleLimitOrderMessageWrapper, status: MessageStatus, message: String?) {
+            messageWrapper.writeResponse(status, message)
+        }
     }
 
-    private lateinit var queue: BlockingQueue<MessageWrapper>
-    private lateinit var clientHandler: TestClientHandler
-    private lateinit var messageWrapper: MessageWrapper
+    private lateinit var queue: BlockingQueue<SingleLimitOrderMessageWrapper>
+    private lateinit var clientHandler: TestStreamObserver<GrpcIncomingMessages.LimitOrderResponse>
+    private lateinit var messageWrapper: SingleLimitOrderMessageWrapper
 
     @Before
     fun setUp() {
-        queue = LinkedBlockingQueue<MessageWrapper>()
-        clientHandler = TestClientHandler()
-        messageWrapper = MessageWrapper("ip", 1, ByteArray(1), clientHandler, id = "id", messageId = "messageId")
+        queue = LinkedBlockingQueue<SingleLimitOrderMessageWrapper>()
+        clientHandler = TestStreamObserver()
+        messageWrapper = SingleLimitOrderMessageWrapper(
+            GrpcIncomingMessages.LimitOrder.getDefaultInstance(),
+            clientHandler,
+            true,
+            context = SingleLimitOrderContext.Builder().messageId("MessageID").limitOrder(MessageBuilder.buildLimitOrder()).build()
+        )
     }
 
-    private fun createStatusHolder(isMessageProcessingEnabled: Boolean, isHealthStatusOk: Boolean): MessageProcessingStatusHolder {
+    private fun createStatusHolder(
+        isMessageProcessingEnabled: Boolean,
+        isHealthStatusOk: Boolean
+    ): MessageProcessingStatusHolder {
         val statusHolder = Mockito.mock(MessageProcessingStatusHolder::class.java)
         Mockito.`when`(statusHolder.isMessageProcessingEnabled())
-                .thenReturn(isMessageProcessingEnabled)
+            .thenReturn(isMessageProcessingEnabled)
         Mockito.`when`(statusHolder.isHealthStatusOk())
-                .thenReturn(isHealthStatusOk)
+            .thenReturn(isHealthStatusOk)
         return statusHolder
     }
 
-    private fun createPreprocessor(isMessageProcessingEnabled: Boolean,
-                                   isHealthStatusOk: Boolean,
-                                   preProcessSuccess: Boolean = true): TestMessagePreprocessor {
-        val contextParser = Mockito.mock(ContextParser::class.java) { TestParsedData(messageWrapper) }
-                as ContextParser<TestParsedData>
-        return TestMessagePreprocessor(contextParser,
-                createStatusHolder(isMessageProcessingEnabled, isHealthStatusOk),
-                queue,
-                preProcessSuccess)
+    private fun createPreprocessor(
+        isMessageProcessingEnabled: Boolean,
+        isHealthStatusOk: Boolean,
+        preProcessSuccess: Boolean = true
+    ): TestMessagePreprocessor {
+        val contextParser = Mockito.mock(SingleLimitOrderContextParser::class.java) { SingleLimitOrderParsedData(messageWrapper, "") }
+                as SingleLimitOrderContextParser
+        return TestMessagePreprocessor(
+            contextParser,
+            createStatusHolder(isMessageProcessingEnabled, isHealthStatusOk),
+            queue,
+            preProcessSuccess
+        )
     }
 
     @Test
@@ -90,9 +116,7 @@ class AbstractMessagePreprocessorTest {
         assertNotNull(messageWrapper.messagePreProcessorEndTimestamp)
         assertEquals(1, clientHandler.responses.size)
         val response = clientHandler.responses.single()
-        assertTrue(response is ProtocolMessages.NewResponse)
-        response as ProtocolMessages.NewResponse
-        assertEquals(MessageStatus.RUNTIME.type, response.status)
+        assertEquals(MessageStatus.RUNTIME.type, response.status.number)
 
         assertEquals(0, queue.size)
     }
@@ -107,9 +131,7 @@ class AbstractMessagePreprocessorTest {
         assertNotNull(messageWrapper.messagePreProcessorEndTimestamp)
         assertEquals(1, clientHandler.responses.size)
         val response = clientHandler.responses.single()
-        assertTrue(response is ProtocolMessages.NewResponse)
-        response as ProtocolMessages.NewResponse
-        assertEquals(MessageStatus.MESSAGE_PROCESSING_DISABLED.type, response.status)
+        assertEquals(MessageStatus.MESSAGE_PROCESSING_DISABLED.type, response.status.number)
 
         assertEquals(0, queue.size)
     }
@@ -124,9 +146,7 @@ class AbstractMessagePreprocessorTest {
         assertNotNull(messageWrapper.messagePreProcessorEndTimestamp)
         assertEquals(1, clientHandler.responses.size)
         val response = clientHandler.responses.single()
-        assertTrue(response is ProtocolMessages.NewResponse)
-        response as ProtocolMessages.NewResponse
-        assertEquals(MessageStatus.MESSAGE_PROCESSING_DISABLED.type, response.status)
+        assertEquals(MessageStatus.MESSAGE_PROCESSING_DISABLED.type, response.status.number)
 
         assertEquals(0, queue.size)
     }

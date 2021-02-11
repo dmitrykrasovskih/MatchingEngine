@@ -27,8 +27,8 @@ class ApplicationStatusContextInitializer : ApplicationContextInitializer<Generi
 
     private fun getAzureStatusProcessor(config: Config): Runnable {
         return AliveStatusProcessorFactory
-                .createAzureProcessor(connectionString = config.me.db.matchingEngineConnString,
-                        appName = config.me.name,
-                        config = config.me.aliveStatus)
+                .createAzureProcessor(connectionString = config.matchingEngine.db.matchingEngineConnString,
+                        appName = config.matchingEngine.name,
+                        config = config.matchingEngine.aliveStatus)
     }
 }

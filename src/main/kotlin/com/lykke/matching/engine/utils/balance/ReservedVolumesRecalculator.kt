@@ -6,13 +6,7 @@ import com.lykke.matching.engine.daos.balance.ClientOrdersReservedVolume
 import com.lykke.matching.engine.daos.balance.ReservedVolumeCorrection
 import com.lykke.matching.engine.daos.wallet.Wallet
 import com.lykke.matching.engine.database.ReservedVolumesDatabaseAccessor
-import com.lykke.matching.engine.holders.ApplicationSettingsHolder
-import com.lykke.matching.engine.holders.AssetsHolder
-import com.lykke.matching.engine.holders.AssetsPairsHolder
-import com.lykke.matching.engine.holders.BalancesHolder
-import com.lykke.matching.engine.holders.MessageSequenceNumberHolder
-import com.lykke.matching.engine.holders.OrdersDatabaseAccessorsHolder
-import com.lykke.matching.engine.holders.StopOrdersDatabaseAccessorsHolder
+import com.lykke.matching.engine.holders.*
 import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.outgoing.messages.BalanceUpdate
 import com.lykke.matching.engine.outgoing.messages.ClientBalanceUpdate
@@ -28,23 +22,22 @@ import org.springframework.boot.ApplicationRunner
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
-import java.util.Date
-import java.util.HashMap
-import java.util.LinkedList
-import java.util.UUID
+import java.util.*
 
 @Component
 @Order(3)
-class ReservedVolumesRecalculator @Autowired constructor(private val orderBookDatabaseAccessorHolder: OrdersDatabaseAccessorsHolder,
-                                                         private val stopOrdersDatabaseAccessorsHolder: StopOrdersDatabaseAccessorsHolder,
-                                                         private val reservedVolumesDatabaseAccessor: ReservedVolumesDatabaseAccessor,
-                                                         private val assetsHolder: AssetsHolder,
-                                                         private val assetsPairsHolder :AssetsPairsHolder,
-                                                         private val balancesHolder: BalancesHolder,
-                                                         private val applicationSettingsHolder: ApplicationSettingsHolder,
-                                                         @Value("#{Config.me.correctReservedVolumes}") private val correctReservedVolumes: Boolean,
-                                                         private val messageSequenceNumberHolder: MessageSequenceNumberHolder,
-                                                         private val messageSender: MessageSender) : ApplicationRunner {
+class ReservedVolumesRecalculator @Autowired constructor(
+    private val orderBookDatabaseAccessorHolder: OrdersDatabaseAccessorsHolder,
+    private val stopOrdersDatabaseAccessorsHolder: StopOrdersDatabaseAccessorsHolder,
+    private val reservedVolumesDatabaseAccessor: ReservedVolumesDatabaseAccessor,
+    private val assetsHolder: AssetsHolder,
+    private val assetsPairsHolder: AssetsPairsHolder,
+    private val balancesHolder: BalancesHolder,
+    private val applicationSettingsHolder: ApplicationSettingsHolder,
+    @Value("#{Config.me.correctReservedVolumes}") private val correctReservedVolumes: Boolean,
+    private val messageSequenceNumberHolder: MessageSequenceNumberHolder,
+    private val messageSender: MessageSender
+) : ApplicationRunner {
     override fun run(args: ApplicationArguments?) {
         correctReservedVolumesIfNeed()
     }
@@ -75,7 +68,7 @@ class ReservedVolumesRecalculator @Autowired constructor(private val orderBookDa
         val reservedBalances = HashMap<String, MutableMap<String, ClientOrdersReservedVolume>>()
         var count = 1
 
-        val handleOrder: (order: LimitOrder, isStopOrder: Boolean) -> Unit = { order, isStopOrder->
+        val handleOrder: (order: LimitOrder, isStopOrder: Boolean) -> Unit = { order, isStopOrder ->
             if (!applicationSettingsHolder.isTrustedClient(order.clientId)) {
                 try {
                     if (isStopOrder) {
@@ -84,21 +77,24 @@ class ReservedVolumesRecalculator @Autowired constructor(private val orderBookDa
                         LOGGER.info("${count++} Client:${order.clientId}, id: ${order.externalId}, asset:${order.assetPairId}, price:${order.price}, volume:${order.volume}, date:${order.registered}, status:${order.status}, reserved: ${order.reservedLimitVolume}}")
                     }
                     val assetPair = assetsPairsHolder.getAssetPair(order.assetPairId)
-                    val asset = assetsHolder.getAsset(if (order.isBuySide()) assetPair.quotingAssetId else assetPair.baseAssetId)
+                    val asset =
+                        assetsHolder.getAsset(if (order.isBuySide()) assetPair.quotingAssetId else assetPair.baseAssetId)
 
                     val reservedVolume = if (order.reservedLimitVolume != null) {
                         order.reservedLimitVolume!!
                     } else {
                         val calculatedReservedVolume = if (order.isBuySide())
-                            NumberUtils.setScale(if (isStopOrder) order.volume * (order.upperPrice ?: order.lowerPrice)!!
-                            else order.getAbsRemainingVolume() * order.price, asset.accuracy, false)
+                            NumberUtils.setScale(
+                                if (isStopOrder) order.volume * (order.upperPrice ?: order.lowerPrice)!!
+                                else order.getAbsRemainingVolume() * order.price, asset.accuracy, false
+                            )
                         else order.getAbsRemainingVolume()
                         LOGGER.info("Null reserved volume, recalculated: $calculatedReservedVolume")
                         calculatedReservedVolume
                     }
 
                     val clientAssets = reservedBalances.getOrPut(order.clientId) { HashMap() }
-                    val balance = clientAssets.getOrPut(asset.assetId) { ClientOrdersReservedVolume() }
+                    val balance = clientAssets.getOrPut(asset.symbol) { ClientOrdersReservedVolume() }
                     val newBalance = NumberUtils.setScaleRoundHalfUp(balance.volume + reservedVolume, asset.accuracy)
                     balance.volume = newBalance
                     balance.orderIds.add(order.externalId)
@@ -126,37 +122,55 @@ class ReservedVolumesRecalculator @Autowired constructor(private val orderBookDa
         balancesHolder.wallets.forEach {
             val wallet = it.value
             val id = wallet.clientId
-            wallet.balances.values.forEach { assetBalance->
+            wallet.balances.values.forEach { assetBalance ->
                 val oldBalance = assetBalance.reserved
                 val newBalance = reservedBalances[id]?.get(assetBalance.asset)
                 if (newBalance != null && newBalance.volume > BigDecimal.ZERO) {
                     if (!NumberUtils.equalsIgnoreScale(oldBalance, newBalance.volume)) {
-                        val correction = ReservedVolumeCorrection(id, assetBalance.asset, newBalance.orderIds.joinToString(","), oldBalance, newBalance.volume)
+                        val correction = ReservedVolumeCorrection(
+                            id,
+                            assetBalance.asset,
+                            newBalance.orderIds.joinToString(","),
+                            oldBalance,
+                            newBalance.volume
+                        )
                         corrections.add(correction)
                         teeLog("1 $id, ${assetBalance.asset} : Old $oldBalance New $newBalance")
                         wallet.setReservedBalance(assetBalance.asset, newBalance.volume)
                         updatedWallets.add(wallet)
-                        val balanceUpdate = ClientBalanceUpdate(id,
-                                assetBalance.asset,
-                                assetBalance.balance,
-                                assetBalance.balance,
-                                oldBalance,
-                                newBalance.volume)
+                        val balanceUpdate = ClientBalanceUpdate(
+                            assetBalance.brokerId, assetBalance.accountId, id,
+                            assetBalance.asset,
+                            assetBalance.version,
+                            assetBalance.balance,
+                            assetBalance.balance,
+                            oldBalance,
+                            newBalance.volume
+                        )
                         balanceUpdates.add(balanceUpdate)
                     }
                 } else if (!NumberUtils.equalsIgnoreScale(oldBalance, BigDecimal.ZERO)) {
                     val orderIds = newBalance?.orderIds?.joinToString(",")
-                    val correction = ReservedVolumeCorrection(id, assetBalance.asset, orderIds, oldBalance, newBalance?.volume ?: BigDecimal.ZERO)
+                    val correction = ReservedVolumeCorrection(
+                        id,
+                        assetBalance.asset,
+                        orderIds,
+                        oldBalance,
+                        newBalance?.volume ?: BigDecimal.ZERO
+                    )
                     corrections.add(correction)
                     teeLog("2 $id, ${assetBalance.asset} : Old $oldBalance New ${newBalance ?: 0.0}")
                     wallet.setReservedBalance(assetBalance.asset, BigDecimal.ZERO)
                     updatedWallets.add(wallet)
-                    val balanceUpdate = ClientBalanceUpdate(id,
-                            assetBalance.asset,
-                            assetBalance.balance,
-                            assetBalance.balance,
-                            oldBalance,
-                            BigDecimal.ZERO)
+                    val balanceUpdate = ClientBalanceUpdate(
+                        assetBalance.brokerId, assetBalance.accountId, id,
+                        assetBalance.asset,
+                        assetBalance.version,
+                        assetBalance.balance,
+                        assetBalance.balance,
+                        oldBalance,
+                        BigDecimal.ZERO
+                    )
                     balanceUpdates.add(balanceUpdate)
                 }
             }
@@ -170,12 +184,15 @@ class ReservedVolumesRecalculator @Autowired constructor(private val orderBookDa
             val cashInOutEvents = mutableListOf<Event<*>>()
             balanceUpdates.forEach { clientBalanceUpdate ->
                 sequenceNumber = messageSequenceNumberHolder.getNewValue()
-                val walletOperation = WalletOperation(clientBalanceUpdate.id,
-                        clientBalanceUpdate.asset,
-                        BigDecimal.ZERO,
-                        clientBalanceUpdate.newReserved - clientBalanceUpdate.oldReserved
+                val walletOperation = WalletOperation(
+                    clientBalanceUpdate.brokerId, clientBalanceUpdate.accountId, clientBalanceUpdate.walletId,
+                    clientBalanceUpdate.asset,
+                    BigDecimal.ZERO,
+                    clientBalanceUpdate.newReserved - clientBalanceUpdate.oldReserved
                 )
-                cashInOutEvents.add(EventFactory.createCashInOutEvent(clientBalanceUpdate.newReserved - clientBalanceUpdate.oldReserved,
+                cashInOutEvents.add(
+                    EventFactory.createCashInOutEvent(
+                        clientBalanceUpdate.newReserved - clientBalanceUpdate.oldReserved,
                         sequenceNumber!!,
                         operationId,
                         operationId,
@@ -183,16 +200,25 @@ class ReservedVolumesRecalculator @Autowired constructor(private val orderBookDa
                         MessageType.LIMIT_ORDER,
                         listOf(clientBalanceUpdate),
                         walletOperation,
-                        emptyList()))
+                        emptyList()
+                    )
+                )
             }
 
             balancesHolder.insertOrUpdateWallets(updatedWallets, sequenceNumber)
             reservedVolumesDatabaseAccessor.addCorrectionsInfo(corrections)
-            balancesHolder.sendBalanceUpdate(BalanceUpdate(operationId, MessageType.LIMIT_ORDER.name, now, balanceUpdates, operationId))
+            balancesHolder.sendBalanceUpdate(
+                BalanceUpdate(
+                    operationId,
+                    MessageType.LIMIT_ORDER.name,
+                    now,
+                    balanceUpdates,
+                    operationId
+                )
+            )
             cashInOutEvents.forEach { messageSender.sendMessage(it) }
 
         }
         teeLog("Reserved volume recalculation finished")
     }
-
 }

@@ -53,7 +53,7 @@ class QueueSizeLogger @Autowired constructor(private val queues: Map<String, Blo
     private fun checkQueueSizeLimits(nameToQueueSize: Map<String, Int>) {
         nameToQueueSize
                 .forEach { entry ->
-                    if (entry.value > config.me.queueConfig.queueSizeLimit) {
+                    if (entry.value > config.matchingEngine.queueConfig.queueSizeLimit) {
                         val message = ENTRY_SIZE_LIMIT_FORMAT.format(entry.key)
                         METRICS_LOGGER.logError(message)
                         LOGGER.warn(message)

@@ -13,7 +13,8 @@ class MultiOrderFilter(private val isTrustedClient: Boolean,
                        private val quotingAssetAccuracy: Int,
                        private val date: Date,
                        initialCapacity: Int,
-                       private val LOGGER: Logger) {
+                       private val LOGGER: Logger
+) {
 
     private var notSortedBuySide = false
     private var notSortedSellSide = false

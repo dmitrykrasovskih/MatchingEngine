@@ -30,9 +30,9 @@ open class WebConfig  {
 
     @Bean
     open fun tomcatServletWebServerFactory(): TomcatServletWebServerFactory {
-        val tomcat = TomcatServletWebServerFactory(config.me.httpApiPort)
+        val tomcat = TomcatServletWebServerFactory(config.matchingEngine.httpApiPort)
 
-        tomcat.addAdditionalTomcatConnectors(getConnector(config.me.httpOrderBookPort))
+        tomcat.addAdditionalTomcatConnectors(getConnector(config.matchingEngine.httpOrderBookPort))
 
         return tomcat
     }

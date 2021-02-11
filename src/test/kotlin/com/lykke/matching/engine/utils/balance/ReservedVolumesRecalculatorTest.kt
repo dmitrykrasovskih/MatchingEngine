@@ -12,11 +12,13 @@ import com.lykke.matching.engine.notification.BalanceUpdateHandlerTest
 import com.lykke.matching.engine.order.utils.TestOrderBookWrapper
 import com.lykke.matching.engine.outgoing.messages.BalanceUpdate
 import com.lykke.matching.engine.outgoing.messages.ClientBalanceUpdate
-import com.lykke.matching.engine.outgoing.messages.v2.events.Event
 import com.lykke.matching.engine.outgoing.messages.v2.events.CashInEvent
 import com.lykke.matching.engine.outgoing.messages.v2.events.CashOutEvent
+import com.lykke.matching.engine.outgoing.messages.v2.events.Event
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.NumberUtils
+import com.lykke.matching.engine.utils.assertEquals
+import com.lykke.matching.engine.utils.getSetting
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,10 +30,8 @@ import org.springframework.context.annotation.Primary
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
-import kotlin.test.assertEquals
-import com.lykke.matching.engine.utils.assertEquals
-import com.lykke.matching.engine.utils.getSetting
 import java.util.concurrent.BlockingQueue
+import kotlin.test.assertEquals
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [(TestApplicationContext::class), (ReservedVolumesRecalculatorTest.Config::class)])
@@ -39,34 +39,41 @@ import java.util.concurrent.BlockingQueue
 class ReservedVolumesRecalculatorTest {
 
     @TestConfiguration
-    open class Config {
+    class Config {
 
         @Bean
         @Primary
-        open fun testBackOfficeDatabaseAccessor(): TestBackOfficeDatabaseAccessor {
-            val testBackOfficeDatabaseAccessor = TestBackOfficeDatabaseAccessor()
-            testBackOfficeDatabaseAccessor.addAsset(Asset("USD", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("EUR", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("BTC", 8))
-
-            return testBackOfficeDatabaseAccessor
-        }
-        @Bean
-        @Primary
-        open fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
+        fun testDictionariesDatabaseAccessor(): testDictionariesDatabaseAccessor {
             val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
-            testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURUSD", "EUR", "USD", 5))
-            testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCUSD", "BTC", "USD", 8))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 8))
 
             return testDictionariesDatabaseAccessor
         }
 
         @Bean
         @Primary
-        open fun testConfig(): TestSettingsDatabaseAccessor {
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
+            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
+            testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
+            testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8))
+
+            return testDictionariesDatabaseAccessor
+        }
+
+        @Bean
+        @Primary
+        fun testConfig(): TestSettingsDatabaseAccessor {
             val testSettingsDatabaseAccessor = TestSettingsDatabaseAccessor()
-            testSettingsDatabaseAccessor.createOrUpdateSetting(AvailableSettingGroup.TRUSTED_CLIENTS, getSetting("trustedClient"))
-            testSettingsDatabaseAccessor.createOrUpdateSetting(AvailableSettingGroup.TRUSTED_CLIENTS, getSetting("trustedClient2"))
+            testSettingsDatabaseAccessor.createOrUpdateSetting(
+                AvailableSettingGroup.TRUSTED_CLIENTS,
+                getSetting("trustedClient")
+            )
+            testSettingsDatabaseAccessor.createOrUpdateSetting(
+                AvailableSettingGroup.TRUSTED_CLIENTS,
+                getSetting("trustedClient2")
+            )
             return testSettingsDatabaseAccessor
         }
     }
@@ -77,11 +84,12 @@ class ReservedVolumesRecalculatorTest {
     @Autowired
     lateinit var testOrderBookWrapper: TestOrderBookWrapper
 
-    @Autowired private
+    @Autowired
+    private
     lateinit var balancesDatabaseAccessorsHolder: BalancesDatabaseAccessorsHolder
 
     @Autowired
-    lateinit var testBackOfficeDatabaseAccessor: TestBackOfficeDatabaseAccessor
+    lateinit var testDictionariesDatabaseAccessor: testDictionariesDatabaseAccessor
 
     @Autowired
     lateinit var testBalanceHolderWrapper: TestBalanceHolderWrapper
@@ -97,14 +105,77 @@ class ReservedVolumesRecalculatorTest {
 
     @Before
     fun setUp() {
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(clientId = "trustedClient", assetId = "BTCUSD", price = 10000.0, volume = -1.0, reservedVolume = 0.5))
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(clientId = "Client1", assetId = "BTCUSD", price = 10000.0, volume = -1.0, reservedVolume = 0.5))
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(uid = "1", clientId = "Client1", assetId = "EURUSD", price = 10000.0, volume = -1.0, reservedVolume = 0.4))
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(uid = "2", clientId = "Client1", assetId = "EURUSD", price = 10000.0, volume = -1.0, reservedVolume = 0.3))
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", price = 10000.0, volume = -1.0, reservedVolume = 1.0))
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                clientId = "trustedClient",
+                assetId = "BTCUSD",
+                price = 10000.0,
+                volume = -1.0,
+                reservedVolume = 0.5
+            )
+        )
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                clientId = "Client1",
+                assetId = "BTCUSD",
+                price = 10000.0,
+                volume = -1.0,
+                reservedVolume = 0.5
+            )
+        )
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                uid = "1",
+                clientId = "Client1",
+                assetId = "EURUSD",
+                price = 10000.0,
+                volume = -1.0,
+                reservedVolume = 0.4
+            )
+        )
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                uid = "2",
+                clientId = "Client1",
+                assetId = "EURUSD",
+                price = 10000.0,
+                volume = -1.0,
+                reservedVolume = 0.3
+            )
+        )
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                clientId = "Client2",
+                assetId = "BTCUSD",
+                price = 10000.0,
+                volume = -1.0,
+                reservedVolume = 1.0
+            )
+        )
 
-        testOrderBookWrapper.addStopLimitOrder(buildLimitOrder(uid = "3", clientId = "Client2", assetId = "BTCUSD", type = LimitOrderType.STOP_LIMIT, volume = 0.1, lowerLimitPrice = 9000.0, lowerPrice = 9900.0, reservedVolume = 990.0))
-        testOrderBookWrapper.addStopLimitOrder(buildLimitOrder(uid = "4", clientId = "Client2", assetId = "BTCUSD", type = LimitOrderType.STOP_LIMIT, volume = 0.1, lowerLimitPrice = 10000.0, lowerPrice = 10900.0))
+        testOrderBookWrapper.addStopLimitOrder(
+            buildLimitOrder(
+                uid = "3",
+                clientId = "Client2",
+                assetId = "BTCUSD",
+                type = LimitOrderType.STOP_LIMIT,
+                volume = 0.1,
+                lowerLimitPrice = 9000.0,
+                lowerPrice = 9900.0,
+                reservedVolume = 990.0
+            )
+        )
+        testOrderBookWrapper.addStopLimitOrder(
+            buildLimitOrder(
+                uid = "4",
+                clientId = "Client2",
+                assetId = "BTCUSD",
+                type = LimitOrderType.STOP_LIMIT,
+                volume = 0.1,
+                lowerLimitPrice = 10000.0,
+                lowerPrice = 10900.0
+            )
+        )
 
         testBalanceHolderWrapper.updateBalance("trustedClient", "BTC", 10.0)
         testBalanceHolderWrapper.updateReservedBalance("trustedClient", "BTC", 2.0, false)
@@ -152,8 +223,24 @@ class ReservedVolumesRecalculatorTest {
         assertEquals(BigDecimal.valueOf(2080.0), testWalletDatabaseAccessor.getReservedBalance("Client2", "USD"))
 
         assertEquals(7, reservedVolumesDatabaseAccessor.corrections.size)
-        assertEquals("1,2", reservedVolumesDatabaseAccessor.corrections.first { NumberUtils.equalsIgnoreScale(it.newReserved, BigDecimal.valueOf( 0.7)) }.orderIds)
-        assertEquals("3,4", reservedVolumesDatabaseAccessor.corrections.first { NumberUtils.equalsIgnoreScale(it.newReserved, BigDecimal.valueOf(2080.0)) }.orderIds)
+        assertEquals(
+            "1,2",
+            reservedVolumesDatabaseAccessor.corrections.first {
+                NumberUtils.equalsIgnoreScale(
+                    it.newReserved,
+                    BigDecimal.valueOf(0.7)
+                )
+            }.orderIds
+        )
+        assertEquals(
+            "3,4",
+            reservedVolumesDatabaseAccessor.corrections.first {
+                NumberUtils.equalsIgnoreScale(
+                    it.newReserved,
+                    BigDecimal.valueOf(2080.0)
+                )
+            }.orderIds
+        )
 
         assertEquals(1, balanceUpdateHandlerTest.balanceUpdateQueue.size)
         val balanceUpdate = balanceUpdateHandlerTest.balanceUpdateQueue.poll() as BalanceUpdate
@@ -176,8 +263,15 @@ class ReservedVolumesRecalculatorTest {
         assertEvent(true, "Client2", "USD", "990", "1", "2080", clientsEventsQueue)
     }
 
-    private fun assertBalanceUpdateNotification(clientId: String, assetId: String, balance: Double, oldReserved: Double, newReserved: Double, balanceUpdates: Collection<ClientBalanceUpdate>) {
-        val balanceUpdate = balanceUpdates.single { it.id == clientId && it.asset == assetId }
+    private fun assertBalanceUpdateNotification(
+        clientId: String,
+        assetId: String,
+        balance: Double,
+        oldReserved: Double,
+        newReserved: Double,
+        balanceUpdates: Collection<ClientBalanceUpdate>
+    ) {
+        val balanceUpdate = balanceUpdates.single { it.walletId == clientId && it.asset == assetId }
         val message = "Client $clientId, assetId $assetId"
         assertEquals(BigDecimal.valueOf(balance), balanceUpdate.oldBalance, message)
         assertEquals(BigDecimal.valueOf(balance), balanceUpdate.newBalance, message)
@@ -185,7 +279,15 @@ class ReservedVolumesRecalculatorTest {
         assertEquals(BigDecimal.valueOf(newReserved), balanceUpdate.newReserved, message)
     }
 
-    private fun assertEvent(isCashIn: Boolean, clientId: String, assetId: String, balance: String, oldReserved: String, newReserved: String, events: Collection<Event<*>>) {
+    private fun assertEvent(
+        isCashIn: Boolean,
+        clientId: String,
+        assetId: String,
+        balance: String,
+        oldReserved: String,
+        newReserved: String,
+        events: Collection<Event<*>>
+    ) {
         val event = events.single {
             isCashIn && it is CashInEvent && it.cashIn.walletId == clientId && it.cashIn.assetId == assetId
                     || !isCashIn && it is CashOutEvent && it.cashOut.walletId == clientId && it.cashOut.assetId == assetId

@@ -11,9 +11,9 @@ import org.springframework.stereotype.Component
 class RedisConnectionFactoryImpl (private val applicationEventPublisher: ApplicationEventPublisher,
                                   private val config: Config): RedisConnectionFactory {
     override fun getConnection(name: String): RedisConnection? {
-        if (config.me.storage != Storage.Redis && config.me.storage != Storage.RedisWithoutOrders) {
+        if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
             return null
         }
-        return RedisConnectionImpl(name, config.me.redis, applicationEventPublisher)
+        return RedisConnectionImpl(name, config.matchingEngine.redis, applicationEventPublisher)
     }
 }

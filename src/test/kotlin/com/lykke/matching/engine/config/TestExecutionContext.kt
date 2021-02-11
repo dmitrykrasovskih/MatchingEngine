@@ -3,25 +3,13 @@ package com.lykke.matching.engine.config
 import com.lykke.matching.engine.daos.LkkTrade
 import com.lykke.matching.engine.database.PersistenceManager
 import com.lykke.matching.engine.fee.FeeProcessor
-import com.lykke.matching.engine.holders.ApplicationSettingsHolder
-import com.lykke.matching.engine.holders.AssetsHolder
-import com.lykke.matching.engine.holders.AssetsPairsHolder
-import com.lykke.matching.engine.holders.BalancesHolder
-import com.lykke.matching.engine.holders.MessageSequenceNumberHolder
+import com.lykke.matching.engine.holders.*
 import com.lykke.matching.engine.matching.MatchingEngine
 import com.lykke.matching.engine.order.ExecutionDataApplyService
 import com.lykke.matching.engine.order.ExecutionEventSender
 import com.lykke.matching.engine.order.ExecutionPersistenceService
-import com.lykke.matching.engine.order.process.GenericLimitOrdersProcessor
-import com.lykke.matching.engine.order.process.LimitOrderProcessor
-import com.lykke.matching.engine.order.process.PreviousLimitOrdersProcessor
-import com.lykke.matching.engine.order.process.StopLimitOrderProcessor
-import com.lykke.matching.engine.order.process.StopOrderBookProcessor
-import com.lykke.matching.engine.order.process.common.LimitOrdersCancelExecutor
-import com.lykke.matching.engine.order.process.common.LimitOrdersCancelExecutorImpl
-import com.lykke.matching.engine.order.process.common.LimitOrdersCanceller
-import com.lykke.matching.engine.order.process.common.LimitOrdersCancellerImpl
-import com.lykke.matching.engine.order.process.common.MatchingResultHandlingHelper
+import com.lykke.matching.engine.order.process.*
+import com.lykke.matching.engine.order.process.common.*
 import com.lykke.matching.engine.order.transaction.ExecutionContextFactory
 import com.lykke.matching.engine.order.transaction.ExecutionEventsSequenceNumbersGenerator
 import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
@@ -38,98 +26,126 @@ import org.springframework.context.annotation.Configuration
 import java.util.concurrent.BlockingQueue
 
 @Configuration
-open class TestExecutionContext {
+class TestExecutionContext {
 
     @Bean
-    open fun matchingEngine(genericLimitOrderService: GenericLimitOrderService,
-                            balancesHolder: BalancesHolder,
-                            feeProcessor: FeeProcessor): MatchingEngine {
-        return MatchingEngine(genericLimitOrderService,
-                feeProcessor)
+    fun matchingEngine(
+        genericLimitOrderService: GenericLimitOrderService,
+        balancesHolder: BalancesHolder,
+        feeProcessor: FeeProcessor
+    ): MatchingEngine {
+        return MatchingEngine(
+            genericLimitOrderService,
+            feeProcessor
+        )
     }
 
     @Bean
-    open fun executionContextFactory(balancesHolder: BalancesHolder,
-                                     genericLimitOrderService: GenericLimitOrderService,
-                                     genericStopLimitOrderService: GenericStopLimitOrderService,
-                                     assetsHolder: AssetsHolder): ExecutionContextFactory {
-        return ExecutionContextFactory(balancesHolder,
-                genericLimitOrderService,
-                genericStopLimitOrderService,
-                assetsHolder)
+    fun executionContextFactory(
+        balancesHolder: BalancesHolder,
+        genericLimitOrderService: GenericLimitOrderService,
+        genericStopLimitOrderService: GenericStopLimitOrderService,
+        assetsHolder: AssetsHolder
+    ): ExecutionContextFactory {
+        return ExecutionContextFactory(
+            balancesHolder,
+            genericLimitOrderService,
+            genericStopLimitOrderService,
+            assetsHolder
+        )
     }
 
     @Bean
-    open fun executionEventsSequenceNumbersGenerator(messageSequenceNumberHolder: MessageSequenceNumberHolder): ExecutionEventsSequenceNumbersGenerator {
+    fun executionEventsSequenceNumbersGenerator(messageSequenceNumberHolder: MessageSequenceNumberHolder): ExecutionEventsSequenceNumbersGenerator {
         return ExecutionEventsSequenceNumbersGenerator(messageSequenceNumberHolder)
     }
 
     @Bean
-    open fun executionPersistenceService(persistenceManager: PersistenceManager): ExecutionPersistenceService {
+    fun executionPersistenceService(persistenceManager: PersistenceManager): ExecutionPersistenceService {
         return ExecutionPersistenceService(persistenceManager)
     }
 
     @Bean
-    open fun executionEventSender(messageSender: MessageSender,
-                                  clientLimitOrdersQueue: BlockingQueue<LimitOrdersReport>,
-                                  trustedClientsLimitOrdersQueue: BlockingQueue<LimitOrdersReport>,
-                                  rabbitSwapQueue: BlockingQueue<MarketOrderWithTrades>,
-                                  lkkTradesQueue: BlockingQueue<List<LkkTrade>>,
-                                  genericLimitOrderService: GenericLimitOrderService,
-                                  orderBookQueue: BlockingQueue<OrderBook>,
-                                  rabbitOrderBookQueue: BlockingQueue<OrderBook>): ExecutionEventSender {
-        return ExecutionEventSender(messageSender,
-                clientLimitOrdersQueue,
-                trustedClientsLimitOrdersQueue,
-                rabbitSwapQueue,
-                lkkTradesQueue,
-                genericLimitOrderService,
-                orderBookQueue,
-                rabbitOrderBookQueue)
+    fun executionEventSender(
+        messageSender: MessageSender,
+        clientLimitOrdersQueue: BlockingQueue<LimitOrdersReport>,
+        trustedClientsLimitOrdersQueue: BlockingQueue<LimitOrdersReport>,
+        rabbitSwapQueue: BlockingQueue<MarketOrderWithTrades>,
+        lkkTradesQueue: BlockingQueue<List<LkkTrade>>,
+        genericLimitOrderService: GenericLimitOrderService,
+        orderBookQueue: BlockingQueue<OrderBook>,
+        rabbitOrderBookQueue: BlockingQueue<OrderBook>
+    ): ExecutionEventSender {
+        return ExecutionEventSender(
+            messageSender,
+            clientLimitOrdersQueue,
+            trustedClientsLimitOrdersQueue,
+            rabbitSwapQueue,
+            lkkTradesQueue,
+            genericLimitOrderService,
+            orderBookQueue,
+            rabbitOrderBookQueue
+        )
     }
 
     @Bean
-    open fun executionDataApplyService(executionEventsSequenceNumbersGenerator: ExecutionEventsSequenceNumbersGenerator,
-                                       executionPersistenceService: ExecutionPersistenceService,
-                                       executionEventSender: ExecutionEventSender): ExecutionDataApplyService {
-        return ExecutionDataApplyService(executionEventsSequenceNumbersGenerator,
-                executionPersistenceService,
-                executionEventSender)
+    fun executionDataApplyService(
+        executionEventsSequenceNumbersGenerator: ExecutionEventsSequenceNumbersGenerator,
+        executionPersistenceService: ExecutionPersistenceService,
+        executionEventSender: ExecutionEventSender
+    ): ExecutionDataApplyService {
+        return ExecutionDataApplyService(
+            executionEventsSequenceNumbersGenerator,
+            executionPersistenceService,
+            executionEventSender
+        )
     }
 
     @Bean
-    open fun limitOrderProcessor(limitOrderInputValidator: LimitOrderInputValidator,
-                                 limitOrderBusinessValidator: LimitOrderBusinessValidator,
-                                 applicationSettingsHolder: ApplicationSettingsHolder,
-                                 matchingEngine: MatchingEngine,
-                                 matchingResultHandlingHelper: MatchingResultHandlingHelper): LimitOrderProcessor {
-        return LimitOrderProcessor(limitOrderInputValidator,
-                limitOrderBusinessValidator,
-                applicationSettingsHolder,
-                matchingEngine,
-                matchingResultHandlingHelper)
+    fun limitOrderProcessor(
+        limitOrderInputValidator: LimitOrderInputValidator,
+        limitOrderBusinessValidator: LimitOrderBusinessValidator,
+        applicationSettingsHolder: ApplicationSettingsHolder,
+        matchingEngine: MatchingEngine,
+        matchingResultHandlingHelper: MatchingResultHandlingHelper
+    ): LimitOrderProcessor {
+        return LimitOrderProcessor(
+            limitOrderInputValidator,
+            limitOrderBusinessValidator,
+            applicationSettingsHolder,
+            matchingEngine,
+            matchingResultHandlingHelper
+        )
     }
 
     @Bean
-    open fun stopLimitOrdersProcessor(limitOrderInputValidator: LimitOrderInputValidator,
-                                      stopOrderBusinessValidator: StopOrderBusinessValidator,
-                                      applicationSettingsHolder: ApplicationSettingsHolder,
-                                      limitOrderProcessor: LimitOrderProcessor): StopLimitOrderProcessor {
-        return StopLimitOrderProcessor(limitOrderInputValidator,
-                stopOrderBusinessValidator,
-                applicationSettingsHolder,
-                limitOrderProcessor)
+    fun stopLimitOrdersProcessor(
+        limitOrderInputValidator: LimitOrderInputValidator,
+        stopOrderBusinessValidator: StopOrderBusinessValidator,
+        applicationSettingsHolder: ApplicationSettingsHolder,
+        limitOrderProcessor: LimitOrderProcessor
+    ): StopLimitOrderProcessor {
+        return StopLimitOrderProcessor(
+            limitOrderInputValidator,
+            stopOrderBusinessValidator,
+            applicationSettingsHolder,
+            limitOrderProcessor
+        )
     }
 
     @Bean
-    open fun genericLimitOrdersProcessor(limitOrderProcessor: LimitOrderProcessor,
-                                         stopLimitOrdersProcessor: StopLimitOrderProcessor): GenericLimitOrdersProcessor {
+    fun genericLimitOrdersProcessor(
+        limitOrderProcessor: LimitOrderProcessor,
+        stopLimitOrdersProcessor: StopLimitOrderProcessor
+    ): GenericLimitOrdersProcessor {
         return GenericLimitOrdersProcessor(limitOrderProcessor, stopLimitOrdersProcessor)
     }
 
     @Bean
-    open fun stopOrderBookProcessor(limitOrderProcessor: LimitOrderProcessor,
-                                    applicationSettingsHolder: ApplicationSettingsHolder): StopOrderBookProcessor {
+    fun stopOrderBookProcessor(
+        limitOrderProcessor: LimitOrderProcessor,
+        applicationSettingsHolder: ApplicationSettingsHolder
+    ): StopOrderBookProcessor {
         return StopOrderBookProcessor(limitOrderProcessor, applicationSettingsHolder)
     }
 
@@ -139,28 +155,38 @@ open class TestExecutionContext {
     }
 
     @Bean
-    open fun previousLimitOrdersProcessor(genericLimitOrderService: GenericLimitOrderService,
-                                          genericStopLimitOrderService: GenericStopLimitOrderService,
-                                          limitOrdersCanceller: LimitOrdersCanceller): PreviousLimitOrdersProcessor {
-        return PreviousLimitOrdersProcessor(genericLimitOrderService, genericStopLimitOrderService, limitOrdersCanceller)
+    fun previousLimitOrdersProcessor(
+        genericLimitOrderService: GenericLimitOrderService,
+        genericStopLimitOrderService: GenericStopLimitOrderService,
+        limitOrdersCanceller: LimitOrdersCanceller
+    ): PreviousLimitOrdersProcessor {
+        return PreviousLimitOrdersProcessor(
+            genericLimitOrderService,
+            genericStopLimitOrderService,
+            limitOrdersCanceller
+        )
     }
 
     @Bean
-    open fun limitOrdersCanceller(applicationSettingsHolder: ApplicationSettingsHolder): LimitOrdersCanceller {
+    fun limitOrdersCanceller(applicationSettingsHolder: ApplicationSettingsHolder): LimitOrdersCanceller {
         return LimitOrdersCancellerImpl(applicationSettingsHolder)
     }
 
     @Bean
-    open fun limitOrdersCancelExecutor(assetsPairsHolder: AssetsPairsHolder,
-                                       executionContextFactory: ExecutionContextFactory,
-                                       limitOrdersCanceller: LimitOrdersCanceller,
-                                       stopOrderBookProcessor: StopOrderBookProcessor,
-                                       executionDataApplyService: ExecutionDataApplyService): LimitOrdersCancelExecutor {
-        return LimitOrdersCancelExecutorImpl(assetsPairsHolder,
-                executionContextFactory,
-                limitOrdersCanceller,
-                stopOrderBookProcessor,
-                executionDataApplyService)
+    fun limitOrdersCancelExecutor(
+        assetsPairsHolder: AssetsPairsHolder,
+        executionContextFactory: ExecutionContextFactory,
+        limitOrdersCanceller: LimitOrdersCanceller,
+        stopOrderBookProcessor: StopOrderBookProcessor,
+        executionDataApplyService: ExecutionDataApplyService
+    ): LimitOrdersCancelExecutor {
+        return LimitOrdersCancelExecutorImpl(
+            assetsPairsHolder,
+            executionContextFactory,
+            limitOrdersCanceller,
+            stopOrderBookProcessor,
+            executionDataApplyService
+        )
     }
 
 }

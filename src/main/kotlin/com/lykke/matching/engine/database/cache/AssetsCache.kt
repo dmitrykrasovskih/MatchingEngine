@@ -1,7 +1,7 @@
 package com.lykke.matching.engine.database.cache
 
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.database.BackOfficeDatabaseAccessor
+import com.lykke.matching.engine.database.DictionariesDatabaseAccessor
 import org.apache.log4j.Logger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -10,7 +10,7 @@ import kotlin.concurrent.fixedRateTimer
 
 @Component
 class AssetsCache @Autowired constructor(
-        private val databaseAccessor: BackOfficeDatabaseAccessor,
+        private val databaseAccessor: DictionariesDatabaseAccessor,
         @Value("\${application.assets.cache.update.interval}") updateInterval: Long? = null) : DataCache() {
 
     companion object {

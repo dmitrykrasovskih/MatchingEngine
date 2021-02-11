@@ -26,10 +26,10 @@ class BalancesDatabaseAccessorsHolderFactory: FactoryBean<BalancesDatabaseAccess
         val primaryAccessor: WalletDatabaseAccessor
         val secondaryAccessor: WalletDatabaseAccessor?
 
-        when (config.me.storage) {
+        when (config.matchingEngine.storage) {
             Storage.Azure -> {
-                primaryAccessor = AzureWalletDatabaseAccessor(config.me.db.balancesInfoConnString,
-                        config.me.db.accountsTableName ?: AzureWalletDatabaseAccessor.DEFAULT_BALANCES_TABLE_NAME)
+                primaryAccessor = AzureWalletDatabaseAccessor(config.matchingEngine.db.balancesInfoConnString,
+                        config.matchingEngine.db.accountsTableName ?: AzureWalletDatabaseAccessor.DEFAULT_BALANCES_TABLE_NAME)
 
                 secondaryAccessor = null
             }
@@ -37,8 +37,8 @@ class BalancesDatabaseAccessorsHolderFactory: FactoryBean<BalancesDatabaseAccess
             Storage.Redis -> {
                 primaryAccessor = redisWalletDatabaseAccessor.get()
 
-                secondaryAccessor = if (config.me.writeBalancesToSecondaryDb)
-                    AzureWalletDatabaseAccessor(config.me.db.balancesInfoConnString, config.me.db.newAccountsTableName!!)
+                secondaryAccessor = if (config.matchingEngine.writeBalancesToSecondaryDb)
+                    AzureWalletDatabaseAccessor(config.matchingEngine.db.balancesInfoConnString, config.matchingEngine.db.newAccountsTableName!!)
                 else null
             }
         }

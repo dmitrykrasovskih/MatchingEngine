@@ -1,7 +1,7 @@
 package com.lykke.matching.engine.order
 
 import com.lykke.matching.engine.order.transaction.ExecutionContext
-import com.lykke.matching.engine.messages.MessageWrapper
+import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.order.transaction.ExecutionEventsSequenceNumbersGenerator
 import org.springframework.stereotype.Component
 

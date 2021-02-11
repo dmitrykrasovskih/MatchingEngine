@@ -46,21 +46,44 @@ class MatchingResultHandlingHelper(private val applicationSettingsHolder: Applic
         if (orderExecutionContext.cancelledOppositeOrdersWalletOperations == null) {
             orderExecutionContext.cancelledOppositeOrdersWalletOperations = mutableListOf()
         }
-        orderExecutionContext.cancelledOppositeOrdersWalletOperations!!.add(createCancelledOppositeOrderWalletOperation(orderExecutionContext, uncompletedLimitOrderCopy))
-        orderExecutionContext.executionContext.info("Opposite limit order (${uncompletedLimitOrderCopy.externalId} is cancelled due to min remaining volume" +
-                "(${NumberUtils.roundForPrint(uncompletedLimitOrderCopy.getAbsRemainingVolume())} < ${NumberUtils.roundForPrint(assetPair.minVolume)})")
+        orderExecutionContext.cancelledOppositeOrdersWalletOperations!!.add(
+            createCancelledOppositeOrderWalletOperation(
+                orderExecutionContext,
+                uncompletedLimitOrderCopy
+            )
+        )
+        orderExecutionContext.executionContext.info(
+            "Opposite limit order (${uncompletedLimitOrderCopy.externalId} is cancelled due to min remaining volume" +
+                    "(${NumberUtils.roundForPrint(uncompletedLimitOrderCopy.getAbsRemainingVolume())} < ${
+                        NumberUtils.roundForPrint(
+                            assetPair.minVolume
+                        )
+                    })"
+        )
         orderExecutionContext.isUncompletedOrderCancelled = true
     }
 
-    private fun createCancelledOppositeOrderWalletOperation(orderExecutionContext: OrderExecutionContext<*>, oppositeOrder: LimitOrder): WalletOperation {
-        val assetId = orderExecutionContext.oppositeLimitAsset!!.assetId
+    private fun createCancelledOppositeOrderWalletOperation(
+        orderExecutionContext: OrderExecutionContext<*>,
+        oppositeOrder: LimitOrder
+    ): WalletOperation {
+        val assetId = orderExecutionContext.oppositeLimitAsset!!.symbol
         val reservedVolume = oppositeOrder.reservedLimitVolume
-                ?: if (oppositeOrder.isBuySide()) oppositeOrder.getAbsRemainingVolume() * oppositeOrder.price else oppositeOrder.getAbsRemainingVolume()
-        val reservedBalance = orderExecutionContext.executionContext.walletOperationsProcessor.getReservedBalance(oppositeOrder.clientId, assetId)
-        return WalletOperation(oppositeOrder.clientId,
-                assetId,
-                BigDecimal.ZERO,
-                if (reservedVolume > reservedBalance) -reservedBalance else -reservedVolume)
+            ?: if (oppositeOrder.isBuySide()) oppositeOrder.getAbsRemainingVolume() * oppositeOrder.price else oppositeOrder.getAbsRemainingVolume()
+        val reservedBalance = orderExecutionContext.executionContext.walletOperationsProcessor.getReservedBalance(
+            oppositeOrder.brokerId,
+            oppositeOrder.accountId,
+            oppositeOrder.clientId,
+            assetId
+        )
+        return WalletOperation(
+            oppositeOrder.brokerId,
+            oppositeOrder.accountId,
+            oppositeOrder.clientId,
+            assetId,
+            BigDecimal.ZERO,
+            if (reservedVolume > reservedBalance) -reservedBalance else -reservedVolume
+        )
     }
 
     fun isOrderForTrustedClientsReport(order: LimitOrder): Boolean {
@@ -68,10 +91,19 @@ class MatchingResultHandlingHelper(private val applicationSettingsHolder: Applic
     }
 
     fun processCancelledOppositeOrders(orderExecutionContext: OrderExecutionContext<*>) {
-        val originalCancelledLimitOrders = orderExecutionContext.matchingResult!!.cancelledLimitOrders.map { it.origin!! }
+        val originalCancelledLimitOrders =
+            orderExecutionContext.matchingResult!!.cancelledLimitOrders.map { it.origin!! }
         orderExecutionContext.executionContext.orderBooksHolder.addCancelledOrders(originalCancelledLimitOrders)
-        orderExecutionContext.executionContext.addClientsLimitOrdersWithTrades(orderExecutionContext.cancelledOppositeClientsOrders!!.map { LimitOrderWithTrades(it) })
-        orderExecutionContext.executionContext.addTrustedClientsLimitOrdersWithTrades(orderExecutionContext.cancelledOppositeTrustedClientsOrders!!.map { LimitOrderWithTrades(it) })
+        orderExecutionContext.executionContext.addClientsLimitOrdersWithTrades(orderExecutionContext.cancelledOppositeClientsOrders!!.map {
+            LimitOrderWithTrades(
+                it
+            )
+        })
+        orderExecutionContext.executionContext.addTrustedClientsLimitOrdersWithTrades(orderExecutionContext.cancelledOppositeTrustedClientsOrders!!.map {
+            LimitOrderWithTrades(
+                it
+            )
+        })
     }
 
     fun processUncompletedOppositeOrder(orderExecutionContext: OrderExecutionContext<*>) {
@@ -85,8 +117,8 @@ class MatchingResultHandlingHelper(private val applicationSettingsHolder: Applic
 
     fun processWalletOperations(orderExecutionContext: OrderExecutionContext<*>) {
         orderExecutionContext.executionContext.walletOperationsProcessor
-                .preProcess(orderExecutionContext.ownWalletOperations!!)
-                .preProcess(orderExecutionContext.matchingResult!!.oppositeCashMovements, true)
+            .preProcess(orderExecutionContext.ownWalletOperations!!)
+            .preProcess(orderExecutionContext.matchingResult!!.oppositeCashMovements, true)
         if (orderExecutionContext.cancelledOppositeOrdersWalletOperations != null) {
             preProcessCancelledOrdersWalletOperations(orderExecutionContext)
         }

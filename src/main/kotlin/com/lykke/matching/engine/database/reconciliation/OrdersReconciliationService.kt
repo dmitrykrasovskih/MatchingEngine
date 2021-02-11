@@ -27,13 +27,13 @@ class OrdersReconciliationService(private val config: Config,
 
     override fun run(args: ApplicationArguments?) {
         val ordersSecondaryAccessor = ordersDatabaseAccessorsHolder.secondaryAccessor
-        if (ordersSecondaryAccessor != null && !config.me.ordersMigration) {
+        if (ordersSecondaryAccessor != null && !config.matchingEngine.ordersMigration) {
             val currentOrderBookSides = ordersSecondaryAccessor.loadLimitOrders().map { OrderBookSide(it.assetPairId, it.isBuySide()) }.toSet()
             persistedOrdersApplicationEventPublisher.publishEvent(OrderBookPersistEvent(mapOrdersToOrderBookPersistenceDataList(ordersDatabaseAccessorsHolder.primaryAccessor.loadLimitOrders(), currentOrderBookSides, LOGGER)))
         }
 
         val stopOrdersSecondaryAccessor = stopOrdersDatabaseAccessorsHolder.secondaryAccessor
-        if (stopOrdersSecondaryAccessor != null && !config.me.ordersMigration) {
+        if (stopOrdersSecondaryAccessor != null && !config.matchingEngine.ordersMigration) {
             val currentStopOrderBookSides = stopOrdersSecondaryAccessor.loadStopLimitOrders().map { OrderBookSide(it.assetPairId, it.isBuySide()) }.toSet()
             persistedStopApplicationEventPublisher.publishEvent(StopOrderBookPersistEvent(mapOrdersToOrderBookPersistenceDataList(stopOrdersDatabaseAccessorsHolder.primaryAccessor.loadStopLimitOrders(), currentStopOrderBookSides, LOGGER)))
         }

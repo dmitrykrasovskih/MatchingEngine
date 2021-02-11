@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package com.myjetwallet.dictionaries.grpc;
+
+option java_package = "com.matching.engine.database.grpc";
+option java_outer_classname = "GrpcDictionaries";
+
+import "google/protobuf/empty.proto";
+
+option csharp_namespace = "Service.AssetsDictionary.Services.Proto";
+
+service Assets {
+    rpc GetAll (google.protobuf.Empty) returns (GetAllAssetsResponse);
+    rpc GetBySymbol (GetAssetBySymbolRequest) returns (GetAssetBySymbolResponse);
+}
+
+service AssetPairs {
+    rpc GetAll (google.protobuf.Empty) returns (GetAllAssetPairsResponse);
+    rpc GetBySymbol (GetAssetPairBySymbolRequest) returns (GetAssetPairBySymbolResponse);
+}
+
+message GetAllAssetsResponse {
+    repeated Asset assets = 1;
+}
+
+message GetAssetBySymbolRequest {
+    string brokerId = 1;
+    string symbol = 2;
+}
+
+message GetAssetBySymbolResponse {
+    Asset asset = 1;
+}
+
+message Asset {
+    string brokerId = 1;
+    string symbol = 2;
+    string description = 3;
+    int32 accuracy = 4;
+}
+
+message GetAllAssetPairsResponse {
+    repeated AssetPair assetPairs = 1;
+}
+
+message GetAssetPairBySymbolRequest {
+    string brokerId = 1;
+    string symbol = 2;
+}
+
+message GetAssetPairBySymbolResponse {
+    AssetPair assetPair = 1;
+}
+
+message AssetPair {
+    string brokerId = 2;
+    string symbol = 3;
+    string baseAsset = 4;
+    string quotingAsset = 5;
+    int32 accuracy = 6;
+    string minVolume = 7;
+    string maxVolume = 8;
+    string maxOppositeVolume = 9;
+    string marketOrderPriceThreshold = 10;
+}

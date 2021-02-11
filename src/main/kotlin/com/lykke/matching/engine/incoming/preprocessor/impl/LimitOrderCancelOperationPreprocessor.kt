@@ -1,14 +1,14 @@
 package com.lykke.matching.engine.incoming.preprocessor.impl
 
-import com.lykke.matching.engine.daos.context.LimitOrderCancelOperationContext
 import com.lykke.matching.engine.database.PersistenceManager
 import com.lykke.matching.engine.database.common.entity.PersistenceData
 import com.lykke.matching.engine.deduplication.ProcessedMessagesCache
 import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
-import com.lykke.matching.engine.incoming.parsers.data.LimitOrderCancelOperationParsedData
 import com.lykke.matching.engine.incoming.parsers.ContextParser
+import com.lykke.matching.engine.incoming.parsers.data.LimitOrderCancelOperationParsedData
 import com.lykke.matching.engine.incoming.preprocessor.AbstractMessagePreprocessor
-import com.lykke.matching.engine.messages.MessageWrapper
+import com.lykke.matching.engine.messages.MessageStatus
+import com.lykke.matching.engine.messages.wrappers.LimitOrderCancelMessageWrapper
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.services.validators.input.LimitOrderCancelOperationInputValidator
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
@@ -19,18 +19,22 @@ import org.springframework.stereotype.Component
 import java.util.concurrent.BlockingQueue
 
 @Component
-class LimitOrderCancelOperationPreprocessor(limitOrderCancelOperationContextParser: ContextParser<LimitOrderCancelOperationParsedData>,
-                                            val limitOrderCancelOperationValidator: LimitOrderCancelOperationInputValidator,
-                                            messageProcessingStatusHolder: MessageProcessingStatusHolder,
-                                            preProcessedMessageQueue: BlockingQueue<MessageWrapper>,
-                                            val limitOrderCancelOperationPreprocessorPersistenceManager: PersistenceManager,
-                                            val processedMessagesCache: ProcessedMessagesCache,
-                                            @Qualifier("limitOrderCancelPreProcessingLogger")
-                                            private val logger: ThrottlingLogger) :
-        AbstractMessagePreprocessor<LimitOrderCancelOperationParsedData>(limitOrderCancelOperationContextParser,
-                messageProcessingStatusHolder,
-                preProcessedMessageQueue,
-                logger) {
+class LimitOrderCancelOperationPreprocessor(
+    limitOrderCancelOperationContextParser: ContextParser<LimitOrderCancelOperationParsedData, LimitOrderCancelMessageWrapper>,
+    val limitOrderCancelOperationValidator: LimitOrderCancelOperationInputValidator,
+    messageProcessingStatusHolder: MessageProcessingStatusHolder,
+    preProcessedMessageQueue: BlockingQueue<LimitOrderCancelMessageWrapper>,
+    val limitOrderCancelOperationPreprocessorPersistenceManager: PersistenceManager,
+    val processedMessagesCache: ProcessedMessagesCache,
+    @Qualifier("limitOrderCancelPreProcessingLogger")
+    private val logger: ThrottlingLogger
+) :
+    AbstractMessagePreprocessor<LimitOrderCancelOperationParsedData, LimitOrderCancelMessageWrapper>(
+        limitOrderCancelOperationContextParser,
+        messageProcessingStatusHolder,
+        preProcessedMessageQueue,
+        logger
+    ) {
 
     companion object {
         private val METRICS_LOGGER = MetricsLogger.getLogger()
@@ -40,14 +44,17 @@ class LimitOrderCancelOperationPreprocessor(limitOrderCancelOperationContextPars
         return validateData(parsedData)
     }
 
-    private fun processInvalidData(data: LimitOrderCancelOperationParsedData,
-                                   validationType: ValidationException.Validation,
-                                   message: String) {
-        val messageWrapper = data.messageWrapper
-        val context = messageWrapper.context as LimitOrderCancelOperationContext
-        logger.info("Input validation failed messageId: ${context.messageId}, details: $message")
+    private fun processInvalidData(
+        data: LimitOrderCancelOperationParsedData,
+        validationType: ValidationException.Validation,
+        message: String
+    ) {
+        val messageWrapper = data.messageWrapper as LimitOrderCancelMessageWrapper
+        val context = messageWrapper.context
+        logger.info("Input validation failed messageId: ${context!!.messageId}, details: $message")
 
-        val persistenceSuccess = limitOrderCancelOperationPreprocessorPersistenceManager.persist(PersistenceData(context.processedMessage))
+        val persistenceSuccess =
+            limitOrderCancelOperationPreprocessorPersistenceManager.persist(PersistenceData(context.processedMessage))
 
         if (!persistenceSuccess) {
             throw Exception("Persistence error")
@@ -70,5 +77,13 @@ class LimitOrderCancelOperationPreprocessor(limitOrderCancelOperationContextPars
             return false
         }
         return true
+    }
+
+    override fun writeResponse(
+        messageWrapper: LimitOrderCancelMessageWrapper,
+        status: MessageStatus,
+        message: String?
+    ) {
+        messageWrapper.writeResponse(status, message)
     }
 }

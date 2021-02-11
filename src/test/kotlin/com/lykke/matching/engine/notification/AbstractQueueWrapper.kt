@@ -11,6 +11,7 @@ abstract class AbstractQueueWrapper<V> {
     }
 
     fun getQueue(): BlockingQueue<V> {
+        @Suppress("UNCHECKED_CAST")
         return getProcessingQueue() as BlockingQueue<V>
     }
 

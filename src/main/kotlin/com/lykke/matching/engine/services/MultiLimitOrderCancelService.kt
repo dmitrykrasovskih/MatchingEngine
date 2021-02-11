@@ -4,70 +4,71 @@ import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.holders.ApplicationSettingsHolder
 import com.lykke.matching.engine.messages.MessageStatus
 import com.lykke.matching.engine.messages.MessageType
-import com.lykke.matching.engine.messages.MessageWrapper
-import com.lykke.matching.engine.messages.ProtocolMessages
+import com.lykke.matching.engine.messages.wrappers.MessageWrapper
+import com.lykke.matching.engine.messages.wrappers.socket.MultiLimitOrderCancelMessageWrapper
 import com.lykke.matching.engine.order.process.common.CancelRequest
+import com.lykke.matching.engine.order.process.common.LimitOrdersCancelExecutor
 import org.apache.log4j.Logger
 import org.springframework.stereotype.Service
-import java.util.Date
+import java.util.*
 
 @Service
-class MultiLimitOrderCancelService(private val limitOrderService: GenericLimitOrderService,
-                                   private val limitOrdersCancelServiceHelper: LimitOrdersCancelServiceHelper,
-                                   private val applicationSettingsHolder: ApplicationSettingsHolder) : AbstractService {
+class MultiLimitOrderCancelService(
+    private val limitOrderService: GenericLimitOrderService,
+    private val limitOrdersCancelExecutor: LimitOrdersCancelExecutor,
+    private val applicationSettingsHolder: ApplicationSettingsHolder
+) : AbstractService {
 
     companion object {
         private val LOGGER = Logger.getLogger(MultiLimitOrderCancelService::class.java.name)
     }
 
-    override fun processMessage(messageWrapper: MessageWrapper) {
-        val message = getMessage(messageWrapper)
-        LOGGER.debug("Got multi limit order cancel " +
-                "message id: ${messageWrapper.messageId}, id: ${message.uid}, ${message.clientId}, " +
-                "assetPair: ${message.assetPairId}, isBuy: ${message.isBuy}")
+    override fun processMessage(genericMessageWrapper: MessageWrapper) {
+        val messageWrapper = genericMessageWrapper as MultiLimitOrderCancelMessageWrapper
+        val message = messageWrapper.parsedMessage
+        messageWrapper.processedMessage = if (applicationSettingsHolder.isTrustedClient(message.walletId))
+            null
+        else
+            ProcessedMessage(messageWrapper.type.type, Date().time, messageWrapper.messageId)
+        LOGGER.debug(
+            "Got multi limit order cancel " +
+                    "message id: ${messageWrapper.messageId}, id: ${message.id}, ${message.walletId}, " +
+                    "assetPair: ${message.assetPairId}, isBuy: ${message.isBuy}"
+        )
 
         val now = Date()
-        val ordersToCancel = limitOrderService.searchOrders(message.clientId, message.assetPairId, message.isBuy)
+        val ordersToCancel = limitOrderService.searchOrders(message.walletId, message.assetPairId, message.isBuy)
         if (ordersToCancel.isEmpty()) {
-            writeResponse(messageWrapper, MessageStatus.OK)
+            messageWrapper.writeResponse(MessageStatus.OK)
             return
         }
-        val updateSuccessful = limitOrdersCancelServiceHelper.cancelOrdersAndWriteResponse(CancelRequest(ordersToCancel,
+
+        val updateSuccessful = limitOrdersCancelExecutor.cancelOrdersAndApply(
+            CancelRequest(
+                ordersToCancel,
                 emptyList(),
-                messageWrapper.messageId!!,
-                message.uid,
+                messageWrapper.messageId,
+                message.id,
                 MessageType.MULTI_LIMIT_ORDER_CANCEL,
                 now,
                 messageWrapper.processedMessage,
                 messageWrapper,
-                LOGGER))
+                LOGGER
+            )
+        )
 
         if (updateSuccessful) {
-            LOGGER.debug("Multi limit order cancel id: ${message.uid}, client ${message.clientId}, assetPair: ${message.assetPairId}, isBuy: ${message.isBuy} processed")
+            messageWrapper.writeResponse(MessageStatus.OK)
+            LOGGER.debug("Multi limit order cancel id: ${message.id}, client ${message.walletId}, assetPair: ${message.assetPairId}, isBuy: ${message.isBuy} processed")
+        } else {
+            val errorMessage = "Unable to save result"
+            messageWrapper.writeResponse(MessageStatus.RUNTIME, errorMessage)
+            LOGGER.info("$errorMessage for operation ${messageWrapper.id}")
         }
     }
 
-    private fun getMessage(messageWrapper: MessageWrapper) =
-            messageWrapper.parsedMessage!! as ProtocolMessages.MultiLimitOrderCancel
-
-    private fun parse(array: ByteArray): ProtocolMessages.MultiLimitOrderCancel {
-        return ProtocolMessages.MultiLimitOrderCancel.parseFrom(array)
-    }
-
-    override fun parseMessage(messageWrapper: MessageWrapper) {
-        val message = parse(messageWrapper.byteArray)
-        messageWrapper.messageId = if (message.hasMessageId()) message.messageId else message.uid.toString()
-        messageWrapper.timestamp = message.timestamp
-        messageWrapper.parsedMessage = message
-        messageWrapper.id = message.uid
-        messageWrapper.processedMessage = if (applicationSettingsHolder.isTrustedClient(message.clientId))
-            null
-        else
-            ProcessedMessage(messageWrapper.type, messageWrapper.timestamp!!, messageWrapper.messageId!!)
-    }
-
-    override fun writeResponse(messageWrapper: MessageWrapper, status: MessageStatus) {
-        messageWrapper.writeNewResponse(ProtocolMessages.NewResponse.newBuilder()
-                .setStatus(status.type))
+    override fun writeResponse(genericMessageWrapper: MessageWrapper, status: MessageStatus) {
+        val messageWrapper = genericMessageWrapper as MultiLimitOrderCancelMessageWrapper
+        messageWrapper.writeResponse(status)
     }
 }

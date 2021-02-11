@@ -33,18 +33,19 @@ class ClientsEventListener {
     @Value("\${azure.logs.clients.events.table}")
     private lateinit var logTable: String
 
+    @Suppress("UNCHECKED_CAST")
     @PostConstruct
     fun initRabbitMqPublisher() {
-        config.me.rabbitMqConfigs.events.forEachIndexed { index, rabbitConfig ->
+        config.matchingEngine.rabbitMqConfigs.events.forEachIndexed { index, rabbitConfig ->
             val clientsEventConsumerQueueName = RabbitEventUtils.getClientEventConsumerQueueName(rabbitConfig.exchange, index)
             val queue = applicationContext.getBean(clientsEventConsumerQueueName) as BlockingQueue<Event<*>>
 
             rabbitMqService.startPublisher(rabbitConfig, clientsEventConsumerQueueName, queue,
-                    config.me.name,
+                    config.matchingEngine.name,
                     AppVersion.VERSION,
                     BuiltinExchangeType.DIRECT,
                     DatabaseLogger(
-                            AzureMessageLogDatabaseAccessor(config.me.db.messageLogConnString,
+                            AzureMessageLogDatabaseAccessor(config.matchingEngine.db.messageLogConnString,
                                     "$logTable$index", "$logBlobName$index")))
         }
     }

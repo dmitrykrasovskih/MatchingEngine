@@ -1,9 +1,9 @@
 package com.lykke.matching.engine.database.file
 
 import com.lykke.matching.engine.daos.LimitOrder
-import com.lykke.matching.engine.daos.v2.LimitOrderFeeInstruction
 import com.lykke.matching.engine.daos.NewLimitOrder
 import com.lykke.matching.engine.daos.fee.v2.NewLimitOrderFeeInstruction
+import com.lykke.matching.engine.daos.v2.LimitOrderFeeInstruction
 import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import org.nustaq.serialization.FSTConfiguration
@@ -12,8 +12,10 @@ import java.nio.file.*
 import java.util.*
 import java.util.stream.Collectors
 
-open class AbstractFileOrderBookDatabaseAccessor(private val ordersDir: String,
-                                                 logPrefix: String = "") {
+open class AbstractFileOrderBookDatabaseAccessor(
+    private val ordersDir: String,
+    logPrefix: String = ""
+) {
 
     companion object {
         private val LOGGER = ThrottlingLogger.getLogger(AbstractFileOrderBookDatabaseAccessor::class.java.name)
@@ -25,7 +27,7 @@ open class AbstractFileOrderBookDatabaseAccessor(private val ordersDir: String,
     private var conf = FSTConfiguration.createDefaultConfiguration()
 
     init {
-        Files.createDirectories( Paths.get(ordersDir))
+        Files.createDirectories(Paths.get(ordersDir))
     }
 
     fun loadOrdersFromFiles(): List<LimitOrder> {
@@ -38,19 +40,21 @@ open class AbstractFileOrderBookDatabaseAccessor(private val ordersDir: String,
             }
 
             result = Files.list(orderDirPath)
-                    .filter {path -> !Files.isDirectory(path) &&
+                .filter { path ->
+                    !Files.isDirectory(path) &&
                             !path
-                                    .fileName
-                                    .toString()
-                                    .startsWith(PREV_ORDER_BOOK_FILE_PREFIX) }
-                    .flatMap {readOrderBookFileOrPrevFileOnFail(it).stream()}
-                    .collect(Collectors.toList())
+                                .fileName
+                                .toString()
+                                .startsWith(PREV_ORDER_BOOK_FILE_PREFIX)
+                }
+                .flatMap { readOrderBookFileOrPrevFileOnFail(it).stream() }
+                .collect(Collectors.toList())
 
 
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             val message = "Unable to load ${logPrefix}limit orders"
             LOGGER.error(message, e)
-            METRICS_LOGGER.logError( message, e)
+            METRICS_LOGGER.logError(message, e)
         }
 
         LOGGER.info("Loaded ${result.size} active ${logPrefix}limit orders")
@@ -61,7 +65,10 @@ open class AbstractFileOrderBookDatabaseAccessor(private val ordersDir: String,
         return try {
             readFile(filePath)
         } catch (e: Exception) {
-            LOGGER.error("Unable to read ${logPrefix}order book file ${filePath.fileName}. Trying to load previous one", e)
+            LOGGER.error(
+                "Unable to read ${logPrefix}order book file ${filePath.fileName}. Trying to load previous one",
+                e
+            )
             readPrevOrderBookFile(filePath.fileName.toString())
         }
     }
@@ -88,15 +95,15 @@ open class AbstractFileOrderBookDatabaseAccessor(private val ordersDir: String,
         return "${asset}_$buy"
     }
 
-    protected fun updateOrdersFile(asset: String, buy: Boolean,  orders: Collection<LimitOrder>) {
+    protected fun updateOrdersFile(asset: String, buy: Boolean, orders: Collection<LimitOrder>) {
         try {
             val fileName = getOrderBookFileName(asset, buy)
             archiveAndDeleteFile(fileName)
             saveFile(fileName, orders.toList())
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             val message = "Unable to save ${logPrefix}order book, size: ${orders.size}"
             LOGGER.error(message, e)
-            METRICS_LOGGER.logError( message, e)
+            METRICS_LOGGER.logError(message, e)
         }
     }
 
@@ -114,16 +121,16 @@ open class AbstractFileOrderBookDatabaseAccessor(private val ordersDir: String,
     private fun convertOrders(orders: List<*>): List<LimitOrder> {
         var oldFormatOrdersCount = 0
         val convertedOrders = orders.stream()
-                .filter { it is LimitOrder || it is NewLimitOrder }
-                .map {
-                    if (it is LimitOrder) {
-                        it
-                    } else {
-                        oldFormatOrdersCount++
-                        fromNewLimitOrderToLimitOrder(it as NewLimitOrder)
-                    }
+            .filter { it is LimitOrder || it is NewLimitOrder }
+            .map {
+                if (it is LimitOrder) {
+                    it
+                } else {
+                    oldFormatOrdersCount++
+                    fromNewLimitOrderToLimitOrder(it as NewLimitOrder)
                 }
-                .collect(Collectors.toCollection { LinkedList<LimitOrder>() })
+            }
+            .collect(Collectors.toCollection { LinkedList<LimitOrder>() })
 
         if (oldFormatOrdersCount != 0) {
             LOGGER.info("Old format orders count: $oldFormatOrdersCount for asset pair: ${convertedOrders.first.assetPairId}")
@@ -133,32 +140,34 @@ open class AbstractFileOrderBookDatabaseAccessor(private val ordersDir: String,
     }
 
     private fun fromNewLimitOrderToLimitOrder(order: NewLimitOrder): LimitOrder {
+        @Suppress("UNCHECKED_CAST")
         return LimitOrder(
-                order.id,
-                order.externalId,
-                order.assetPairId,
-                order.clientId,
-                BigDecimal.valueOf(order.volume),
-                BigDecimal.valueOf(order.price),
-                order.status,
-                order.statusDate,
-                order.createdAt,
-                order.registered,
-                BigDecimal.valueOf(order.remainingVolume),
-                order.lastMatchTime,
-                order.reservedLimitVolume?.toBigDecimal(),
-                convertLimitOrderFeeInstruction(order.fee as com.lykke.matching.engine.daos.LimitOrderFeeInstruction?),
-                convertLimitOrderFeeInstructions(order.fees as List<com.lykke.matching.engine.daos.fee.NewLimitOrderFeeInstruction>?),
-                order.type,
-                order.lowerLimitPrice?.toBigDecimal(),
-                order.lowerPrice?.toBigDecimal(),
-                order.upperLimitPrice?.toBigDecimal(),
-                order.upperPrice?.toBigDecimal(),
-                order.previousExternalId,
-                null,
-                null,
-                null,
-                null
+            order.id,
+            order.externalId,
+            order.assetPairId,
+            order.brokerId,
+            order.accountId,
+            order.clientId,
+            BigDecimal.valueOf(order.volume),
+            BigDecimal.valueOf(order.price),
+            order.status,
+            order.statusDate,
+            order.createdAt,
+            order.registered,
+            BigDecimal.valueOf(order.remainingVolume),
+            order.lastMatchTime,
+            order.reservedLimitVolume?.toBigDecimal(),
+            convertLimitOrderFeeInstructions(order.fees as List<com.lykke.matching.engine.daos.fee.NewLimitOrderFeeInstruction>?),
+            order.type,
+            order.lowerLimitPrice?.toBigDecimal(),
+            order.lowerPrice?.toBigDecimal(),
+            order.upperLimitPrice?.toBigDecimal(),
+            order.upperPrice?.toBigDecimal(),
+            order.previousExternalId,
+            null,
+            null,
+            null,
+            null
         )
     }
 
@@ -166,9 +175,11 @@ open class AbstractFileOrderBookDatabaseAccessor(private val ordersDir: String,
         if (fee == null) {
             return null
         }
-        return LimitOrderFeeInstruction(fee.type, fee.sizeType,
-                fee.size?.toBigDecimal(), fee.makerSizeType,
-                fee.makerSize?.toBigDecimal(), fee.sourceClientId, fee.targetClientId)
+        return LimitOrderFeeInstruction(
+            fee.type, fee.sizeType,
+            fee.size, fee.makerSizeType,
+            fee.makerSize, fee.sourceWalletId, fee.targetWalletId
+        )
     }
 
     private fun convertLimitOrderFeeInstructions(fees: List<com.lykke.matching.engine.daos.fee.NewLimitOrderFeeInstruction>?): List<NewLimitOrderFeeInstruction>? {
@@ -176,12 +187,16 @@ open class AbstractFileOrderBookDatabaseAccessor(private val ordersDir: String,
             return null
         }
         return fees
-                .stream()
-                .map { NewLimitOrderFeeInstruction(it.type, it.sizeType,
-                        it.size?.toBigDecimal(), it.makerSizeType,
-                        it.makerSize?.toBigDecimal(), it.sourceClientId,
-                        it.targetClientId, it.assetIds, it.makerFeeModificator?.toBigDecimal()) }
-                .collect(Collectors.toList())
+            .stream()
+            .map {
+                NewLimitOrderFeeInstruction(
+                    it.type, it.sizeType,
+                    it.size, it.makerSizeType,
+                    it.makerSize, it.sourceWalletId,
+                    it.targetWalletId, it.assetIds, it.makerFeeModificator
+                )
+            }
+            .collect(Collectors.toList())
     }
 
     private fun saveFile(fileName: String, data: List<LimitOrder>) {
@@ -191,7 +206,7 @@ open class AbstractFileOrderBookDatabaseAccessor(private val ordersDir: String,
         } catch (e: Exception) {
             val message = "Unable to save order book file, name: $fileName"
             LOGGER.error(message, e)
-            METRICS_LOGGER.logError( message, e)
+            METRICS_LOGGER.logError(message, e)
             throw e
         }
     }
@@ -201,12 +216,12 @@ open class AbstractFileOrderBookDatabaseAccessor(private val ordersDir: String,
             val prevOrderBookFile = getPrevOrderBookFilePath(fileName)
             val orderBookFile = getOrderBookFilePath(fileName)
             Files.move(orderBookFile, prevOrderBookFile, StandardCopyOption.REPLACE_EXISTING)
-        } catch(e: NoSuchFileException) {
+        } catch (e: NoSuchFileException) {
             // it is new order book - ignore
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             val message = "Unable to archive and delete, name: $fileName"
             LOGGER.error(message, e)
-            METRICS_LOGGER.logError( message, e)
+            METRICS_LOGGER.logError(message, e)
         }
     }
 }

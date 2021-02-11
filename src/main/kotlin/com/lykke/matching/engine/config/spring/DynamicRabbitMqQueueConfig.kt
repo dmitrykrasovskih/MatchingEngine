@@ -48,7 +48,7 @@ open class DynamicRabbitMqQueueConfig : BeanFactoryPostProcessor, EnvironmentAwa
             queueBeanDefinition.addQualifier(AutowireCandidateQualifier(it))
         }
 
-        config.me.rabbitMqConfigs.events.forEachIndexed { index, eventConfig ->
+        config.matchingEngine.rabbitMqConfigs.events.forEachIndexed { index, eventConfig ->
             factory.registerBeanDefinition(RabbitEventUtils.getClientEventConsumerQueueName(eventConfig.exchange, index), queueBeanDefinition)
         }
     }
@@ -69,7 +69,7 @@ open class DynamicRabbitMqQueueConfig : BeanFactoryPostProcessor, EnvironmentAwa
             queueBeanDefinition.addQualifier(AutowireCandidateQualifier(it))
         }
 
-        config.me.rabbitMqConfigs.trustedClientsEvents.forEachIndexed { index, eventConfig ->
+        config.matchingEngine.rabbitMqConfigs.trustedClientsEvents.forEachIndexed { index, eventConfig ->
             factory.registerBeanDefinition(RabbitEventUtils.getTrustedClientsEventConsumerQueueName(eventConfig.exchange, index), queueBeanDefinition)
         }
     }

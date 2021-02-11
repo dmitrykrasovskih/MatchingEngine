@@ -20,18 +20,18 @@ class SingleLimitOrderPerformanceTest: AbstractPerformanceTest()  {
         testBalanceHolderWrapper.updateBalance("Client2", "EUR", 1000.0)
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 1000.0)
 
-        testBackOfficeDatabaseAccessor.addAsset(Asset("USD", 2))
-        testBackOfficeDatabaseAccessor.addAsset(Asset("EUR", 2))
-        testBackOfficeDatabaseAccessor.addAsset(Asset("ETH", 6))
-        testBackOfficeDatabaseAccessor.addAsset(Asset("BTC", 8))
+        testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
+        testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
+        testDictionariesDatabaseAccessor.addAsset(Asset("", "ETH", 6))
+        testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 8))
 
         applicationSettingsCache.createOrUpdateSettingValue(AvailableSettingGroup.TRUSTED_CLIENTS, "Client3", "Client3", true)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURUSD", "EUR", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURCHF", "EUR", "CHF", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCEUR", "BTC", "EUR", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCUSD", "BTC", "USD", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("ETHBTC", "ETH", "BTC", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURCHF", "EUR", "CHF", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCEUR", "BTC", "EUR", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "ETHBTC", "ETH", "BTC", 5))
     }
 
     @Test
@@ -89,9 +89,9 @@ class SingleLimitOrderPerformanceTest: AbstractPerformanceTest()  {
 
     private fun testSmallVolume(): Double {
         val counter = ActionTimeCounter()
-        testBackOfficeDatabaseAccessor.addAsset(Asset("USD", 2))
-        testBackOfficeDatabaseAccessor.addAsset(Asset("EUR", 2))
-        counter.executeAction {  testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURUSD", "EUR", "USD", 5,
+        testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
+        testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
+        counter.executeAction {  testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5,
                 BigDecimal.valueOf(0.1), BigDecimal.valueOf(0.2)))}
         initServices()
 
@@ -234,8 +234,8 @@ class SingleLimitOrderPerformanceTest: AbstractPerformanceTest()  {
     fun testOverflowedRemainingVolume(): Double {
         val counter = ActionTimeCounter()
 
-        testBackOfficeDatabaseAccessor.addAsset(Asset("PKT", 12))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("PKTETH", "PKT", "ETH", 5))
+        testDictionariesDatabaseAccessor.addAsset(Asset("", "PKT", 12))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "PKTETH", "PKT", "ETH", 5))
         testBalanceHolderWrapper.updateBalance("Client1", "ETH", 1.0)
         testBalanceHolderWrapper.updateBalance("Client2", "PKT", 3.0)
 

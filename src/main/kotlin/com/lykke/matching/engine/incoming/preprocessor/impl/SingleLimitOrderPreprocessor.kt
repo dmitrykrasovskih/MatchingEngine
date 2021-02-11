@@ -1,13 +1,12 @@
 package com.lykke.matching.engine.incoming.preprocessor.impl
 
-import com.lykke.matching.engine.daos.context.SingleLimitOrderContext
 import com.lykke.matching.engine.daos.order.LimitOrderType
 import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
 import com.lykke.matching.engine.incoming.parsers.data.SingleLimitOrderParsedData
 import com.lykke.matching.engine.incoming.parsers.impl.SingleLimitOrderContextParser
 import com.lykke.matching.engine.incoming.preprocessor.AbstractMessagePreprocessor
 import com.lykke.matching.engine.messages.MessageStatus
-import com.lykke.matching.engine.messages.MessageWrapper
+import com.lykke.matching.engine.messages.wrappers.SingleLimitOrderMessageWrapper
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.services.validators.impl.OrderValidationException
 import com.lykke.matching.engine.services.validators.impl.OrderValidationResult
@@ -20,23 +19,28 @@ import org.springframework.stereotype.Component
 import java.util.concurrent.BlockingQueue
 
 @Component
-class SingleLimitOrderPreprocessor(singleLimitOrderContextParser: SingleLimitOrderContextParser,
-                                   preProcessedMessageQueue: BlockingQueue<MessageWrapper>,
-                                   private val messageProcessingStatusHolder: MessageProcessingStatusHolder,
-                                   @Qualifier("singleLimitOrderPreProcessingLogger")
-                                   private val logger: ThrottlingLogger) :
-        AbstractMessagePreprocessor<SingleLimitOrderParsedData>(singleLimitOrderContextParser,
-                messageProcessingStatusHolder,
-                preProcessedMessageQueue,
-                logger) {
+class SingleLimitOrderPreprocessor(
+    singleLimitOrderContextParser: SingleLimitOrderContextParser,
+    preProcessedMessageQueue: BlockingQueue<SingleLimitOrderMessageWrapper>,
+    private val messageProcessingStatusHolder: MessageProcessingStatusHolder,
+    @Qualifier("singleLimitOrderPreProcessingLogger")
+    private val logger: ThrottlingLogger
+) :
+    AbstractMessagePreprocessor<SingleLimitOrderParsedData, SingleLimitOrderMessageWrapper>(
+        singleLimitOrderContextParser,
+        messageProcessingStatusHolder,
+        preProcessedMessageQueue,
+        logger
+    ) {
 
     @Autowired
     private lateinit var limitOrderInputValidator: LimitOrderInputValidator
 
     override fun preProcessParsedData(parsedData: SingleLimitOrderParsedData): Boolean {
-        val singleLimitContext = parsedData.messageWrapper.context as SingleLimitOrderContext
+        val singleLimitContext = (parsedData.messageWrapper as SingleLimitOrderMessageWrapper).context
 
-        if (messageProcessingStatusHolder.isTradeDisabled(singleLimitContext.assetPair)) {
+
+        if (messageProcessingStatusHolder.isTradeDisabled(singleLimitContext!!.assetPair)) {
             writeResponse(parsedData.messageWrapper, MessageStatus.MESSAGE_PROCESSING_DISABLED)
             return false
         }
@@ -45,9 +49,15 @@ class SingleLimitOrderPreprocessor(singleLimitOrderContextParser: SingleLimitOrd
 
         //currently if order is not valid at all - can not be passed to the business thread - ignore it
         if (validationResult.isFatalInvalid) {
-            logger.error("Fatal validation error occurred, ${validationResult.message} " +
-                    "Error details: $singleLimitContext")
-            writeResponse(parsedData.messageWrapper, MessageStatusUtils.toMessageStatus(validationResult.status!!), validationResult.message)
+            logger.error(
+                "Fatal validation error occurred, ${validationResult.message} " +
+                        "Error details: $singleLimitContext"
+            )
+            writeResponse(
+                parsedData.messageWrapper,
+                MessageStatusUtils.toMessageStatus(validationResult.status!!),
+                validationResult.message
+            )
             return false
         }
 
@@ -56,7 +66,8 @@ class SingleLimitOrderPreprocessor(singleLimitOrderContextParser: SingleLimitOrd
     }
 
     private fun getValidationResult(singleLimitOrderParsedData: SingleLimitOrderParsedData): OrderValidationResult {
-        val singleLimitContext = singleLimitOrderParsedData.messageWrapper.context as SingleLimitOrderContext
+        val singleLimitContext =
+            (singleLimitOrderParsedData.messageWrapper as SingleLimitOrderMessageWrapper).context!!
 
         try {
             when (singleLimitContext.limitOrder.type) {
@@ -72,5 +83,13 @@ class SingleLimitOrderPreprocessor(singleLimitOrderContextParser: SingleLimitOrd
 
     private fun isFatalInvalid(validationException: OrderValidationException): Boolean {
         return validationException.orderStatus == OrderStatus.UnknownAsset
+    }
+
+    override fun writeResponse(
+        messageWrapper: SingleLimitOrderMessageWrapper,
+        status: MessageStatus,
+        message: String?
+    ) {
+        messageWrapper.writeResponse(status, message)
     }
 }

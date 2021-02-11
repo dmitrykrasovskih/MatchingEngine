@@ -2,14 +2,15 @@ package com.lykke.matching.engine.services.validators.input.impl
 
 import com.lykke.matching.engine.daos.context.LimitOrderCancelOperationContext
 import com.lykke.matching.engine.incoming.parsers.data.LimitOrderCancelOperationParsedData
+import com.lykke.matching.engine.messages.wrappers.LimitOrderCancelMessageWrapper
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.services.validators.input.LimitOrderCancelOperationInputValidator
 import org.springframework.stereotype.Component
 
 @Component
-class LimitOrderCancelOperationInputValidatorImpl: LimitOrderCancelOperationInputValidator {
+class LimitOrderCancelOperationInputValidatorImpl : LimitOrderCancelOperationInputValidator {
     override fun performValidation(limitOrderCancelOperationParsedData: LimitOrderCancelOperationParsedData) {
-        val context = limitOrderCancelOperationParsedData.messageWrapper.context as LimitOrderCancelOperationContext
+        val context = (limitOrderCancelOperationParsedData.messageWrapper as LimitOrderCancelMessageWrapper).context!!
         validateOrderIds(context)
     }
 

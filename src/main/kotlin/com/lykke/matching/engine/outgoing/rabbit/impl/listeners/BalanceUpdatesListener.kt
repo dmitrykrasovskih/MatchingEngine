@@ -45,14 +45,14 @@ class BalanceUpdatesListener {
 
     @PostConstruct
     fun initRabbitMqPublisher() {
-        rabbitMqOldService.startPublisher(config.me.rabbitMqConfigs.balanceUpdates,
+        rabbitMqOldService.startPublisher(config.matchingEngine.rabbitMqConfigs.balanceUpdates,
                 BalanceUpdatesListener::class.java.simpleName,
                 balanceUpdateQueue,
-                config.me.name,
+                config.matchingEngine.name,
                 AppVersion.VERSION,
                 BuiltinExchangeType.FANOUT,
                 DatabaseLogger(
-                        AzureMessageLogDatabaseAccessor(config.me.db.messageLogConnString,
+                        AzureMessageLogDatabaseAccessor(config.matchingEngine.db.messageLogConnString,
                                 logTable, logBlobName)))
     }
 

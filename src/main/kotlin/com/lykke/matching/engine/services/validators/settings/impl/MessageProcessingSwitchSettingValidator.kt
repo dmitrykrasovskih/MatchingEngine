@@ -12,8 +12,8 @@ class MessageProcessingSwitchSettingValidator: SettingValidator {
         val SUPPORTED_VALUE = "stop"
     }
 
-    override fun validate(settingDto: SettingDto) {
-        if (settingDto.name != SUPPORTED_VALUE || settingDto.value != SUPPORTED_VALUE) {
+    override fun validate(setting: SettingDto) {
+        if (setting.name != SUPPORTED_VALUE || setting.value != SUPPORTED_VALUE) {
             throw ValidationException(validationMessage = "Not acceptable setting value/setting name was supplied. Acceptable setting value/name is: '$SUPPORTED_VALUE'")
         }
     }

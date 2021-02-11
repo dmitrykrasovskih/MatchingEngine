@@ -18,7 +18,7 @@ import java.math.BigDecimal
 import java.util.Date
 
 class EventFactory {
-
+// TODO new format!!!
     companion object {
         private val LOGGER = ThrottlingLogger.getLogger(EventFactory::class.java.name)
         private val METRICS_LOGGER = MetricsLogger.getLogger()

@@ -37,7 +37,7 @@ class PersistenceManagerFactoryImpl(private val balancesDatabaseAccessorsHolder:
                                     private val ordersPersistInSecondaryDbStrategy: Optional<OrdersPersistInSecondaryDbStrategy>) : PersistenceManagerFactory {
 
     override fun get(redisConnection: Optional<RedisConnection>): PersistenceManager {
-        return when (config.me.storage) {
+        return when (config.matchingEngine.storage) {
             Storage.Azure -> DefaultPersistenceManager(balancesDatabaseAccessorsHolder.primaryAccessor,
                     ordersDatabaseAccessorsHolder.primaryAccessor,
                     stopOrdersDatabaseAccessorsHolder.primaryAccessor,

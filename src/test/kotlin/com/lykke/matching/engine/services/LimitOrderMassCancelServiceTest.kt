@@ -8,8 +8,7 @@ import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.IncomingLimitOrder
 import com.lykke.matching.engine.daos.order.LimitOrderType
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
-import com.lykke.matching.engine.database.BackOfficeDatabaseAccessor
-import com.lykke.matching.engine.database.TestBackOfficeDatabaseAccessor
+import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
 import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.order.OrderStatus
@@ -41,22 +40,22 @@ import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderStatus as Outgo
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class LimitOrderMassCancelServiceTest : AbstractTest() {
     @TestConfiguration
-    open class Config {
+    class Config {
         @Bean
         @Primary
-        open fun testBackOfficeDatabaseAccessor(): BackOfficeDatabaseAccessor {
-            val testBackOfficeDatabaseAccessor = TestBackOfficeDatabaseAccessor()
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
+            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
 
-            testBackOfficeDatabaseAccessor.addAsset(Asset("BTC", 8))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("USD", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("EUR", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 8))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
 
-            return testBackOfficeDatabaseAccessor
+            return testDictionariesDatabaseAccessor
         }
 
         @Bean
         @Primary
-        open fun testConfig(): TestSettingsDatabaseAccessor {
+        fun testConfig(): TestSettingsDatabaseAccessor {
             val testSettingsDatabaseAccessor = TestSettingsDatabaseAccessor()
             testSettingsDatabaseAccessor.createOrUpdateSetting(AvailableSettingGroup.TRUSTED_CLIENTS, getSetting("TrustedClient"))
             return testSettingsDatabaseAccessor
@@ -69,8 +68,8 @@ class LimitOrderMassCancelServiceTest : AbstractTest() {
     @Before
     fun setUp() {
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCUSD", "BTC", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURUSD", "EUR", "USD", 2))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 2))
 
         testBalanceHolderWrapper.updateBalance("Client1", "BTC", 1.0)
         testBalanceHolderWrapper.updateBalance("Client1", "USD", 100.0)
@@ -142,7 +141,7 @@ class LimitOrderMassCancelServiceTest : AbstractTest() {
         val balanceUpdate = balanceUpdateHandlerTest.balanceUpdateQueue.poll() as BalanceUpdate
         assertEquals(MessageType.LIMIT_ORDER_MASS_CANCEL.name, balanceUpdate.type)
         assertEquals(1, balanceUpdate.balances.size)
-        assertEquals("Client1", balanceUpdate.balances.first().id)
+        assertEquals("Client1", balanceUpdate.balances.first().walletId)
         assertEquals(BigDecimal.valueOf(0.6), balanceUpdate.balances.first().oldReserved)
         assertEquals(BigDecimal.ZERO, balanceUpdate.balances.first().newReserved)
 
@@ -190,12 +189,12 @@ class LimitOrderMassCancelServiceTest : AbstractTest() {
         assertEquals(2, balanceUpdate.balances.size)
 
         val btc = balanceUpdate.balances.first { it.asset == "BTC" }
-        assertEquals("Client1", btc.id)
+        assertEquals("Client1", btc.walletId)
         assertEquals(BigDecimal.valueOf(0.6), btc.oldReserved)
         assertEquals(BigDecimal.ZERO, btc.newReserved)
 
         val usd = balanceUpdate.balances.first { it.asset == "USD" }
-        assertEquals("Client1", usd.id)
+        assertEquals("Client1", usd.walletId)
         assertEquals(BigDecimal.valueOf(91.0), usd.oldReserved)
         assertEquals(BigDecimal.ZERO, usd.newReserved)
 

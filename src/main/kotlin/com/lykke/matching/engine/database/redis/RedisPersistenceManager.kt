@@ -130,7 +130,7 @@ class RedisPersistenceManager(
         }
 
         LOGGER.trace("Start to persist balances in redis")
-        transaction.select(config.me.redis.balanceDatabase)
+        transaction.select(config.matchingEngine.redis.balanceDatabase)
         primaryBalancesAccessor.insertOrUpdateBalances(transaction, assetBalances!!)
     }
 

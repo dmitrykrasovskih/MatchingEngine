@@ -1,10 +1,9 @@
 package com.lykke.matching.engine.services
 
 import com.lykke.matching.engine.messages.MessageStatus
-import com.lykke.matching.engine.messages.MessageWrapper
+import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 
 interface AbstractService {
-    fun parseMessage(messageWrapper: MessageWrapper)
-    fun processMessage(messageWrapper: MessageWrapper)
-    fun writeResponse(messageWrapper: MessageWrapper, status: MessageStatus)
+    fun processMessage(genericMessageWrapper: MessageWrapper)
+    fun writeResponse(genericMessageWrapper: MessageWrapper, status: MessageStatus)
 }

@@ -2,7 +2,7 @@ package com.lykke.matching.engine.socket.impl
 
 import com.lykke.matching.engine.incoming.MessageRouter
 import com.lykke.matching.engine.messages.MessageType
-import com.lykke.matching.engine.messages.MessageWrapper
+import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.socket.ClientHandler
 import com.lykke.matching.engine.socket.ClientsRequestsSocketServer
 import com.lykke.matching.engine.utils.IntUtils
@@ -15,7 +15,6 @@ import java.net.Socket
 import java.time.LocalDateTime
 
 class ClientHandlerImpl(
-        private val messageRouter: MessageRouter,
         private val socket: Socket,
         private val socketServer: ClientsRequestsSocketServer,
         private val lifeTimeMinutes: Long) : Thread(ClientHandlerImpl::class.java.name), ClientHandler {
@@ -83,7 +82,7 @@ class ClientHandlerImpl(
         val serializedData = ByteArray(size)
         inputStream.readFully(serializedData, 0, size)
         incomingSize += 1 + size
-        messageRouter.process(MessageWrapper(clientHostName, type, serializedData, this))
+//        messageRouter.process(MessageWrapper(clientHostName, type, serializedData, this))
     }
 
     override fun writeOutput(byteArray: ByteArray) {

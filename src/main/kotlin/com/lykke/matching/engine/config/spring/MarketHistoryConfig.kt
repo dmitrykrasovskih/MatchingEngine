@@ -46,17 +46,17 @@ open class MarketHistoryConfig {
     @Bean
     open fun azureBestPriceDatabaseAccessor(@Value("\${$PROP_NAME_BEST_PRICE_TABLE:#{null}}")
                                             bestPricesTable: String?): AzureBestPriceDatabaseAccessor? {
-        if (config.me.disableBestPriceHistory == true) {
+        if (config.matchingEngine.disableBestPriceHistory == true) {
             return null
         }
         checkMandatoryValue(bestPricesTable, PROP_NAME_BEST_PRICE_TABLE)
-        return AzureBestPriceDatabaseAccessor(config.me.db.hBestPriceConnString, bestPricesTable!!)
+        return AzureBestPriceDatabaseAccessor(config.matchingEngine.db.hBestPriceConnString, bestPricesTable!!)
     }
 
     @Bean
     open fun bestPriceUpdater(genericLimitOrderService: GenericLimitOrderService,
                               bestPriceDatabaseAccessor: Optional<BestPriceDatabaseAccessor>): BestPriceUpdater? {
-        if (config.me.disableBestPriceHistory == true) {
+        if (config.matchingEngine.disableBestPriceHistory == true) {
             return null
         }
         return BestPriceUpdater(genericLimitOrderService, bestPriceDatabaseAccessor.get())
@@ -69,39 +69,39 @@ open class MarketHistoryConfig {
     @Bean
     open fun azureCandlesDatabaseAccessor(@Value("\${$PROP_NAME_CANDLES_TABLE:#{null}}")
                                           candlesTable: String?): AzureCandlesDatabaseAccessor? {
-        if (config.me.disableCandlesHistory == true) {
+        if (config.matchingEngine.disableCandlesHistory == true) {
             return null
         }
         checkMandatoryValue(candlesTable, PROP_NAME_CANDLES_TABLE)
-        return AzureCandlesDatabaseAccessor(config.me.db.hCandlesConnString, candlesTable!!)
+        return AzureCandlesDatabaseAccessor(config.matchingEngine.db.hCandlesConnString, candlesTable!!)
     }
 
     @Bean
     open fun azureHoursCandlesDatabaseAccessor(@Value("\${$PROP_NAME_HOUR_CANDLES_TABLE:#{null}}")
                                                hourCandlesTable: String?): AzureHoursCandlesDatabaseAccessor? {
-        if (config.me.disableHourCandlesHistory == true) {
+        if (config.matchingEngine.disableHourCandlesHistory == true) {
             return null
         }
         checkMandatoryValue(hourCandlesTable, PROP_NAME_HOUR_CANDLES_TABLE)
-        return AzureHoursCandlesDatabaseAccessor(config.me.db.hHourCandlesConnString, hourCandlesTable!!)
+        return AzureHoursCandlesDatabaseAccessor(config.matchingEngine.db.hHourCandlesConnString, hourCandlesTable!!)
     }
 
     @Bean(initMethod = "start")
     open fun tradesInfoService(candlesDatabaseAccessor: Optional<CandlesDatabaseAccessor>,
                                hoursCandlesDatabaseAccessor: Optional<HoursCandlesDatabaseAccessor>,
                                tradeInfoQueue: Optional<BlockingQueue<TradeInfo>>): TradesInfoService? {
-        if (config.me.disableCandlesHistory == true && config.me.disableHourCandlesHistory == true) {
+        if (config.matchingEngine.disableCandlesHistory == true && config.matchingEngine.disableHourCandlesHistory == true) {
             return null
         }
 
-        return TradesInfoService(if (config.me.disableCandlesHistory != true) candlesDatabaseAccessor.get() else null,
-                if (config.me.disableHourCandlesHistory != true) hoursCandlesDatabaseAccessor.get() else null,
+        return TradesInfoService(if (config.matchingEngine.disableCandlesHistory != true) candlesDatabaseAccessor.get() else null,
+                if (config.matchingEngine.disableHourCandlesHistory != true) hoursCandlesDatabaseAccessor.get() else null,
                 tradeInfoQueue.get())
     }
 
     @Bean
     open fun tradeInfoQueue(): BlockingQueue<TradeInfo>? {
-        if (config.me.disableCandlesHistory == true && config.me.disableHourCandlesHistory == true) {
+        if (config.matchingEngine.disableCandlesHistory == true && config.matchingEngine.disableHourCandlesHistory == true) {
             return null
         }
         return LinkedBlockingQueue<TradeInfo>()
@@ -110,17 +110,17 @@ open class MarketHistoryConfig {
     @Bean(initMethod = "start")
     open fun candlesUpdater(tradesInfoService: Optional<TradesInfoService>,
                             taskScheduler: TaskScheduler): CandlesUpdater? {
-        if (config.me.disableCandlesHistory == true) {
+        if (config.matchingEngine.disableCandlesHistory == true) {
             return null
         }
         return CandlesUpdater(tradesInfoService.get(),
                 taskScheduler,
-                config.me.candleSaverInterval)
+                config.matchingEngine.candleSaverInterval)
     }
 
     @Bean
     open fun hoursCandlesUpdater(tradesInfoService: Optional<TradesInfoService>): HoursCandlesUpdater? {
-        if (config.me.disableHourCandlesHistory == true) {
+        if (config.matchingEngine.disableHourCandlesHistory == true) {
             return null
         }
         return HoursCandlesUpdater(tradesInfoService.get())
@@ -134,18 +134,18 @@ open class MarketHistoryConfig {
     open fun azureHistoryTicksDatabaseAccessor(@Value("\${$PROP_NAME_TICK_FREQUENCY:#{null}}")
                                                frequency: Long?)
             : HistoryTicksDatabaseAccessor? {
-        if (config.me.disableBlobHistory == true) {
+        if (config.matchingEngine.disableBlobHistory == true) {
             return null
         }
         checkMandatoryValue(frequency, PROP_NAME_TICK_FREQUENCY)
-        return AzureHistoryTicksDatabaseAccessor(config.me.db.hBlobConnString, frequency!!)
+        return AzureHistoryTicksDatabaseAccessor(config.matchingEngine.db.hBlobConnString, frequency!!)
     }
 
     @Bean
     open fun marketStateCache(historyTicksDatabaseAccessor: Optional<HistoryTicksDatabaseAccessor>,
                               @Value("\${$PROP_NAME_TICK_FREQUENCY:#{null}}")
                               frequency: Long?): MarketStateCache? {
-        if (config.me.disableBlobHistory == true) {
+        if (config.matchingEngine.disableBlobHistory == true) {
             return null
         }
         checkMandatoryValue(frequency, PROP_NAME_TICK_FREQUENCY)
@@ -157,7 +157,7 @@ open class MarketHistoryConfig {
                                  marketStateCache: Optional<MarketStateCache>,
                                  @Value("\${$PROP_NAME_TICK_FREQUENCY:#{null}}")
                                  frequency: Long?): HistoryTicksService? {
-        if (config.me.disableBlobHistory == true) {
+        if (config.matchingEngine.disableBlobHistory == true) {
             return null
         }
         checkMandatoryValue(frequency, PROP_NAME_TICK_FREQUENCY)

@@ -10,8 +10,10 @@ import org.springframework.stereotype.Component
 import java.math.BigDecimal
 
 @Component
-class StopOrderBookProcessor(private val limitOrderProcessor: LimitOrderProcessor,
-                             private val applicationSettingsHolder: ApplicationSettingsHolder) {
+class StopOrderBookProcessor(
+    private val limitOrderProcessor: LimitOrderProcessor,
+    private val applicationSettingsHolder: ApplicationSettingsHolder
+) {
 
     fun checkAndExecuteStopLimitOrders(executionContext: ExecutionContext): List<ProcessedOrder> {
         val processedOrders = mutableListOf<ProcessedOrder>()
@@ -53,13 +55,17 @@ class StopOrderBookProcessor(private val limitOrderProcessor: LimitOrderProcesso
         val orderBook = executionContext.orderBooksHolder.getChangedCopyOrOriginalOrderBook(assetPairId)
         val bestBidPrice = orderBook.getBidPrice()
         val bestAskPrice = orderBook.getAskPrice()
-        val order = executionContext.stopOrderBooksHolder.pollStopOrderToExecute(assetPairId,
-                bestBidPrice,
-                bestAskPrice,
-                executionContext.date)
+        val order = executionContext.stopOrderBooksHolder.pollStopOrderToExecute(
+            assetPairId,
+            bestBidPrice,
+            bestAskPrice,
+            executionContext.date
+        )
         if (order != null) {
-            executionContext.info("Process stop order ${order.externalId}, client ${order.clientId}, asset pair $assetPairId" +
-                    " (bestBidPrice=$bestBidPrice, bestAskPrice=$bestAskPrice) due to message ${executionContext.messageId}")
+            executionContext.info(
+                "Process stop order ${order.externalId}, client ${order.clientId}, asset pair $assetPairId" +
+                        " (bestBidPrice=$bestBidPrice, bestAskPrice=$bestAskPrice) due to message ${executionContext.messageId}"
+            )
         }
         return order
     }
@@ -72,10 +78,12 @@ class StopOrderBookProcessor(private val limitOrderProcessor: LimitOrderProcesso
         }
         val assetPair = executionContext.assetPairsById[order.assetPairId]!!
         val limitAssetId = if (order.isBuySide()) assetPair.quotingAssetId else assetPair.baseAssetId
-        val walletOperation = WalletOperation(order.clientId,
-                limitAssetId,
-                BigDecimal.ZERO,
-                -reservedVolume)
+        val walletOperation = WalletOperation(
+            order.brokerId, order.accountId, order.clientId,
+            limitAssetId,
+            BigDecimal.ZERO,
+            -reservedVolume
+        )
         executionContext.walletOperationsProcessor.preProcess(listOf(walletOperation), true)
     }
 

@@ -4,9 +4,10 @@ import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.daos.AssetPair
-import com.lykke.matching.engine.daos.VolumePrice
+import com.lykke.matching.engine.daos.IncomingLimitOrder
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
-import com.lykke.matching.engine.database.*
+import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
+import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
 import com.lykke.matching.engine.utils.MessageBuilder
@@ -23,7 +24,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
-import java.math.BigDecimal
 import kotlin.test.assertEquals
 
 @RunWith(SpringRunner::class)
@@ -35,19 +35,20 @@ class NegativePriceTest : AbstractTest() {
     private lateinit var testSettingsDatabaseAccessor: TestSettingsDatabaseAccessor
 
     @TestConfiguration
-    open class Config {
+    class Config {
         @Bean
         @Primary
-        open fun testBackOfficeDatabaseAccessor(): TestBackOfficeDatabaseAccessor {
-            val testBackOfficeDatabaseAccessor = TestBackOfficeDatabaseAccessor()
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
+            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
 
-            testBackOfficeDatabaseAccessor.addAsset(Asset("USD", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("EUR", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
 
-            return testBackOfficeDatabaseAccessor
+            return testDictionariesDatabaseAccessor
         }
     }
 
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired
     private lateinit var testConfigDatabaseAccessor: TestSettingsDatabaseAccessor
 
@@ -59,14 +60,23 @@ class NegativePriceTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client", "USD", 1.0)
         testBalanceHolderWrapper.updateReservedBalance("Client", "USD", 0.0)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
 
         initServices()
     }
 
     @Test
     fun testLimitOrder() {
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client", assetId = "EURUSD", price = -1.0, volume = 1.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client",
+                    assetId = "EURUSD",
+                    price = -1.0,
+                    volume = 1.0
+                )
+            )
+        )
 
         assertEquals(1, testClientLimitOrderListener.getCount())
         val result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
@@ -81,15 +91,16 @@ class NegativePriceTest : AbstractTest() {
 
         initServices()
 
-        multiLimitOrderService.processMessage(buildMultiLimitOrderWrapper("EURUSD",
+        multiLimitOrderService.processMessage(
+            buildMultiLimitOrderWrapper(
+                "EURUSD",
                 "Client",
                 listOf(
-                        VolumePrice(BigDecimal.valueOf(1.0), BigDecimal.valueOf(1.0)),
-                        VolumePrice(BigDecimal.valueOf(1.0), BigDecimal.valueOf(-1.0))
-                ),
-                emptyList(),
-                emptyList(),
-                listOf("order1", "order2")))
+                    IncomingLimitOrder(1.0, 1.0, "order1"),
+                    IncomingLimitOrder(1.0, -1.0, "order2")
+                )
+            )
+        )
 
         assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
         val result = testTrustedClientsLimitOrderListener.getQueue().poll() as LimitOrdersReport

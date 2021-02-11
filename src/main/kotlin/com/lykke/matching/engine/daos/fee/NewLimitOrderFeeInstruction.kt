@@ -2,31 +2,32 @@ package com.lykke.matching.engine.daos.fee
 
 import com.lykke.matching.engine.daos.FeeSizeType
 import com.lykke.matching.engine.daos.FeeType
-import com.lykke.matching.engine.messages.ProtocolMessages
+import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
 import org.nustaq.serialization.annotations.Version
+import java.math.BigDecimal
 
 class NewLimitOrderFeeInstruction(
         type: FeeType,
         takerSizeType: FeeSizeType?,
-        takerSize: Double?,
+        takerSize: BigDecimal?,
         val makerSizeType: FeeSizeType?,
-        val makerSize: Double?,
+        val makerSize: BigDecimal?,
         sourceClientId: String?,
         targetClientId: String?,
         assetIds: List<String>,
         @Version(1)
-        val makerFeeModificator: Double?
+        val makerFeeModificator: BigDecimal?
 ) : NewFeeInstruction(type, takerSizeType, takerSize, sourceClientId, targetClientId, assetIds) {
 
     companion object {
-        fun create(fees: List<ProtocolMessages.LimitOrderFee>): List<NewLimitOrderFeeInstruction> {
+        fun create(fees: List<GrpcIncomingMessages.LimitOrderFee>): List<NewLimitOrderFeeInstruction> {
             return fees.map { create(it) }
         }
 
-        fun create(fee: ProtocolMessages.LimitOrderFee): NewLimitOrderFeeInstruction {
+        fun create(fee: GrpcIncomingMessages.LimitOrderFee): NewLimitOrderFeeInstruction {
             val feeType = FeeType.getByExternalId(fee.type)
-            var takerSizeType: FeeSizeType? = if (fee.hasTakerSize()) FeeSizeType.getByExternalId(fee.takerSizeType) else null
-            var makerSizeType: FeeSizeType? = if (fee.hasMakerSizeType()) FeeSizeType.getByExternalId(fee.makerSizeType) else null
+            var takerSizeType: FeeSizeType? = if (fee.takerSizeType != null) FeeSizeType.getByExternalId(fee.takerSizeType) else null
+            var makerSizeType: FeeSizeType? = if (fee.makerSizeType != null) FeeSizeType.getByExternalId(fee.makerSizeType) else null
             if (feeType != FeeType.NO_FEE) {
                 if (takerSizeType == null) {
                     takerSizeType = FeeSizeType.PERCENTAGE
@@ -38,13 +39,13 @@ class NewLimitOrderFeeInstruction(
             return NewLimitOrderFeeInstruction(
                     feeType,
                     takerSizeType,
-                    if (fee.hasTakerSize()) fee.takerSize else null,
+                    if (fee.hasTakerSize()) BigDecimal(fee.takerSize.value) else null,
                     makerSizeType,
-                    if (fee.hasMakerSize()) fee.makerSize else null,
-                    if (fee.hasSourceClientId()) fee.sourceClientId else null,
-                    if (fee.hasTargetClientId()) fee.targetClientId else null,
+                    if (fee.hasMakerSize()) BigDecimal(fee.makerSize.value) else null,
+                    if (fee.hasSourceWalletId()) fee.sourceWalletId.value else null,
+                    if (fee.hasTargetWalletId()) fee.targetWalletId.value else null,
                     fee.assetIdList.toList(),
-                    if (fee.hasMakerFeeModificator() && fee.makerFeeModificator != 0.0) fee.makerFeeModificator else null)
+                    if (fee.hasMakerFeeModificator()) BigDecimal(fee.makerFeeModificator.value) else null)
         }
     }
 
@@ -56,8 +57,8 @@ class NewLimitOrderFeeInstruction(
                 (if (makerSize != null) ", makerSize=$makerSize" else "") +
                 (if (makerFeeModificator != null) ", makerFeeModificator=$makerFeeModificator" else "") +
                 (if (assetIds.isNotEmpty() == true) ", assetIds=$assetIds" else "") +
-                (if (sourceClientId?.isNotEmpty() == true) ", sourceClientId=$sourceClientId" else "") +
-                "${if (targetClientId?.isNotEmpty() == true) ", targetClientId=$targetClientId" else ""})"
+                (if (sourceWalletId?.isNotEmpty() == true) ", sourceWalletId=$sourceWalletId" else "") +
+                "${if (targetWalletId?.isNotEmpty() == true) ", targetWalletId=$targetWalletId" else ""})"
     }
 
 }

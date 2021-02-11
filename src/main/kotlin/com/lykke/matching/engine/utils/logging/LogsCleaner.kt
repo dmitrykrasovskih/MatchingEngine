@@ -22,11 +22,11 @@ open class LogsCleaner {
     @PostConstruct
     fun startLogsCleaner() {
         try {
-            val logFilesCleanerConfig = config.me.logFilesCleaner
+            val logFilesCleanerConfig = config.matchingEngine.logFilesCleaner
             val logFilesCleanerConfigWithDefaults = LogFilesCleanerConfig(logFilesCleanerConfig.enabled,
                     logFilesCleanerConfig.directory,
                     logFilesCleanerConfig.period,
-                    logFilesCleanerConfig.connectionString ?: config.me.db.messageLogConnString,
+                    logFilesCleanerConfig.connectionString ?: config.matchingEngine.db.messageLogConnString,
                     logFilesCleanerConfig.blobContainerName,
                     logFilesCleanerConfig.uploadDaysThreshold,
                     logFilesCleanerConfig.archiveDaysThreshold)

@@ -14,10 +14,10 @@ import com.lykke.matching.engine.order.utils.TestOrderBookWrapper
 import com.lykke.matching.engine.outgoing.messages.CashOperation
 import com.lykke.matching.engine.outgoing.messages.CashTransferOperation
 import com.lykke.matching.engine.outgoing.messages.v2.events.Event
+import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.outgoing.messages.v2.events.common.BalanceUpdate
 import com.lykke.matching.engine.services.*
 import com.lykke.matching.engine.utils.NumberUtils
-import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.utils.assertEquals
 import com.lykke.matching.engine.utils.order.MinVolumeOrderCanceller
 import org.junit.After
@@ -43,9 +43,6 @@ abstract class AbstractTest {
 
     protected lateinit var testWalletDatabaseAccessor: TestWalletDatabaseAccessor
     protected lateinit var stopOrderDatabaseAccessor: TestStopOrderBookDatabaseAccessor
-
-    @Autowired
-    protected lateinit var testBackOfficeDatabaseAccessor: TestBackOfficeDatabaseAccessor
 
     @Autowired
     private lateinit var assetsCache: AssetsCache
@@ -133,7 +130,7 @@ abstract class AbstractTest {
 
     @Autowired
     @Qualifier("rabbitCashInOutQueue")
-    protected lateinit var cashInOutQueue:  BlockingQueue<CashOperation>
+    protected lateinit var cashInOutQueue: BlockingQueue<CashOperation>
 
     @Autowired
     protected lateinit var limitOrderMassCancelService: LimitOrderMassCancelService
@@ -146,7 +143,8 @@ abstract class AbstractTest {
 
     protected open fun initServices() {
         testWalletDatabaseAccessor = balancesDatabaseAccessorsHolder.primaryAccessor as TestWalletDatabaseAccessor
-        stopOrderDatabaseAccessor = stopOrdersDatabaseAccessorsHolder.primaryAccessor as TestStopOrderBookDatabaseAccessor
+        stopOrderDatabaseAccessor =
+            stopOrdersDatabaseAccessorsHolder.primaryAccessor as TestStopOrderBookDatabaseAccessor
         clearMessageQueues()
         assetsCache.update()
         assetPairsCache.update()
@@ -177,7 +175,9 @@ abstract class AbstractTest {
 
         // check cache orders map size
         val allClientIds = testWalletDatabaseAccessor.loadWallets().keys
-        assertEquals(size, allClientIds.sumBy { genericLimitOrderService.searchOrders(it, assetPairId, isBuySide).size })
+        assertEquals(
+            size,
+            allClientIds.sumBy { genericLimitOrderService.searchOrders(it, assetPairId, isBuySide).size })
     }
 
     protected fun assertStopOrderBookSize(assetPairId: String, isBuySide: Boolean, size: Int) {
@@ -186,7 +186,9 @@ abstract class AbstractTest {
 
         // check cache orders map size
         val allClientIds = testWalletDatabaseAccessor.loadWallets().keys
-        assertEquals(size, allClientIds.sumBy { genericStopLimitOrderService.searchOrders(it, assetPairId, isBuySide).size })
+        assertEquals(
+            size,
+            allClientIds.sumBy { genericStopLimitOrderService.searchOrders(it, assetPairId, isBuySide).size })
     }
 
     protected fun assertBalance(clientId: String, assetId: String, balance: Double? = null, reserved: Double? = null) {
@@ -195,7 +197,7 @@ abstract class AbstractTest {
             assertEquals(BigDecimal.valueOf(balance), testWalletDatabaseAccessor.getBalance(clientId, assetId))
         }
         if (reserved != null) {
-            assertEquals(BigDecimal.valueOf(reserved), balancesHolder.getReservedBalance(clientId, assetId))
+            assertEquals(BigDecimal.valueOf(reserved), balancesHolder.getReservedBalance("", "", clientId, assetId))
             assertEquals(BigDecimal.valueOf(reserved), testWalletDatabaseAccessor.getReservedBalance(clientId, assetId))
         }
     }
@@ -237,10 +239,10 @@ abstract class AbstractTest {
         val ordersMap1 = orders1.groupBy { it.id }.mapValues { it.value.first() }
         val ordersMap2 = orders2.groupBy { it.id }.mapValues { it.value.first() }
         assertEquals(ordersMap1.size, ordersMap2.size)
-        ordersMap1.forEach { id, order1 ->
+        for ((id, order1) in ordersMap1) {
             val order2 = ordersMap2[id]
             assertNotNull(order2)
-            assertEqualsOrders(order1, order2!!)
+            assertEqualsOrders(order1, order2)
         }
     }
 
@@ -291,13 +293,15 @@ abstract class AbstractTest {
         assertEquals(balance1.reserved.toDouble(), balance2.reserved.toDouble())
     }
 
-    protected fun assertEventBalanceUpdate(clientId: String,
-                                           assetId: String,
-                                           oldBalance: String?,
-                                           newBalance: String?,
-                                           oldReserved: String?,
-                                           newReserved: String?,
-                                           balanceUpdates: Collection<BalanceUpdate>) {
+    protected fun assertEventBalanceUpdate(
+        clientId: String,
+        assetId: String,
+        oldBalance: String?,
+        newBalance: String?,
+        oldReserved: String?,
+        newReserved: String?,
+        balanceUpdates: Collection<BalanceUpdate>
+    ) {
         val balanceUpdate = balanceUpdates.single { it.walletId == clientId && it.assetId == assetId }
         assertEquals(oldBalance, balanceUpdate.oldBalance)
         assertEquals(newBalance, balanceUpdate.newBalance)

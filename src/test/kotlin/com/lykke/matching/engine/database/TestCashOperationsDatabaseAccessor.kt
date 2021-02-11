@@ -2,9 +2,9 @@ package com.lykke.matching.engine.database
 
 import com.lykke.matching.engine.daos.SwapOperation
 import com.lykke.matching.engine.daos.TransferOperation
-import java.util.LinkedList
+import java.util.*
 
-class TestCashOperationsDatabaseAccessor: CashOperationsDatabaseAccessor {
+class TestCashOperationsDatabaseAccessor : CashOperationsDatabaseAccessor {
 
     private val transferOperations = LinkedList<TransferOperation>()
     private val swapOperations = LinkedList<SwapOperation>()

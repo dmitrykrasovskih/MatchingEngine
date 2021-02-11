@@ -20,7 +20,7 @@ class PerformanceStatsLoggerStarter @Autowired constructor(private val performan
         taskScheduler.scheduleAtFixedRate({
             Thread.currentThread().name = "PerformanceStatsLogger"
             performanceStatsLogger.logStats(performanceStatsHolder.getStatsAndReset().values)
-        }, ZonedDateTime.now().toInstant().plusMillis(config.me.performanceStatsInterval),
-                Duration.ofMillis(config.me.performanceStatsInterval))
+        }, ZonedDateTime.now().toInstant().plusMillis(config.matchingEngine.performanceStatsInterval),
+                Duration.ofMillis(config.matchingEngine.performanceStatsInterval))
     }
 }

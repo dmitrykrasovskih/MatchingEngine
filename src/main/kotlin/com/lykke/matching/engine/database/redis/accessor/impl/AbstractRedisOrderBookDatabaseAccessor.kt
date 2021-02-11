@@ -25,7 +25,7 @@ abstract class AbstractRedisOrderBookDatabaseAccessor(private val redisConnectio
         redisConnection.resource { jedis ->
 
 
-            if (jedis.db != db.toLong()) {
+            if (jedis.db != db) {
                 jedis.select(db)
             }
             val keys = jedis.keys("$keyPrefix*").toList()

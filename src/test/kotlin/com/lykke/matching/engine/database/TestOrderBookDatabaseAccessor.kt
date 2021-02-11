@@ -1,9 +1,9 @@
 package com.lykke.matching.engine.database
 
 import com.lykke.matching.engine.daos.LimitOrder
-import java.lang.Exception
 
-class TestOrderBookDatabaseAccessor(private val secondaryDbAccessor: TestFileOrderDatabaseAccessor): OrderBookDatabaseAccessor {
+class TestOrderBookDatabaseAccessor(private val secondaryDbAccessor: TestFileOrderDatabaseAccessor) :
+    OrderBookDatabaseAccessor {
 
     private val orders = HashMap<String, LimitOrder>()
 

@@ -9,9 +9,7 @@ import com.lykke.matching.engine.daos.FeeType
 import com.lykke.matching.engine.daos.fee.v2.NewLimitOrderFeeInstruction
 import com.lykke.matching.engine.daos.order.OrderTimeInForce
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
-import com.lykke.matching.engine.daos.v2.LimitOrderFeeInstruction
-import com.lykke.matching.engine.database.BackOfficeDatabaseAccessor
-import com.lykke.matching.engine.database.TestBackOfficeDatabaseAccessor
+import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
 import com.lykke.matching.engine.order.ExpiryOrdersQueue
 import com.lykke.matching.engine.order.OrderStatus
@@ -24,7 +22,7 @@ import com.lykke.matching.engine.outgoing.messages.v2.enums.TradeRole
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
-import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrderFeeInstruction
+import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrderFeeInstructions
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrderWrapper
 import com.lykke.matching.engine.utils.NumberUtils
@@ -41,8 +39,10 @@ import org.springframework.context.annotation.Primary
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
-import java.util.Date
-import kotlin.test.*
+import java.util.*
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderStatus as OutgoingOrderStatus
 
 @RunWith(SpringRunner::class)
@@ -50,23 +50,23 @@ import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderStatus as Outgo
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class LimitOrderServiceTest : AbstractTest() {
     @TestConfiguration
-    open class Config {
+    class Config {
         @Bean
         @Primary
-        open fun testBackOfficeDatabaseAccessor(): BackOfficeDatabaseAccessor {
-            val testBackOfficeDatabaseAccessor = TestBackOfficeDatabaseAccessor()
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
+            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
 
-            testBackOfficeDatabaseAccessor.addAsset(Asset("USD", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("EUR", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("ETH", 6))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("BTC", 8))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "ETH", 6))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 8))
 
-            return testBackOfficeDatabaseAccessor
+            return testDictionariesDatabaseAccessor
         }
 
         @Bean
         @Primary
-        open fun testConfig(): TestSettingsDatabaseAccessor {
+        fun testConfig(): TestSettingsDatabaseAccessor {
             val testSettingsDatabaseAccessor = TestSettingsDatabaseAccessor()
             testSettingsDatabaseAccessor.createOrUpdateSetting(AvailableSettingGroup.TRUSTED_CLIENTS, getSetting("Client3"))
             return testSettingsDatabaseAccessor
@@ -86,11 +86,11 @@ class LimitOrderServiceTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client2", "EUR", 1000.0)
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 1000.0)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURUSD", "EUR", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURCHF", "EUR", "CHF", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCEUR", "BTC", "EUR", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCUSD", "BTC", "USD", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("ETHBTC", "ETH", "BTC", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURCHF", "EUR", "CHF", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCEUR", "BTC", "EUR", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "ETHBTC", "ETH", "BTC", 5))
 
         initServices()
     }
@@ -295,9 +295,9 @@ class LimitOrderServiceTest : AbstractTest() {
 
     @Test
     fun testSmallVolume() {
-        testBackOfficeDatabaseAccessor.addAsset(Asset("USD", 2))
-        testBackOfficeDatabaseAccessor.addAsset(Asset("EUR", 2))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURUSD", "EUR", "USD", 5,
+        testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
+        testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5,
                 BigDecimal.valueOf(0.1), BigDecimal.valueOf(0.2)))
 
         initServices()
@@ -1022,7 +1022,7 @@ class LimitOrderServiceTest : AbstractTest() {
 
         initServices()
 
-        marketOrderService.processMessage(MessageBuilder.buildMarketOrderWrapper(MessageBuilder.buildMarketOrder(volume = 10.0)))
+        marketOrderService.processMessage(buildMarketOrderWrapper(MessageBuilder.buildMarketOrder(volume = 10.0)))
 
         assertEquals(1, rabbitSwapListener.getCount())
         var marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
@@ -1044,7 +1044,7 @@ class LimitOrderServiceTest : AbstractTest() {
 
         clearMessageQueues()
 
-        marketOrderService.processMessage(MessageBuilder.buildMarketOrderWrapper(MessageBuilder.buildMarketOrder(volume = 10.0)))
+        marketOrderService.processMessage(buildMarketOrderWrapper(MessageBuilder.buildMarketOrder(volume = 10.0)))
 
         assertEquals(1, rabbitSwapListener.getCount())
         marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
@@ -1090,7 +1090,7 @@ class LimitOrderServiceTest : AbstractTest() {
         assertEquals(OutgoingOrderStatus.MATCHED, event.orders[1].status)
 
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
-        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("Client1", "USD"))
+        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client1", "USD"))
         assertEquals(0, genericLimitOrderService.getOrderBook("BTCUSD").getOrderBook(true).size)
         assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
     }
@@ -1109,7 +1109,7 @@ class LimitOrderServiceTest : AbstractTest() {
 
         initServices()
 
-        assertEquals(BigDecimal.valueOf(29.99), balancesHolder.getReservedBalance("Client1", "BTC"))
+        assertEquals(BigDecimal.valueOf(29.99), balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
 
         singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = 30.0, price = 6110.0)))
 
@@ -1134,7 +1134,7 @@ class LimitOrderServiceTest : AbstractTest() {
         assertEquals("-0.09", event.orders[3].remainingVolume)
 
         assertEquals(BigDecimal.valueOf(70.01), balancesHolder.getBalance("Client1", "BTC"))
-        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("Client1", "BTC"))
+        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
     }
 
     @Test
@@ -1171,7 +1171,7 @@ class LimitOrderServiceTest : AbstractTest() {
         assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
         val balanceUpdate = balanceUpdateHandlerTest.balanceUpdateQueue.poll() as BalanceUpdate
 
-        val filteredBalances = balanceUpdate.balances.filter { it.id == "Client1" }
+        val filteredBalances = balanceUpdate.balances.filter { it.walletId == "Client1" }
         assertEquals(1, filteredBalances.size)
         val refund = filteredBalances.first()
         assertEquals(BigDecimal.ZERO, refund.newReserved)
@@ -1217,7 +1217,7 @@ class LimitOrderServiceTest : AbstractTest() {
         assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
         val balanceUpdate = balanceUpdateHandlerTest.balanceUpdateQueue.poll() as BalanceUpdate
 
-        val filteredBalances = balanceUpdate.balances.filter { it.id == "Client1" }
+        val filteredBalances = balanceUpdate.balances.filter { it.walletId == "Client1" }
         assertEquals(0, filteredBalances.size)
 
         assertEquals(1, clientsEventsQueue.size)
@@ -1276,13 +1276,13 @@ class LimitOrderServiceTest : AbstractTest() {
         initServices()
 
         singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(assetId = "BTCUSD", price = 5000.0, volume = 0.01, clientId = "Client1",
-                fee = LimitOrderFeeInstruction(FeeType.CLIENT_FEE, FeeSizeType.PERCENTAGE, BigDecimal.valueOf(0.01), FeeSizeType.PERCENTAGE, BigDecimal.valueOf(0.01), null, "targetFeeClient"))))
+                fees = listOf(NewLimitOrderFeeInstruction(FeeType.CLIENT_FEE, FeeSizeType.PERCENTAGE, BigDecimal.valueOf(0.01), FeeSizeType.PERCENTAGE, BigDecimal.valueOf(0.01), null, "targetFeeClient", emptyList(), null)))))
         singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(assetId = "BTCUSD", price = 4999.0, volume = 0.01, clientId = "Client3",
-                fee = LimitOrderFeeInstruction(FeeType.CLIENT_FEE, FeeSizeType.PERCENTAGE, BigDecimal.valueOf(0.01), FeeSizeType.PERCENTAGE, BigDecimal.valueOf(0.01), null, "targetFeeClient"))))
+                fees = listOf(NewLimitOrderFeeInstruction(FeeType.CLIENT_FEE, FeeSizeType.PERCENTAGE, BigDecimal.valueOf(0.01), FeeSizeType.PERCENTAGE, BigDecimal.valueOf(0.01), null, "targetFeeClient", emptyList(), null)))))
 
         clearMessageQueues()
         singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", price = 4998.0, volume = -0.01000199,
-                fee = LimitOrderFeeInstruction(FeeType.CLIENT_FEE, FeeSizeType.PERCENTAGE, BigDecimal.valueOf(0.01), FeeSizeType.PERCENTAGE, BigDecimal.valueOf(0.01), null, "targetFeeClient"))))
+                fees = listOf(NewLimitOrderFeeInstruction(FeeType.CLIENT_FEE, FeeSizeType.PERCENTAGE, BigDecimal.valueOf(0.01), FeeSizeType.PERCENTAGE, BigDecimal.valueOf(0.01), null, "targetFeeClient", emptyList(), null)))))
         val result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
 
         assertEquals(2, result.orders.size)
@@ -1447,7 +1447,7 @@ class LimitOrderServiceTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client1", "BTC", 0.02)
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 50.01)
 
-        testBackOfficeDatabaseAccessor.addAsset(Asset("BTC", 5))
+        testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 5))
 
         initServices()
 
@@ -1477,8 +1477,8 @@ class LimitOrderServiceTest : AbstractTest() {
 
     @Test
     fun testOverflowedRemainingVolume() {
-        testBackOfficeDatabaseAccessor.addAsset(Asset("PKT", 12))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("PKTETH", "PKT", "ETH", 5))
+        testDictionariesDatabaseAccessor.addAsset(Asset("", "PKT", 12))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "PKTETH", "PKT", "ETH", 5))
         testBalanceHolderWrapper.updateBalance("Client1", "ETH", 1.0)
         testBalanceHolderWrapper.updateBalance("Client2", "PKT", 3.0)
 
@@ -1532,10 +1532,10 @@ class LimitOrderServiceTest : AbstractTest() {
 
     @Test
     fun testLimitOrderSellFullBalance() {
-        testBackOfficeDatabaseAccessor.addAsset(Asset("LKK1Y", 2))
-        testBackOfficeDatabaseAccessor.addAsset(Asset("LKK", 2))
+        testDictionariesDatabaseAccessor.addAsset(Asset("", "LKK1Y", 2))
+        testDictionariesDatabaseAccessor.addAsset(Asset("", "LKK", 2))
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("LKK1YLKK", "LKK1Y", "LKK", 4))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "LKK1YLKK", "LKK1Y", "LKK", 4))
 
         testBalanceHolderWrapper.updateBalance("Client1", "LKK1Y", 5495.03)
         testBalanceHolderWrapper.updateBalance("Client2", "LKK", 10000.0)
@@ -1551,7 +1551,7 @@ class LimitOrderServiceTest : AbstractTest() {
                         assetId = "LKK1YLKK",
                         volume = -5495.03,
                         price = 1.0082,
-                        fee = buildLimitOrderFeeInstruction(takerSize = 0.0009, targetClientId = "Client5")
+                        fees = buildLimitOrderFeeInstructions(takerSize = 0.0009, targetClientId = "Client5")
                 )
         ))
 
@@ -1629,7 +1629,7 @@ class LimitOrderServiceTest : AbstractTest() {
     @Test
     fun testOrderMaxValue() {
         testBalanceHolderWrapper.updateBalance("Client1", "BTC", 1.1)
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCUSD", "BTC", "USD", 8,
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8,
                 maxValue = BigDecimal.valueOf(10000.0)))
         assetPairsCache.update()
 
@@ -1648,7 +1648,7 @@ class LimitOrderServiceTest : AbstractTest() {
     @Test
     fun testOrderMaxVolume() {
         testBalanceHolderWrapper.updateBalance("Client1", "BTC", 1.1)
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCUSD", "BTC", "USD", 8,
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8,
                 maxVolume = BigDecimal.valueOf(1.0)))
         assetPairsCache.update()
 

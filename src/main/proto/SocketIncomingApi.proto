@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.myjetwallet.messages.incoming.socket";
+option java_outer_classname = "SocketIncomingApi";
+option objc_class_prefix = "API";
+
+package com.myjetwallet.messages.incoming.socket;
+
+import "SocketIncomingMessages.proto";
+
+service OrderCancelService {
+    rpc MultiLimitOrderCancel(com.myjetwallet.messages.incoming.socket.MultiLimitOrderCancel) returns (com.myjetwallet.messages.incoming.socket.Response) {}
+    rpc MassCancelLimitOrder(com.myjetwallet.messages.incoming.socket.LimitOrderMassCancel) returns (com.myjetwallet.messages.incoming.socket.Response) {}
+}

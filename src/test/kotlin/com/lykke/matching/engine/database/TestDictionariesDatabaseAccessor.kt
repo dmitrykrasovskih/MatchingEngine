@@ -1,7 +1,8 @@
 package com.lykke.matching.engine.database
 
+import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.daos.AssetPair
-import java.util.HashMap
+import java.util.*
 
 class TestDictionariesDatabaseAccessor : DictionariesDatabaseAccessor {
 
@@ -11,15 +12,30 @@ class TestDictionariesDatabaseAccessor : DictionariesDatabaseAccessor {
         return assetPairs
     }
 
-    override fun loadAssetPair(assetId: String, throwException: Boolean): AssetPair? {
-        return assetPairs[assetId]
+    override fun loadAssetPair(assetPairId: String): AssetPair? {
+        return assetPairs[assetPairId]
     }
 
     fun addAssetPair(pair: AssetPair) {
-        assetPairs[pair.assetPairId] = pair
+        assetPairs[pair.symbol] = pair
     }
 
     fun clear() {
+        assets.clear()
         assetPairs.clear()
+    }
+
+    val assets = HashMap<String, Asset>()
+
+    fun addAsset(asset: Asset) {
+        assets[asset.symbol] = asset
+    }
+
+    override fun loadAsset(assetId: String): Asset? {
+        return assets[assetId]
+    }
+
+    override fun loadAssets(): MutableMap<String, Asset> {
+        return HashMap()
     }
 }

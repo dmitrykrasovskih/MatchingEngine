@@ -1,7 +1,7 @@
 package com.lykke.matching.engine.database
 
 import com.lykke.matching.engine.daos.LkkTrade
-import java.util.ArrayList
+import java.util.*
 
 class TestMarketOrderDatabaseAccessor : MarketOrderDatabaseAccessor {
 

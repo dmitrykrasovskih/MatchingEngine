@@ -1,12 +1,10 @@
 package com.lykke.matching.engine.utils.config
 
-import com.google.gson.annotations.SerializedName
 import com.lykke.utils.logging.config.SlackNotificationConfig
 import com.lykke.utils.logging.config.ThrottlingLoggerConfig
 
 data class Config(
-    @SerializedName("MatchingEngine")
-    val me: MatchingEngineConfig,
+    val matchingEngine: MatchingEngineConfig,
     val slackNotifications: SlackNotificationConfig,
     val throttlingLogger: ThrottlingLoggerConfig
 )

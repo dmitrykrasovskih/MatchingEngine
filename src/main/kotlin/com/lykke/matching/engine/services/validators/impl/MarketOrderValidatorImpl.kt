@@ -28,12 +28,11 @@ class MarketOrderValidatorImpl
         private val LOGGER = Logger.getLogger(MarketOrderValidatorImpl::class.java.name)
     }
 
-    override fun performValidation(order: MarketOrder, orderBook: PriorityBlockingQueue<LimitOrder>,
-                                   feeInstruction: FeeInstruction?, feeInstructions: List<NewFeeInstruction>?) {
+    override fun performValidation(order: MarketOrder, orderBook: PriorityBlockingQueue<LimitOrder>, feeInstructions: List<NewFeeInstruction>?) {
         isAssetKnown(order)
         isAssetEnabled(order)
         isVolumeValid(order)
-        isFeeValid(feeInstruction, feeInstructions, order)
+        isFeeValid(feeInstructions, order)
         isOrderBookValid(order, orderBook)
         isVolumeAccuracyValid(order)
         isPriceAccuracyValid(order)
@@ -46,9 +45,9 @@ class MarketOrderValidatorImpl
         }
     }
 
-    private fun isFeeValid(feeInstruction: FeeInstruction?, feeInstructions: List<NewFeeInstruction>?, order: MarketOrder) {
+    private fun isFeeValid(feeInstructions: List<NewFeeInstruction>?, order: MarketOrder) {
 
-        if (!checkFee(feeInstruction, feeInstructions)) {
+        if (!checkFee(feeInstructions)) {
             LOGGER.error("Invalid fee (order id: ${order.id}, order externalId: ${order.externalId})")
             throw OrderValidationException(OrderStatus.InvalidFee)
         }

@@ -3,10 +3,10 @@ package com.lykke.matching.engine.services.validators.input.impl
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.LimitOrder
-import com.lykke.matching.engine.daos.context.SingleLimitOrderContext
 import com.lykke.matching.engine.fee.checkFee
 import com.lykke.matching.engine.holders.ApplicationSettingsHolder
 import com.lykke.matching.engine.incoming.parsers.data.SingleLimitOrderParsedData
+import com.lykke.matching.engine.messages.wrappers.SingleLimitOrderMessageWrapper
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.order.process.context.StopLimitOrderContext
 import com.lykke.matching.engine.services.validators.common.OrderValidationUtils
@@ -17,22 +17,27 @@ import org.springframework.stereotype.Component
 import java.math.BigDecimal
 
 @Component
-class LimitOrderInputValidatorImpl(val applicationSettingsHolder: ApplicationSettingsHolder) : LimitOrderInputValidator {
+class LimitOrderInputValidatorImpl(val applicationSettingsHolder: ApplicationSettingsHolder) :
+    LimitOrderInputValidator {
     override fun validateLimitOrder(singleLimitOrderParsedData: SingleLimitOrderParsedData) {
-        val singleLimitContext = singleLimitOrderParsedData.messageWrapper.context as SingleLimitOrderContext
+        val singleLimitContext = (singleLimitOrderParsedData.messageWrapper as SingleLimitOrderMessageWrapper).context!!
 
-        validateLimitOrder(singleLimitContext.isTrustedClient,
-                singleLimitContext.limitOrder,
-                singleLimitContext.assetPair,
-                singleLimitOrderParsedData.inputAssetPairId,
-                singleLimitContext.baseAsset)
+        validateLimitOrder(
+            singleLimitContext.isTrustedClient,
+            singleLimitContext.limitOrder,
+            singleLimitContext.assetPair,
+            singleLimitOrderParsedData.inputAssetPairId,
+            singleLimitContext.baseAsset
+        )
     }
 
-    override fun validateLimitOrder(isTrustedClient: Boolean,
-                                    order: LimitOrder,
-                                    assetPair: AssetPair?,
-                                    assetPairId: String,
-                                    baseAsset: Asset?) {
+    override fun validateLimitOrder(
+        isTrustedClient: Boolean,
+        order: LimitOrder,
+        assetPair: AssetPair?,
+        assetPairId: String,
+        baseAsset: Asset?
+    ) {
         if (!isTrustedClient) {
             validateFee(order)
         }
@@ -47,28 +52,34 @@ class LimitOrderInputValidatorImpl(val applicationSettingsHolder: ApplicationSet
     }
 
     override fun validateStopOrder(singleLimitOrderParsedData: SingleLimitOrderParsedData) {
-        val singleLimitContext = singleLimitOrderParsedData.messageWrapper.context as SingleLimitOrderContext
+        val singleLimitContext = (singleLimitOrderParsedData.messageWrapper as SingleLimitOrderMessageWrapper).context!!
         val limitOrder = singleLimitContext.limitOrder
         val assetPair = singleLimitContext.assetPair
-        validateStopOrder(limitOrder,
-                assetPair,
-                singleLimitOrderParsedData.inputAssetPairId,
-                singleLimitContext.baseAsset)
+        validateStopOrder(
+            limitOrder,
+            assetPair,
+            singleLimitOrderParsedData.inputAssetPairId,
+            singleLimitContext.baseAsset
+        )
     }
 
     override fun validateStopOrder(stopLimitOrderContext: StopLimitOrderContext) {
         val assetPair = stopLimitOrderContext.executionContext.assetPairsById[stopLimitOrderContext.order.assetPairId]
         val baseAsset = assetPair?.let { stopLimitOrderContext.executionContext.assetsById[assetPair.baseAssetId] }
-        validateStopOrder(stopLimitOrderContext.order,
-                assetPair,
-                stopLimitOrderContext.order.assetPairId,
-                baseAsset)
+        validateStopOrder(
+            stopLimitOrderContext.order,
+            assetPair,
+            stopLimitOrderContext.order.assetPairId,
+            baseAsset
+        )
     }
 
-    private fun validateStopOrder(limitOrder: LimitOrder,
-                                  assetPair: AssetPair?,
-                                  assetPairId: String,
-                                  baseAsset: Asset?) {
+    private fun validateStopOrder(
+        limitOrder: LimitOrder,
+        assetPair: AssetPair?,
+        assetPairId: String,
+        baseAsset: Asset?
+    ) {
         validateAsset(assetPair, assetPairId)
         validateFee(limitOrder)
         validateLimitPrices(limitOrder)
@@ -83,13 +94,16 @@ class LimitOrderInputValidatorImpl(val applicationSettingsHolder: ApplicationSet
             throw OrderValidationException(OrderStatus.UnknownAsset, "Unable to find asset pair $assetPairId")
         }
 
-        if (applicationSettingsHolder.isAssetDisabled(assetPair.baseAssetId) || applicationSettingsHolder.isAssetDisabled(assetPair.quotingAssetId)) {
+        if (applicationSettingsHolder.isAssetDisabled(assetPair.baseAssetId) || applicationSettingsHolder.isAssetDisabled(
+                assetPair.quotingAssetId
+            )
+        ) {
             throw OrderValidationException(OrderStatus.DisabledAsset, "disabled asset")
         }
     }
 
     private fun validateFee(order: LimitOrder) {
-        if (order.fee != null && order.fees?.size ?: 0 > 1 || !checkFee(null, order.fees)) {
+        if (!checkFee(order.fees)) {
             throw OrderValidationException(OrderStatus.InvalidFee, "has invalid fee")
         }
     }
@@ -102,11 +116,12 @@ class LimitOrderInputValidatorImpl(val applicationSettingsHolder: ApplicationSet
 
     private fun validateLimitPrices(order: LimitOrder) {
         if ((order.lowerLimitPrice == null && order.lowerPrice == null && order.upperLimitPrice == null && order.upperPrice == null) ||
-                ((order.lowerLimitPrice == null).xor(order.lowerPrice == null)) ||
-                ((order.upperLimitPrice == null).xor(order.upperPrice == null)) ||
-                (order.lowerLimitPrice != null && (order.lowerLimitPrice <= BigDecimal.ZERO || order.lowerPrice!! <= BigDecimal.ZERO)) ||
-                (order.upperLimitPrice != null && (order.upperLimitPrice <= BigDecimal.ZERO || order.upperPrice!! <= BigDecimal.ZERO)) ||
-                (order.lowerLimitPrice != null && order.upperLimitPrice != null && order.lowerLimitPrice >= order.upperLimitPrice)) {
+            ((order.lowerLimitPrice == null).xor(order.lowerPrice == null)) ||
+            ((order.upperLimitPrice == null).xor(order.upperPrice == null)) ||
+            (order.lowerLimitPrice != null && (order.lowerLimitPrice <= BigDecimal.ZERO || order.lowerPrice!! <= BigDecimal.ZERO)) ||
+            (order.upperLimitPrice != null && (order.upperLimitPrice <= BigDecimal.ZERO || order.upperPrice!! <= BigDecimal.ZERO)) ||
+            (order.lowerLimitPrice != null && order.upperLimitPrice != null && order.lowerLimitPrice >= order.upperLimitPrice)
+        ) {
             throw OrderValidationException(OrderStatus.InvalidPrice, "limit prices are invalid")
         }
     }
@@ -127,7 +142,8 @@ class LimitOrderInputValidatorImpl(val applicationSettingsHolder: ApplicationSet
         validateMaxValue(limitOrder, assetPair)
 
         if (assetPair.maxValue != null && (limitOrder.lowerLimitPrice != null && limitOrder.getAbsVolume() * limitOrder.lowerPrice!! > assetPair.maxValue
-                        || limitOrder.upperLimitPrice != null && limitOrder.getAbsVolume() * limitOrder.upperPrice!! > assetPair.maxValue)) {
+                    || limitOrder.upperLimitPrice != null && limitOrder.getAbsVolume() * limitOrder.upperPrice!! > assetPair.maxValue)
+        ) {
             throw OrderValidationException(OrderStatus.InvalidValue, "value is too large")
         }
     }
@@ -162,9 +178,10 @@ class LimitOrderInputValidatorImpl(val applicationSettingsHolder: ApplicationSet
     private fun validateStopPricesAccuracy(order: LimitOrder, assetPair: AssetPair) {
         val priceAccuracy = assetPair.accuracy
         if (order.lowerLimitPrice != null && !NumberUtils.isScaleSmallerOrEqual(order.lowerLimitPrice, priceAccuracy)
-                || order.lowerPrice != null && !NumberUtils.isScaleSmallerOrEqual(order.lowerPrice, priceAccuracy)
-                || order.upperLimitPrice != null && !NumberUtils.isScaleSmallerOrEqual(order.upperLimitPrice, priceAccuracy)
-                || order.upperPrice != null && !NumberUtils.isScaleSmallerOrEqual(order.upperPrice, priceAccuracy)) {
+            || order.lowerPrice != null && !NumberUtils.isScaleSmallerOrEqual(order.lowerPrice, priceAccuracy)
+            || order.upperLimitPrice != null && !NumberUtils.isScaleSmallerOrEqual(order.upperLimitPrice, priceAccuracy)
+            || order.upperPrice != null && !NumberUtils.isScaleSmallerOrEqual(order.upperPrice, priceAccuracy)
+        ) {
             throw OrderValidationException(OrderStatus.InvalidPriceAccuracy, "stop order price accuracy is invalid")
         }
     }

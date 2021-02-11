@@ -1,5 +1,5 @@
 package com.lykke.matching.engine.incoming.parsers.data
 
-import com.lykke.matching.engine.messages.MessageWrapper
+import com.lykke.matching.engine.messages.wrappers.LimitOrderCancelMessageWrapper
 
-class LimitOrderCancelOperationParsedData(messageWrapper: MessageWrapper): ParsedData(messageWrapper)
+class LimitOrderCancelOperationParsedData(messageWrapper: LimitOrderCancelMessageWrapper): ParsedData(messageWrapper)

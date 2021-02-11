@@ -45,14 +45,14 @@ class CashTransferEventListener {
 
     @PostConstruct
     fun initRabbitMqPublisher() {
-        rabbitMqOldService.startPublisher(config.me.rabbitMqConfigs.transfers,
+        rabbitMqOldService.startPublisher(config.matchingEngine.rabbitMqConfigs.transfers,
                 CashTransferEventListener::class.java.simpleName,
                 rabbitTransferQueue,
-                config.me.name,
+                config.matchingEngine.name,
                 AppVersion.VERSION,
                 BuiltinExchangeType.FANOUT,
                 DatabaseLogger(
-                        AzureMessageLogDatabaseAccessor(config.me.db.messageLogConnString,
+                        AzureMessageLogDatabaseAccessor(config.matchingEngine.db.messageLogConnString,
                                 logTable, logBlobName)))
     }
 

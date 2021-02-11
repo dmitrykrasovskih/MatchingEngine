@@ -45,14 +45,14 @@ class CashInOutListener {
 
     @PostConstruct
     fun initRabbitMqPublisher() {
-        rabbitMqOldService.startPublisher(config.me.rabbitMqConfigs.cashOperations,
+        rabbitMqOldService.startPublisher(config.matchingEngine.rabbitMqConfigs.cashOperations,
                 CashInOutListener::class.java.simpleName,
                 rabbitCashInOutQueue,
-                config.me.name,
+                config.matchingEngine.name,
                 AppVersion.VERSION,
                 BuiltinExchangeType.FANOUT,
                 DatabaseLogger(
-                        AzureMessageLogDatabaseAccessor(config.me.db.messageLogConnString,
+                        AzureMessageLogDatabaseAccessor(config.matchingEngine.db.messageLogConnString,
                                 logTable, logBlobName)))
     }
 

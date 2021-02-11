@@ -24,16 +24,16 @@ class StopOrdersDatabaseAccessorsHolderFactory : FactoryBean<StopOrdersDatabaseA
     }
 
     override fun getObject(): StopOrdersDatabaseAccessorsHolder {
-        return when (config.me.storage) {
+        return when (config.matchingEngine.storage) {
             Storage.Azure ->
-                StopOrdersDatabaseAccessorsHolder(FileStopOrderBookDatabaseAccessor(config.me.stopOrderBookPath), null)
+                StopOrdersDatabaseAccessorsHolder(FileStopOrderBookDatabaseAccessor(config.matchingEngine.stopOrderBookPath), null)
             Storage.Redis ->
-                StopOrdersDatabaseAccessorsHolder(RedisStopOrderBookDatabaseAccessor(initialLoadingRedisConnection.get(), config.me.redis.ordersDatabase),
-                        if (config.me.writeOrdersToSecondaryDb)
-                            FileStopOrderBookDatabaseAccessor(config.me.secondaryStopOrderBookPath)
+                StopOrdersDatabaseAccessorsHolder(RedisStopOrderBookDatabaseAccessor(initialLoadingRedisConnection.get(), config.matchingEngine.redis.ordersDatabase),
+                        if (config.matchingEngine.writeOrdersToSecondaryDb)
+                            FileStopOrderBookDatabaseAccessor(config.matchingEngine.secondaryStopOrderBookPath)
                         else null)
             Storage.RedisWithoutOrders ->
-                StopOrdersDatabaseAccessorsHolder(FileStopOrderBookDatabaseAccessor(config.me.stopOrderBookPath), null)
+                StopOrdersDatabaseAccessorsHolder(FileStopOrderBookDatabaseAccessor(config.matchingEngine.stopOrderBookPath), null)
         }
     }
 }

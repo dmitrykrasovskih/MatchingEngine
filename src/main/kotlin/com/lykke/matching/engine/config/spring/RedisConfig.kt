@@ -72,44 +72,44 @@ open class RedisConfig {
     //<editor-fold desc="Redis database accessors">
     @Bean
     open fun redisProcessedMessagesDatabaseAccessor(): RedisProcessedMessagesDatabaseAccessor? {
-        if (config.me.storage != Storage.Redis && config.me.storage != Storage.RedisWithoutOrders) {
+        if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
             return null
         }
 
         return RedisProcessedMessagesDatabaseAccessor(initialLoadingRedisConnection()!!,
-                config.me.redis.processedMessageDatabase,
+                config.matchingEngine.redis.processedMessageDatabase,
                 getProcessedMessageTTL())
     }
 
 
     @Bean
     open fun redisWalletDatabaseAccessor(): RedisWalletDatabaseAccessor? {
-        if (config.me.storage != Storage.Redis && config.me.storage != Storage.RedisWithoutOrders) {
+        if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
             return null
         }
 
-        return RedisWalletDatabaseAccessor(initialLoadingRedisConnection()!!, config.me.redis.balanceDatabase)
+        return RedisWalletDatabaseAccessor(initialLoadingRedisConnection()!!, config.matchingEngine.redis.balanceDatabase)
     }
 
     @Bean
     open fun redisCashOperationIdDatabaseAccessor(): RedisCashOperationIdDatabaseAccessor? {
-        if (config.me.storage != Storage.Redis && config.me.storage != Storage.RedisWithoutOrders) {
+        if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
             return null
         }
 
         return RedisCashOperationIdDatabaseAccessor(cashInOutOperationIdRedisConnection()!!,
                 cashTransferOperationIdRedisConnection()!!,
-                config.me.redis.processedCashMessageDatabase)
+                config.matchingEngine.redis.processedCashMessageDatabase)
     }
 
     @Bean
     open fun redisMessageSequenceNumberDatabaseAccessor(): RedisMessageSequenceNumberDatabaseAccessor? {
-        if (config.me.storage != Storage.Redis && config.me.storage != Storage.RedisWithoutOrders) {
+        if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
             return null
         }
 
         return RedisMessageSequenceNumberDatabaseAccessor(initialLoadingRedisConnection()!!,
-                config.me.redis.sequenceNumberDatabase)
+                config.matchingEngine.redis.sequenceNumberDatabase)
     }
     //</editor-fold>
 
@@ -120,16 +120,16 @@ open class RedisConfig {
                                       allRedisConnections: List<RedisConnection>,
                                       @Value("\${redis.health.check.interval}") updateInterval: Long,
                                       @Value("\${redis.health.check.reconnect.interval}") reconnectInterval: Long): RedisReconnectionManager? {
-        if (config.me.storage != Storage.Redis && config.me.storage != Storage.RedisWithoutOrders) {
+        if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
             return null
         }
 
-        return RedisReconnectionManager(config.me, allRedisConnections, pingRedisConnection()!!,
+        return RedisReconnectionManager(config.matchingEngine, allRedisConnections, pingRedisConnection()!!,
                 taskScheduler, applicationEventPublisher, updateInterval, reconnectInterval)
     }
     //</editor-fold>
 
     private fun getProcessedMessageTTL(): Int {
-        return (config.me.processedMessagesInterval / 500).toInt()
+        return (config.matchingEngine.processedMessagesInterval / 500).toInt()
     }
 }

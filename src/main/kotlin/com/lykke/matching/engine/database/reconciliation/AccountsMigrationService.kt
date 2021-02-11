@@ -21,7 +21,7 @@ class AccountsMigrationService @Autowired constructor (private val balancesHolde
                                                        private val config: Config,
                                                        private val redisWalletDatabaseAccessor: Optional<RedisWalletDatabaseAccessor>): ApplicationRunner {
     override fun run(args: ApplicationArguments?) {
-        if (config.me.walletsMigration) {
+        if (config.matchingEngine.walletsMigration) {
             migrateAccounts()
         }
     }
@@ -30,19 +30,16 @@ class AccountsMigrationService @Autowired constructor (private val balancesHolde
         private val LOGGER = Logger.getLogger(AccountsMigrationService::class.java.name)
     }
 
-    private val azureAccountsTableName = config.me.db.accountsTableName
+    private val azureAccountsTableName = config.matchingEngine.db.accountsTableName
             ?: AzureWalletDatabaseAccessor.DEFAULT_BALANCES_TABLE_NAME
-    private val azureDatabaseAccessor = AzureWalletDatabaseAccessor(config.me.db.balancesInfoConnString, azureAccountsTableName)
+    private val azureDatabaseAccessor = AzureWalletDatabaseAccessor(config.matchingEngine.db.balancesInfoConnString, azureAccountsTableName)
 
     fun migrateAccounts() {
-        if (!config.me.walletsMigration) {
+        if (!config.matchingEngine.walletsMigration) {
             return
         }
-        if (config.me.redis == null) {
-            throw IllegalArgumentException("Redis config is not provided can not migrate accounts")
-        }
 
-        when (config.me.storage) {
+        when (config.matchingEngine.storage) {
             Storage.Azure -> fromRedisToDb()
             Storage.RedisWithoutOrders,
             Storage.Redis -> fromDbToRedis()
@@ -51,11 +48,11 @@ class AccountsMigrationService @Autowired constructor (private val balancesHolde
 
     fun fromDbToRedis() {
         if (redisWalletDatabaseAccessor.get().loadWallets().isNotEmpty()) {
-            throw AccountsMigrationException("Wallets already exist in redis ${config.me.redis.host}.${config.me.redis.port}")
+            throw AccountsMigrationException("Wallets already exist in redis ${config.matchingEngine.redis.host}.${config.matchingEngine.redis.port}")
         }
 
         val startTime = Date().time
-        teeLog("Starting wallets migration from azure to redis; azure table: $azureAccountsTableName, redis: ${config.me.redis.host}.${config.me.redis.port}")
+        teeLog("Starting wallets migration from azure to redis; azure table: $azureAccountsTableName, redis: ${config.matchingEngine.redis.host}.${config.matchingEngine.redis.port}")
         val wallets = azureDatabaseAccessor.loadWallets()
         val loadTime = Date().time
         teeLog("Loaded ${wallets.size} wallets from azure (ms: ${loadTime - startTime})")
@@ -68,11 +65,11 @@ class AccountsMigrationService @Autowired constructor (private val balancesHolde
 
     fun fromRedisToDb() {
         val startTime = Date().time
-        teeLog("Starting wallets migration from redis to azure; redis: ${config.me.redis.host}.${config.me.redis.port}, azure table: $azureAccountsTableName")
+        teeLog("Starting wallets migration from redis to azure; redis: ${config.matchingEngine.redis.host}.${config.matchingEngine.redis.port}, azure table: $azureAccountsTableName")
         val loadTime = Date().time
         val wallets = redisWalletDatabaseAccessor.get().loadWallets()
         if (wallets.isEmpty()) {
-            throw AccountsMigrationException("There are no wallets in redis ${config.me.redis.host}.${config.me.redis.port}")
+            throw AccountsMigrationException("There are no wallets in redis ${config.matchingEngine.redis.host}.${config.matchingEngine.redis.port}")
         }
         teeLog("Loaded ${wallets.size} wallets from redis (ms: ${loadTime - startTime})")
         balancesHolder.insertOrUpdateWallets(wallets.values.toList(), null)

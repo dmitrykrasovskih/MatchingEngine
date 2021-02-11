@@ -15,6 +15,6 @@ class KeepAliveStarter @Autowired constructor(private val meIsAliveResponseGette
                                               private val config: Config) {
     @PostConstruct
     private fun start() {
-        KeepAliveStarter.start(config.me.keepAlive, meIsAliveResponseGetter, AppVersion.VERSION)
+        KeepAliveStarter.start(config.matchingEngine.keepAlive, meIsAliveResponseGetter, AppVersion.VERSION)
     }
 }

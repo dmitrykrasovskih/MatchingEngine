@@ -25,15 +25,16 @@ class TrustedClientsEventsListener {
     @Autowired
     private lateinit var applicationContext: ApplicationContext
 
+    @Suppress("UNCHECKED_CAST")
     @PostConstruct
     fun initRabbitMqPublisher() {
-        config.me.rabbitMqConfigs.trustedClientsEvents.forEachIndexed { index, rabbitConfig ->
+        config.matchingEngine.rabbitMqConfigs.trustedClientsEvents.forEachIndexed { index, rabbitConfig ->
             val trustedClientsEventConsumerQueue = RabbitEventUtils.getTrustedClientsEventConsumerQueueName(rabbitConfig.exchange, index)
             val queue = applicationContext.getBean(trustedClientsEventConsumerQueue) as BlockingQueue<ExecutionEvent>
             rabbitMqService.startPublisher(rabbitConfig,
                     trustedClientsEventConsumerQueue,
                     queue,
-                    config.me.name,
+                    config.matchingEngine.name,
                     AppVersion.VERSION,
                     BuiltinExchangeType.DIRECT,
                     null)

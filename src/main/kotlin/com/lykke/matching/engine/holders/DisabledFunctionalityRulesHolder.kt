@@ -1,11 +1,7 @@
 package com.lykke.matching.engine.holders
 
 import com.google.gson.Gson
-import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
-import com.lykke.matching.engine.daos.DisabledFunctionalityData
-import com.lykke.matching.engine.daos.DisabledFunctionalityRule
-import com.lykke.matching.engine.daos.OperationType
+import com.lykke.matching.engine.daos.*
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.database.cache.ApplicationGroupDeleteEvent
 import com.lykke.matching.engine.database.cache.ApplicationSettingCreateOrUpdateEvent
@@ -14,12 +10,13 @@ import com.lykke.matching.engine.database.cache.ApplicationSettingsCache
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
-import java.util.concurrent.locks.ReentrantLock
 import javax.annotation.PostConstruct
 
 @Component
-class DisabledFunctionalityRulesHolder(val applicationSettingsCache: ApplicationSettingsCache,
-                                       val assetsPairsHolder: AssetsPairsHolder) {
+class DisabledFunctionalityRulesHolder(
+    val applicationSettingsCache: ApplicationSettingsCache,
+    val assetsPairsHolder: AssetsPairsHolder
+) {
 
     @Volatile
     private var disabledFunctionalityData = DisabledFunctionalityData()
@@ -35,7 +32,7 @@ class DisabledFunctionalityRulesHolder(val applicationSettingsCache: Application
         }
 
         return disabledFunctionalityDataToCheck.disabledOperations.contains(OperationType.TRADE)
-                || disabledFunctionalityDataToCheck.disabledAssetPairIds.contains(assetPair.assetPairId)
+                || disabledFunctionalityDataToCheck.disabledAssetPairIds.contains(assetPair.symbol)
     }
 
     fun isCashInDisabled(asset: Asset?): Boolean {
@@ -46,9 +43,9 @@ class DisabledFunctionalityRulesHolder(val applicationSettingsCache: Application
         }
 
         return disabledFunctionalityDataToCheck.disabledOperations.contains(OperationType.CASH_IN)
-                || (disabledFunctionalityDataToCheck.disabledOperationsByAsset[asset.assetId]?.contains(OperationType.CASH_IN)
-                ?: false)
-                || disabledFunctionalityDataToCheck.disabledAssetIds.contains(asset.assetId)
+                || (disabledFunctionalityDataToCheck.disabledOperationsByAsset[asset.symbol]?.contains(OperationType.CASH_IN)
+            ?: false)
+                || disabledFunctionalityDataToCheck.disabledAssetIds.contains(asset.symbol)
 
     }
 
@@ -60,9 +57,9 @@ class DisabledFunctionalityRulesHolder(val applicationSettingsCache: Application
         }
 
         return disabledFunctionalityDataToCheck.disabledOperations.contains(OperationType.CASH_OUT)
-                || (disabledFunctionalityDataToCheck.disabledOperationsByAsset[asset.assetId]?.contains(OperationType.CASH_OUT)
-                ?: false)
-                || disabledFunctionalityDataToCheck.disabledAssetIds.contains(asset.assetId)
+                || (disabledFunctionalityDataToCheck.disabledOperationsByAsset[asset.symbol]?.contains(OperationType.CASH_OUT)
+            ?: false)
+                || disabledFunctionalityDataToCheck.disabledAssetIds.contains(asset.symbol)
     }
 
     fun isCashTransferDisabled(asset: Asset?): Boolean {
@@ -73,9 +70,9 @@ class DisabledFunctionalityRulesHolder(val applicationSettingsCache: Application
         }
 
         return disabledFunctionalityDataToCheck.disabledOperations.contains(OperationType.CASH_TRANSFER)
-                || (disabledFunctionalityDataToCheck.disabledOperationsByAsset[asset.assetId]?.contains(OperationType.CASH_TRANSFER)
-                ?: false)
-                || disabledFunctionalityDataToCheck.disabledAssetIds.contains(asset.assetId)
+                || (disabledFunctionalityDataToCheck.disabledOperationsByAsset[asset.symbol]?.contains(OperationType.CASH_TRANSFER)
+            ?: false)
+                || disabledFunctionalityDataToCheck.disabledAssetIds.contains(asset.symbol)
     }
 
     @PostConstruct
@@ -85,7 +82,10 @@ class DisabledFunctionalityRulesHolder(val applicationSettingsCache: Application
         val disabledAssetIds = HashSet<String>()
         val disabledOperationsByAsset = HashMap<String, MutableSet<OperationType>>()
 
-        applicationSettingsCache.getSettingsGroup(AvailableSettingGroup.DISABLED_FUNCTIONALITY_RULES, true)?.settings?.forEach {
+        applicationSettingsCache.getSettingsGroup(
+            AvailableSettingGroup.DISABLED_FUNCTIONALITY_RULES,
+            true
+        )?.settings?.forEach {
             val disabledRule = gson.fromJson(it.value, DisabledFunctionalityRule::class.java)
 
             if (disabledRule.assetPairId != null) {
@@ -94,30 +94,35 @@ class DisabledFunctionalityRulesHolder(val applicationSettingsCache: Application
 
             if (disabledRule.assetId != null) {
                 if (disabledRule.operationType == OperationType.TRADE) {
-                    disabledAssetPairIds.addAll(assetsPairsHolder.getAssetPairsByAssetId(disabledRule.assetId).map { it.assetPairId })
+                    disabledAssetPairIds.addAll(
+                        assetsPairsHolder.getAssetPairsByAssetId(disabledRule.assetId).map { it.symbol })
                     return@forEach
                 }
 
                 if (disabledRule.operationType == null) {
-                    disabledAssetPairIds.addAll(assetsPairsHolder.getAssetPairsByAssetId(disabledRule.assetId).map { it.assetPairId })
+                    disabledAssetPairIds.addAll(
+                        assetsPairsHolder.getAssetPairsByAssetId(disabledRule.assetId).map { it.symbol })
                     disabledAssetIds.add(disabledRule.assetId)
                     return@forEach
                 } else {
-                    val disabledOperationsForAsset = disabledOperationsByAsset.getOrPut(disabledRule.assetId) { HashSet() }
+                    val disabledOperationsForAsset =
+                        disabledOperationsByAsset.getOrPut(disabledRule.assetId) { HashSet() }
                     disabledOperationsForAsset.add(disabledRule.operationType)
                     return@forEach
                 }
             }
 
-            if (disabledRule.operationType != null && disabledRule.assetId == null && disabledRule.assetPairId == null) {
+            if (disabledRule.operationType != null && disabledRule.assetPairId == null) {
                 disabledOperations.add(disabledRule.operationType)
             }
         }
 
-        disabledFunctionalityData = DisabledFunctionalityData(disabledAssetPairIds = disabledAssetPairIds,
-                disabledOperations = disabledOperations,
-                disabledAssetIds = disabledAssetIds,
-                disabledOperationsByAsset = disabledOperationsByAsset)
+        disabledFunctionalityData = DisabledFunctionalityData(
+            disabledAssetPairIds = disabledAssetPairIds,
+            disabledOperations = disabledOperations,
+            disabledAssetIds = disabledAssetIds,
+            disabledOperationsByAsset = disabledOperationsByAsset
+        )
 
     }
 

@@ -32,9 +32,9 @@ open class AppConfiguration {
     @Bean
     open fun azureStatusProcessor(): Runnable {
         return AliveStatusProcessorFactory
-                .createAzureProcessor(connectionString = config.me.db.matchingEngineConnString,
-                        appName = config.me.name,
-                        config = config.me.aliveStatus)
+                .createAzureProcessor(connectionString = config.matchingEngine.db.matchingEngineConnString,
+                        appName = config.matchingEngine.name,
+                        config = config.matchingEngine.aliveStatus)
     }
 
     @Bean
@@ -42,8 +42,8 @@ open class AppConfiguration {
         return QueueSizeHealthChecker(
                 MonitoredComponent.INPUT_QUEUE,
                 namesToInputQueues,
-                config.me.queueConfig.maxQueueSizeLimit,
-                config.me.queueConfig.recoverQueueSizeLimit)
+                config.matchingEngine.queueConfig.maxQueueSizeLimit,
+                config.matchingEngine.queueConfig.recoverQueueSizeLimit)
     }
 
     @Bean
@@ -51,8 +51,8 @@ open class AppConfiguration {
         return QueueSizeHealthChecker(
                 MonitoredComponent.RABBIT_QUEUE,
                 namesToInputQueues,
-                config.me.queueConfig.rabbitMaxQueueSizeLimit,
-                config.me.queueConfig.rabbitRecoverQueueSizeLimit)
+                config.matchingEngine.queueConfig.rabbitMaxQueueSizeLimit,
+                config.matchingEngine.queueConfig.rabbitRecoverQueueSizeLimit)
     }
 
     @Bean

@@ -5,10 +5,9 @@ import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.IncomingLimitOrder
-import com.lykke.matching.engine.daos.order.OrderTimeInForce
 import com.lykke.matching.engine.daos.order.LimitOrderType
+import com.lykke.matching.engine.daos.order.OrderTimeInForce
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
-import com.lykke.matching.engine.database.TestBackOfficeDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
 import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.order.ExpiryOrdersQueue
@@ -36,7 +35,7 @@ import org.springframework.context.annotation.Primary
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
-import java.util.Date
+import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -50,17 +49,16 @@ import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderStatus as Outgo
 class StopLimitOrderTest : AbstractTest() {
 
     @TestConfiguration
-    open class Config {
-
+    class Config {
         @Bean
         @Primary
-        open fun testBackOfficeDatabaseAccessor(): TestBackOfficeDatabaseAccessor {
-            val testBackOfficeDatabaseAccessor = TestBackOfficeDatabaseAccessor()
+        fun testDictionariesDatabaseAccessor(): testDictionariesDatabaseAccessor {
+            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
 
-            testBackOfficeDatabaseAccessor.addAsset(Asset("USD", 2))
-            testBackOfficeDatabaseAccessor.addAsset(Asset("BTC", 8))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
+            testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 8))
 
-            return testBackOfficeDatabaseAccessor
+            return testDictionariesDatabaseAccessor
         }
     }
 
@@ -80,17 +78,29 @@ class StopLimitOrderTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client1", "USD", 1000.0)
         testBalanceHolderWrapper.updateReservedBalance("Client1", "USD", 0.0)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCUSD", "BTC", "USD", 6))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCEUR", "BTC", "USD", 6, maxValue = BigDecimal.valueOf(8000)))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 6))
+        testDictionariesDatabaseAccessor.addAssetPair(
+            AssetPair(
+                "BTCEUR",
+                "BTC",
+                "USD",
+                6,
+                maxValue = BigDecimal.valueOf(8000)
+            )
+        )
         initServices()
     }
 
     @Test
     fun testNotEnoughFunds() {
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client1", assetId = "BTCUSD", volume = -1.01,
-                type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.0, lowerPrice = 9000.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD", volume = -1.01,
+                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.0, lowerPrice = 9000.0
+                )
+            )
+        )
 
         assertEquals(0, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
         assertEquals(1, testClientLimitOrderListener.getCount())
@@ -113,21 +123,25 @@ class StopLimitOrderTest : AbstractTest() {
 
     @Test
     fun testAddStopLimitOrder() {
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client1", assetId = "BTCUSD", volume = -0.01,
-                type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.0, lowerPrice = 9000.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD", volume = -0.01,
+                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.0, lowerPrice = 9000.0
+                )
+            )
+        )
 
         assertEquals(1, testClientLimitOrderListener.getCount())
         val report = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
         assertEquals(1, report.orders.size)
         assertEquals(OrderStatus.Pending.name, report.orders.first().order.status)
-        assertEquals(BigDecimal.valueOf( 0.01), report.orders.first().order.reservedLimitVolume)
+        assertEquals(BigDecimal.valueOf(0.01), report.orders.first().order.reservedLimitVolume)
         assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
 
         assertEquals(1, stopOrderDatabaseAccessor.getStopOrders("BTCUSD", false).size)
         assertEquals(1, genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).size)
-        assertEquals(BigDecimal.valueOf(0.01), balancesHolder.getReservedBalance("Client1", "BTC"))
+        assertEquals(BigDecimal.valueOf(0.01), balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
         assertEquals(BigDecimal.valueOf(0.01), testWalletDatabaseAccessor.getReservedBalance("Client1", "BTC"))
 
         assertEquals(1, clientsEventsQueue.size)
@@ -143,16 +157,24 @@ class StopLimitOrderTest : AbstractTest() {
 
     @Test
     fun testAddStopLimitOrderAndCancelAllPrevious() {
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client1", assetId = "BTCUSD", volume = -0.01,
-                type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.0, lowerPrice = 9000.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD", volume = -0.01,
+                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.0, lowerPrice = 9000.0
+                )
+            )
+        )
         clearMessageQueues()
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client1", assetId = "BTCUSD", type = LimitOrderType.STOP_LIMIT, volume = -0.02,
-                lowerLimitPrice = 9500.0, lowerPrice = 9000.0, upperLimitPrice = 10500.0, upperPrice = 10000.0
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD", type = LimitOrderType.STOP_LIMIT, volume = -0.02,
+                    lowerLimitPrice = 9500.0, lowerPrice = 9000.0, upperLimitPrice = 10500.0, upperPrice = 10000.0
 
-        ), true))
+                ), true
+            )
+        )
 
         assertEquals(1, testClientLimitOrderListener.getCount())
         val report = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
@@ -163,8 +185,11 @@ class StopLimitOrderTest : AbstractTest() {
         assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
         assertEquals(1, stopOrderDatabaseAccessor.getStopOrders("BTCUSD", false).size)
         assertEquals(1, genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).size)
-        assertEquals(BigDecimal.valueOf(-0.02), genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).first().volume)
-        assertEquals(BigDecimal.valueOf(0.02), balancesHolder.getReservedBalance("Client1", "BTC"))
+        assertEquals(
+            BigDecimal.valueOf(-0.02),
+            genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).first().volume
+        )
+        assertEquals(BigDecimal.valueOf(0.02), balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
         assertEquals(BigDecimal.valueOf(0.02), testWalletDatabaseAccessor.getReservedBalance("Client1", "BTC"))
 
         assertEquals(1, clientsEventsQueue.size)
@@ -180,17 +205,21 @@ class StopLimitOrderTest : AbstractTest() {
 
     @Test
     fun testCancelStopLimitOrder() {
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order1", clientId = "Client1", assetId = "BTCUSD", volume = -0.01,
-                type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.0, lowerPrice = 9000.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order1", clientId = "Client1", assetId = "BTCUSD", volume = -0.01,
+                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.0, lowerPrice = 9000.0
+                )
+            )
+        )
 
         clearMessageQueues()
         limitOrderCancelService.processMessage(messageBuilder.buildLimitOrderCancelWrapper("order1"))
 
         assertTrue(stopOrderDatabaseAccessor.getStopOrders("BTCUSD", false).isEmpty())
         assertTrue(genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).isEmpty())
-        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("Client1", "BTC"))
+        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client1", "BTC"))
         assertEquals(1, testClientLimitOrderListener.getCount())
         val report = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
@@ -214,21 +243,56 @@ class StopLimitOrderTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client3", "BTC", 1.0)
         initServices()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order1", clientId = "Client1", assetId = "BTCUSD", volume = -0.01,
-                type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.0, lowerPrice = 9000.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order1", clientId = "Client1", assetId = "BTCUSD", volume = -0.01,
+                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.0, lowerPrice = 9000.0
+                )
+            )
+        )
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order2", clientId = "Client1", assetId = "BTCUSD", volume = -0.03,
-                type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.5, lowerPrice = 9000.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order2", clientId = "Client1", assetId = "BTCUSD", volume = -0.03,
+                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.5, lowerPrice = 9000.0
+                )
+            )
+        )
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = 0.03, price = 9501.0)))
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = 0.03, price = 9499.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    volume = 0.03,
+                    price = 9501.0
+                )
+            )
+        )
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    volume = 0.03,
+                    price = 9499.0
+                )
+            )
+        )
 
         clearMessageQueues()
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client3", assetId = "BTCUSD", volume = -0.03, price = 9501.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client3",
+                    assetId = "BTCUSD",
+                    volume = -0.03,
+                    price = 9501.0
+                )
+            )
+        )
 
         assertBalance("Client1", "BTC", reserved = 0.01)
 
@@ -268,17 +332,48 @@ class StopLimitOrderTest : AbstractTest() {
 
         initServices()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = -0.1, price = 10000.0)))
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client3", assetId = "BTCUSD", volume = -0.1, price = 11000.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    volume = -0.1,
+                    price = 10000.0
+                )
+            )
+        )
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client3",
+                    assetId = "BTCUSD",
+                    volume = -0.1,
+                    price = 11000.0
+                )
+            )
+        )
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client1", assetId = "BTCUSD", volume = 0.05, type = LimitOrderType.STOP_LIMIT,
-                upperLimitPrice = 10500.0, upperPrice = 11000.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD", volume = 0.05, type = LimitOrderType.STOP_LIMIT,
+                    upperLimitPrice = 10500.0, upperPrice = 11000.0
+                )
+            )
+        )
 
         clearMessageQueues()
         // cancel previous orders and will be rejected due to not enough funds
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = -0.2, price = 10000.0), true))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    volume = -0.2,
+                    price = 10000.0
+                ), true
+            )
+        )
 
         assertStopOrderBookSize("BTCUSD", false, 0)
         assertBalance("Client1", "USD", reserved = 0.0)
@@ -301,7 +396,8 @@ class StopLimitOrderTest : AbstractTest() {
         assertEquals(executionEvent.header.eventType, MessageType.LIMIT_ORDER.name)
         assertEquals(executionEvent.header.messageType, OutgoingMessageType.ORDER)
         assertEquals(5, executionEvent.orders.size)
-        val eventClientOrder = executionEvent.orders.single { it.walletId == "Client1" && it.orderType == OrderType.LIMIT }
+        val eventClientOrder =
+            executionEvent.orders.single { it.walletId == "Client1" && it.orderType == OrderType.LIMIT }
         assertEquals(1, eventClientOrder.trades?.size)
         assertEquals("BTC", eventClientOrder.trades!!.first().baseAssetId)
         assertEquals("0.05", eventClientOrder.trades!!.first().baseVolume)
@@ -314,15 +410,38 @@ class StopLimitOrderTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client2", "BTC", 0.3)
         initServices()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order1", clientId = "Client1", assetId = "BTCUSD", volume = 0.09,
-                type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 10000.0, upperPrice = 10500.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order1", clientId = "Client1", assetId = "BTCUSD", volume = 0.09,
+                    type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 10000.0, upperPrice = 10500.0
+                )
+            )
+        )
         assertStopOrderBookSize("BTCUSD", true, 1)
         assertBalance("Client1", "USD", reserved = 945.0)
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", uid = "order2", assetId = "BTCUSD", volume = -0.1, price = 9000.0)))
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = -0.2, price = 10000.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    uid = "order2",
+                    assetId = "BTCUSD",
+                    volume = -0.1,
+                    price = 9000.0
+                )
+            )
+        )
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    volume = -0.2,
+                    price = 10000.0
+                )
+            )
+        )
 
         clearMessageQueues()
         limitOrderCancelService.processMessage(messageBuilder.buildLimitOrderCancelWrapper("order2"))
@@ -363,18 +482,49 @@ class StopLimitOrderTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client3", "BTC", 1.0)
         initServices()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = 0.03, price = 9600.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    volume = 0.03,
+                    price = 9600.0
+                )
+            )
+        )
 
         // Order leading to negative spread. Added to reject stop order.
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client1", assetId = "BTCUSD", volume = 0.03, price = 9500.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1",
+                    assetId = "BTCUSD",
+                    volume = 0.03,
+                    price = 9500.0
+                )
+            )
+        )
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client1", assetId = "BTCUSD", volume = -0.01,
-                type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.5, lowerPrice = 9000.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD", volume = -0.01,
+                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.5, lowerPrice = 9000.0
+                )
+            )
+        )
 
         clearMessageQueues()
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client3", assetId = "BTCUSD", volume = -0.03, price = 9600.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client3",
+                    assetId = "BTCUSD",
+                    volume = -0.03,
+                    price = 9600.0
+                )
+            )
+        )
 
         assertOrderBookSize("BTCUSD", true, 1)
         assertStopOrderBookSize("BTCUSD", false, 0)
@@ -384,13 +534,17 @@ class StopLimitOrderTest : AbstractTest() {
         assertEquals(1, testClientLimitOrderListener.getCount())
         val report = testClientLimitOrderListener.getQueue().single() as LimitOrdersReport
         assertEquals(4, report.orders.size)
-        assertEquals(OrderStatus.Executed.name, report.orders.single { it.order.clientId == "Client1" && it.order.type == LimitOrderType.STOP_LIMIT }.order.status)
+        assertEquals(
+            OrderStatus.Executed.name,
+            report.orders.single { it.order.clientId == "Client1" && it.order.type == LimitOrderType.STOP_LIMIT }.order.status
+        )
 
         // new contract event assertion
         assertEquals(1, clientsEventsQueue.size)
         val executionEvent = clientsEventsQueue.single() as ExecutionEvent
         assertEquals(4, executionEvent.orders.size)
-        val eventStopOrder = executionEvent.orders.single { it.walletId == "Client1" && it.orderType == OrderType.STOP_LIMIT }
+        val eventStopOrder =
+            executionEvent.orders.single { it.walletId == "Client1" && it.orderType == OrderType.STOP_LIMIT }
         assertEquals(OutgoingOrderStatus.EXECUTED, eventStopOrder.status)
         val childLimitOrder = executionEvent.orders.single { it.externalId == eventStopOrder.childExternalId }
         assertEquals(OutgoingOrderStatus.REJECTED, childLimitOrder.status)
@@ -403,18 +557,49 @@ class StopLimitOrderTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client3", "USD", 1900.0)
         initServices()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order1", clientId = "Client1", assetId = "BTCUSD", volume = 0.09,
-                type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 10000.0, upperPrice = 10500.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order1", clientId = "Client1", assetId = "BTCUSD", volume = 0.09,
+                    type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 10000.0, upperPrice = 10500.0
+                )
+            )
+        )
         assertStopOrderBookSize("BTCUSD", true, 1)
         assertBalance("Client1", "USD", reserved = 945.0)
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = -0.1, price = 9000.0)))
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = -0.2, price = 10000.0, uid = "TwoTradesOrder")))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    volume = -0.1,
+                    price = 9000.0
+                )
+            )
+        )
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    volume = -0.2,
+                    price = 10000.0,
+                    uid = "TwoTradesOrder"
+                )
+            )
+        )
 
         clearMessageQueues()
-        marketOrderService.processMessage(buildMarketOrderWrapper(buildMarketOrder(clientId = "Client3", assetId = "BTCUSD", volume = 0.2)))
+        marketOrderService.processMessage(
+            buildMarketOrderWrapper(
+                buildMarketOrder(
+                    clientId = "Client3",
+                    assetId = "BTCUSD",
+                    volume = 0.2
+                )
+            )
+        )
 
         assertStopOrderBookSize("BTCUSD", true, 0)
         assertOrderBookSize("BTCUSD", false, 1)
@@ -428,7 +613,7 @@ class StopLimitOrderTest : AbstractTest() {
 
         val stopOrder = report.orders.first { it.order.externalId == "order1" }
         assertEquals(OrderStatus.Executed.name, stopOrder.order.status)
-        assertEquals(BigDecimal.valueOf( 10500.0), stopOrder.order.price)
+        assertEquals(BigDecimal.valueOf(10500.0), stopOrder.order.price)
 
         // new contract event assertion
         assertEquals(1, clientsEventsQueue.size)
@@ -447,28 +632,66 @@ class StopLimitOrderTest : AbstractTest() {
 
     private fun processStopLimitOrderAfterMultiLimitOrder(forTrustedClient: Boolean) {
         if (forTrustedClient) {
-            testSettingsDatabaseAccessor.createOrUpdateSetting(AvailableSettingGroup.TRUSTED_CLIENTS, getSetting("Client3"))
+            testSettingsDatabaseAccessor.createOrUpdateSetting(
+                AvailableSettingGroup.TRUSTED_CLIENTS,
+                getSetting("Client3")
+            )
         }
 
         testBalanceHolderWrapper.updateBalance("Client2", "BTC", 0.3)
         testBalanceHolderWrapper.updateBalance("Client3", "BTC", 1.0)
         initServices()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order1", clientId = "Client1", assetId = "BTCUSD", volume = 0.09,
-                type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 8500.0, lowerPrice = 9000.0, upperLimitPrice = 10000.0, upperPrice = 10500.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order1",
+                    clientId = "Client1",
+                    assetId = "BTCUSD",
+                    volume = 0.09,
+                    type = LimitOrderType.STOP_LIMIT,
+                    lowerLimitPrice = 8500.0,
+                    lowerPrice = 9000.0,
+                    upperLimitPrice = 10000.0,
+                    upperPrice = 10500.0
+                )
+            )
+        )
         assertStopOrderBookSize("BTCUSD", true, 1)
         assertBalance("Client1", "USD", reserved = 945.0)
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = -0.1, price = 9000.0)))
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = -0.2, price = 10000.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    volume = -0.1,
+                    price = 9000.0
+                )
+            )
+        )
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    volume = -0.2,
+                    price = 10000.0
+                )
+            )
+        )
 
         clearMessageQueues()
-        multiLimitOrderService.processMessage(buildMultiLimitOrderWrapper("BTCUSD",
+        multiLimitOrderService.processMessage(
+            buildMultiLimitOrderWrapper(
+                "BTCUSD",
                 "Client3",
-                listOf(IncomingLimitOrder(-0.1, 11000.0),
-                        IncomingLimitOrder(-0.05, 8500.0))))
+                listOf(
+                    IncomingLimitOrder(-0.1, 11000.0),
+                    IncomingLimitOrder(-0.05, 8500.0)
+                )
+            )
+        )
     }
 
     @Test
@@ -543,28 +766,49 @@ class StopLimitOrderTest : AbstractTest() {
 
     private fun processStopLimitOrderAfterMultiLimitOrderCancellation(forTrustedClient: Boolean) {
         if (forTrustedClient) {
-            testSettingsDatabaseAccessor.createOrUpdateSetting(AvailableSettingGroup.TRUSTED_CLIENTS, getSetting("Client2"))
+            testSettingsDatabaseAccessor.createOrUpdateSetting(
+                AvailableSettingGroup.TRUSTED_CLIENTS,
+                getSetting("Client2")
+            )
         }
 
         testBalanceHolderWrapper.updateBalance("Client2", "BTC", 0.3)
         testBalanceHolderWrapper.updateBalance("Client3", "BTC", 0.1)
         initServices()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order1", clientId = "Client1", assetId = "BTCUSD", volume = 0.09,
-                type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 10000.0, upperPrice = 10500.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order1", clientId = "Client1", assetId = "BTCUSD", volume = 0.09,
+                    type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 10000.0, upperPrice = 10500.0
+                )
+            )
+        )
 
-        multiLimitOrderService.processMessage(buildMultiLimitOrderWrapper("BTCUSD",
+        multiLimitOrderService.processMessage(
+            buildMultiLimitOrderWrapper(
+                "BTCUSD",
                 "Client2",
-                listOf(IncomingLimitOrder(-0.1, 9000.0),
-                        IncomingLimitOrder(-0.2, 10000.0))))
+                listOf(
+                    IncomingLimitOrder(-0.1, 9000.0),
+                    IncomingLimitOrder(-0.2, 10000.0)
+                )
+            )
+        )
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client3", assetId = "BTCUSD", volume = -0.1, price = 10000.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client3",
+                    assetId = "BTCUSD",
+                    volume = -0.1,
+                    price = 10000.0
+                )
+            )
+        )
 
         clearMessageQueues()
         val message = buildMultiLimitOrderCancelWrapper("Client2", "BTCUSD", false)
-        multiLimitOrderCancelService.parseMessage(message)
         multiLimitOrderCancelService.processMessage(message)
     }
 
@@ -646,27 +890,45 @@ class StopLimitOrderTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client2", "BTC", 1.0)
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 10000.0)
 
-        testBackOfficeDatabaseAccessor.addAsset(Asset("EUR", 2))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURUSD", "EUR", "USD", 2))
+        testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 2))
         initServices()
 
-        multiLimitOrderService.processMessage(buildMultiLimitOrderWrapper("BTCUSD", "Client2", listOf(
-                IncomingLimitOrder(-0.00009, 10000.0),
-                IncomingLimitOrder(-0.09, 11000.0))))
+        multiLimitOrderService.processMessage(
+            buildMultiLimitOrderWrapper(
+                "BTCUSD", "Client2", listOf(
+                    IncomingLimitOrder(-0.00009, 10000.0),
+                    IncomingLimitOrder(-0.09, 11000.0)
+                )
+            )
+        )
 
-        multiLimitOrderService.processMessage(buildMultiLimitOrderWrapper("EURUSD", "Client2", listOf(
-                IncomingLimitOrder(1.0, 1.1),
-                IncomingLimitOrder(6.0, 1.0))))
+        multiLimitOrderService.processMessage(
+            buildMultiLimitOrderWrapper(
+                "EURUSD", "Client2", listOf(
+                    IncomingLimitOrder(1.0, 1.1),
+                    IncomingLimitOrder(6.0, 1.0)
+                )
+            )
+        )
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client1", assetId = "BTCUSD", volume = 0.09,
-                type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 11000.0, upperPrice = 11000.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD", volume = 0.09,
+                    type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 11000.0, upperPrice = 11000.0
+                )
+            )
+        )
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client1", assetId = "EURUSD", volume = -5.0,
-                type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 1.0, lowerPrice = 0.99
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "EURUSD", volume = -5.0,
+                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 1.0, lowerPrice = 0.99
+                )
+            )
+        )
 
         assertStopOrderBookSize("BTCUSD", true, 1)
         assertOrderBookSize("BTCUSD", false, 2)
@@ -676,8 +938,8 @@ class StopLimitOrderTest : AbstractTest() {
         assertBalance("Client1", "USD", reserved = 990.0)
         assertBalance("Client1", "EUR", reserved = 5.0)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("BTCUSD", "BTC", "USD", 5, BigDecimal.valueOf(0.0001)))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("EURUSD", "EUR", "USD", 2, BigDecimal.valueOf(5.0)))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 5, BigDecimal.valueOf(0.0001)))
+        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 2, BigDecimal.valueOf(5.0)))
 
         initServices()
 
@@ -699,7 +961,10 @@ class StopLimitOrderTest : AbstractTest() {
         assertEquals(8, event.orders.size)
         assertEquals(6, event.balanceUpdates?.size)
         assertEquals(3, event.orders.filter { it.status == OutgoingOrderStatus.CANCELLED }.size)
-        assertEquals(1, event.orders.filter { it.status == OutgoingOrderStatus.CANCELLED && it.trades?.isNotEmpty() == true }.size)
+        assertEquals(
+            1,
+            event.orders.filter { it.status == OutgoingOrderStatus.CANCELLED && it.trades?.isNotEmpty() == true }.size
+        )
     }
 
     @Test
@@ -709,45 +974,97 @@ class StopLimitOrderTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client2", "BTC", 1.0)
         initServices()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = 0.1, price = 10000.0)))
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = 0.1, price = 9500.0)))
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = 0.1, price = 9000.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    volume = 0.1,
+                    price = 10000.0
+                )
+            )
+        )
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    volume = 0.1,
+                    price = 9500.0
+                )
+            )
+        )
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    volume = 0.1,
+                    price = 9000.0
+                )
+            )
+        )
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client1", assetId = "BTCUSD", volume = -0.2,
-                type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 10500.0, upperPrice = 10000.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD", volume = -0.2,
+                    type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 10500.0, upperPrice = 10000.0
+                )
+            )
+        )
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client1", assetId = "BTCUSD", volume = -0.1,
-                type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.0, lowerPrice = 9500.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD", volume = -0.1,
+                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9500.0, lowerPrice = 9500.0
+                )
+            )
+        )
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client1", assetId = "BTCUSD", volume = -0.2,
-                type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9000.0, lowerPrice = 9000.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD", volume = -0.2,
+                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9000.0, lowerPrice = 9000.0
+                )
+            )
+        )
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client3", assetId = "BTCUSD", volume = 0.1,
-                type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9000.0, lowerPrice = 9000.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client3", assetId = "BTCUSD", volume = 0.1,
+                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9000.0, lowerPrice = 9000.0
+                )
+            )
+        )
 
         assertEquals(3, genericLimitOrderService.getOrderBook("BTCUSD").getOrderBook(true).size)
         assertEquals(1, genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(true).size)
         assertEquals(3, genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).size)
-        assertEquals(BigDecimal.valueOf(0.5), balancesHolder.getReservedBalance("Client1", "BTC"))
-        assertEquals(BigDecimal.valueOf( 900.0), balancesHolder.getReservedBalance("Client3", "USD"))
+        assertEquals(BigDecimal.valueOf(0.5), balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
+        assertEquals(BigDecimal.valueOf(900.0), balancesHolder.getReservedBalance("", "", "Client3", "USD"))
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = 0.1, price = 10500.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    volume = 0.1,
+                    price = 10500.0
+                )
+            )
+        )
 
 
         assertTrue(genericLimitOrderService.getOrderBook("BTCUSD").getOrderBook(true).isEmpty())
         assertTrue(genericLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).isEmpty())
         assertTrue(genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(true).isEmpty())
         assertTrue(genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).isEmpty())
-        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("Client1", "BTC"))
-        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("Client3", "USD"))
+        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
+        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client3", "USD"))
     }
 
     @Test
@@ -759,40 +1076,69 @@ class StopLimitOrderTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 900.0)
         initServices()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client1", assetId = "BTCUSD", volume = -0.1,
-                type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9000.0, lowerPrice = 8500.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD", volume = -0.1,
+                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9000.0, lowerPrice = 8500.0
+                )
+            )
+        )
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client3", assetId = "BTCUSD", volume = 0.1,
-                type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 10000.0, lowerPrice = 10500.0
-        )))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client3", assetId = "BTCUSD", volume = 0.1,
+                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 10000.0, lowerPrice = 10500.0
+                )
+            )
+        )
 
         assertEquals(1, genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(true).size)
         assertEquals(1, genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).size)
-        assertEquals(BigDecimal.valueOf( 0.1), balancesHolder.getReservedBalance("Client1", "BTC"))
-        assertEquals(BigDecimal.valueOf(1050.0), balancesHolder.getReservedBalance("Client3", "USD"))
+        assertEquals(BigDecimal.valueOf(0.1), balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
+        assertEquals(BigDecimal.valueOf(1050.0), balancesHolder.getReservedBalance("", "", "Client3", "USD"))
 
-        multiLimitOrderService.processMessage(buildMultiLimitOrderWrapper("BTCUSD",
+        multiLimitOrderService.processMessage(
+            buildMultiLimitOrderWrapper(
+                "BTCUSD",
                 "Client2",
-                listOf(IncomingLimitOrder(-0.1, 10000.0),
-                        IncomingLimitOrder(0.1, 9000.0))))
+                listOf(
+                    IncomingLimitOrder(-0.1, 10000.0),
+                    IncomingLimitOrder(0.1, 9000.0)
+                )
+            )
+        )
 
         assertTrue(genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(true).isEmpty())
         assertTrue(genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).isEmpty())
-        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("Client1", "BTC"))
-        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("Client3", "USD"))
+        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
+        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client3", "USD"))
     }
 
     @Test
     fun testProcessStopLimitOrderImmediately() {
         testBalanceHolderWrapper.updateBalance("Client2", "BTC", 0.1)
         initServices()
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = -0.1, price = 9900.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2",
+                    assetId = "BTCUSD",
+                    volume = -0.1,
+                    price = 9900.0
+                )
+            )
+        )
         clearMessageQueues()
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(uid = "order1", clientId = "Client1", assetId = "BTCUSD", volume = 0.1,
-                type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9900.0, lowerPrice = 10000.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order1", clientId = "Client1", assetId = "BTCUSD", volume = 0.1,
+                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 9900.0, lowerPrice = 10000.0
+                )
+            )
+        )
 
         assertStopOrderBookSize("BTCUSD", true, 0)
         assertStopOrderBookSize("BTCUSD", false, 0)
@@ -834,25 +1180,43 @@ class StopLimitOrderTest : AbstractTest() {
     fun testFullMatchSeveralStopOrdersWithIncomingOrder() {
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 10000.0)
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client1", assetId = "BTCUSD",
-                type = LimitOrderType.STOP_LIMIT,
-                volume = -0.55,
-                lowerLimitPrice = 5001.0,
-                lowerPrice = 5000.0,
-                uid = "StopOrder1")))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD",
+                    type = LimitOrderType.STOP_LIMIT,
+                    volume = -0.55,
+                    lowerLimitPrice = 5001.0,
+                    lowerPrice = 5000.0,
+                    uid = "StopOrder1"
+                )
+            )
+        )
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client1", assetId = "BTCUSD",
-                type = LimitOrderType.STOP_LIMIT,
-                volume = -0.45,
-                lowerLimitPrice = 5000.0,
-                lowerPrice = 5000.0,
-                uid = "StopOrder2")))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD",
+                    type = LimitOrderType.STOP_LIMIT,
+                    volume = -0.45,
+                    lowerLimitPrice = 5000.0,
+                    lowerPrice = 5000.0,
+                    uid = "StopOrder2"
+                )
+            )
+        )
 
         clearMessageQueues()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD",
-                volume = 2.0, price = 5000.0,
-                uid = "IncomingLimitOrder")))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2", assetId = "BTCUSD",
+                    volume = 2.0, price = 5000.0,
+                    uid = "IncomingLimitOrder"
+                )
+            )
+        )
 
         assertStopOrderBookSize("BTCUSD", true, 0)
         assertStopOrderBookSize("BTCUSD", false, 0)
@@ -864,7 +1228,8 @@ class StopLimitOrderTest : AbstractTest() {
         assertEquals(OrderStatus.Processing.name, cacheIncomingOrder!!.status)
         assertEquals(BigDecimal.valueOf(1), cacheIncomingOrder.remainingVolume)
 
-        val dbIncomingOrder = ordersDatabaseAccessorsHolder.primaryAccessor.loadLimitOrders().singleOrNull { it.externalId == "IncomingLimitOrder" }
+        val dbIncomingOrder = ordersDatabaseAccessorsHolder.primaryAccessor.loadLimitOrders()
+            .singleOrNull { it.externalId == "IncomingLimitOrder" }
         assertNotNull(dbIncomingOrder)
         assertEquals(OrderStatus.Processing.name, dbIncomingOrder!!.status)
         assertEquals(BigDecimal.valueOf(1), dbIncomingOrder.remainingVolume)
@@ -880,13 +1245,15 @@ class StopLimitOrderTest : AbstractTest() {
 
     @Test
     fun testExpiredStopLimitOrder() {
-        val order = buildLimitOrder(clientId = "Client1", assetId = "BTCUSD",
-                type = LimitOrderType.STOP_LIMIT,
-                volume = -1.0,
-                lowerLimitPrice = 1.0,
-                lowerPrice = 1.0,
-                timeInForce = OrderTimeInForce.GTD,
-                expiryTime = Date())
+        val order = buildLimitOrder(
+            clientId = "Client1", assetId = "BTCUSD",
+            type = LimitOrderType.STOP_LIMIT,
+            volume = -1.0,
+            lowerLimitPrice = 1.0,
+            lowerPrice = 1.0,
+            timeInForce = OrderTimeInForce.GTD,
+            expiryTime = Date()
+        )
 
         Thread.sleep(10)
         singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(order))
@@ -902,21 +1269,33 @@ class StopLimitOrderTest : AbstractTest() {
     @Test
     fun testProcessExpiredStopLimitOrder() {
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 1.0)
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client1", assetId = "BTCUSD",
-                type = LimitOrderType.STOP_LIMIT,
-                volume = -1.0,
-                lowerLimitPrice = 1.0,
-                lowerPrice = 1.0,
-                timeInForce = OrderTimeInForce.GTD,
-                expiryTime = Date(Date().time + 300))))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD",
+                    type = LimitOrderType.STOP_LIMIT,
+                    volume = -1.0,
+                    lowerLimitPrice = 1.0,
+                    lowerPrice = 1.0,
+                    timeInForce = OrderTimeInForce.GTD,
+                    expiryTime = Date(Date().time + 300)
+                )
+            )
+        )
 
         Thread.sleep(500)
 
         assertEquals(1, expiryOrdersQueue.getExpiredOrdersExternalIds(Date()).size)
 
         clearMessageQueues()
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD",
-                volume = 1.0, price = 1.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2", assetId = "BTCUSD",
+                    volume = 1.0, price = 1.0
+                )
+            )
+        )
 
         assertEquals(0, expiryOrdersQueue.getExpiredOrdersExternalIds(Date()).size)
         assertStopOrderBookSize("BTCUSD", false, 0)
@@ -939,17 +1318,29 @@ class StopLimitOrderTest : AbstractTest() {
     @Test
     fun testProcessImmediateOrCancelStopLimitOrderWithTrades() {
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 0.5)
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client1", assetId = "BTCUSD",
-                type = LimitOrderType.STOP_LIMIT,
-                volume = -1.0,
-                lowerLimitPrice = 1.0,
-                lowerPrice = 1.0,
-                timeInForce = OrderTimeInForce.IOC)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD",
+                    type = LimitOrderType.STOP_LIMIT,
+                    volume = -1.0,
+                    lowerLimitPrice = 1.0,
+                    lowerPrice = 1.0,
+                    timeInForce = OrderTimeInForce.IOC
+                )
+            )
+        )
 
         clearMessageQueues()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD",
-                volume = 0.5, price = 1.0)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2", assetId = "BTCUSD",
+                    volume = 0.5, price = 1.0
+                )
+            )
+        )
 
         assertStopOrderBookSize("BTCUSD", false, 0)
         assertOrderBookSize("BTCUSD", false, 0)
@@ -975,17 +1366,29 @@ class StopLimitOrderTest : AbstractTest() {
     @Test
     fun testProcessImmediateOrCancelStopLimitOrderWithoutTrades() {
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 0.5)
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client1", assetId = "BTCUSD",
-                type = LimitOrderType.STOP_LIMIT,
-                volume = -1.0,
-                lowerLimitPrice = 0.99,
-                lowerPrice = 0.98,
-                timeInForce = OrderTimeInForce.IOC)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD",
+                    type = LimitOrderType.STOP_LIMIT,
+                    volume = -1.0,
+                    lowerLimitPrice = 0.99,
+                    lowerPrice = 0.98,
+                    timeInForce = OrderTimeInForce.IOC
+                )
+            )
+        )
 
         clearMessageQueues()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD",
-                volume = 0.5, price = 0.97)))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2", assetId = "BTCUSD",
+                    volume = 0.5, price = 0.97
+                )
+            )
+        )
 
         assertStopOrderBookSize("BTCUSD", false, 0)
         assertOrderBookSize("BTCUSD", false, 0)

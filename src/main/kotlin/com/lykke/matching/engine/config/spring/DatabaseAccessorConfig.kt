@@ -19,6 +19,7 @@ import com.lykke.matching.engine.database.redis.accessor.impl.RedisCashOperation
 import com.lykke.matching.engine.database.redis.accessor.impl.RedisMessageSequenceNumberDatabaseAccessor
 import com.lykke.matching.engine.database.redis.accessor.impl.RedisProcessedMessagesDatabaseAccessor
 import com.lykke.matching.engine.database.redis.connection.RedisConnection
+import com.lykke.matching.engine.database.redis.dictionaries.GrpcDictionariesDatabaseAccessor
 import com.lykke.matching.engine.holders.BalancesDatabaseAccessorsHolder
 import com.lykke.matching.engine.holders.OrdersDatabaseAccessorsHolder
 import com.lykke.matching.engine.holders.StopOrdersDatabaseAccessorsHolder
@@ -95,7 +96,7 @@ open class DatabaseAccessorConfig {
     //<editor-fold desc="Multisource database accessors">
     @Bean
     open fun readOnlyProcessedMessagesDatabaseAccessor(redisProcessedMessagesDatabaseAccessor: Optional<RedisProcessedMessagesDatabaseAccessor>): ReadOnlyProcessedMessagesDatabaseAccessor {
-        return when (config.me.storage) {
+        return when (config.matchingEngine.storage) {
             Storage.Azure -> fileProcessedMessagesDatabaseAccessor()
             Storage.RedisWithoutOrders,
             Storage.Redis -> redisProcessedMessagesDatabaseAccessor.get()
@@ -104,7 +105,7 @@ open class DatabaseAccessorConfig {
 
     @Bean
     open fun cashOperationIdDatabaseAccessor(redisCashOperationIdDatabaseAccessor: Optional<RedisCashOperationIdDatabaseAccessor>): CashOperationIdDatabaseAccessor? {
-        return when (config.me.storage) {
+        return when (config.matchingEngine.storage) {
             Storage.Azure -> AzureCashOperationIdDatabaseAccessor()
             Storage.RedisWithoutOrders,
             Storage.Redis -> redisCashOperationIdDatabaseAccessor.get()
@@ -113,7 +114,7 @@ open class DatabaseAccessorConfig {
 
     @Bean
     open fun messageSequenceNumberDatabaseAccessor(redisMessageSequenceNumberDatabaseAccessor: Optional<RedisMessageSequenceNumberDatabaseAccessor>): ReadOnlyMessageSequenceNumberDatabaseAccessor {
-        return when (config.me.storage) {
+        return when (config.matchingEngine.storage) {
             Storage.Azure -> AzureMessageSequenceNumberDatabaseAccessor()
             Storage.RedisWithoutOrders,
             Storage.Redis -> redisMessageSequenceNumberDatabaseAccessor.get()
@@ -121,39 +122,33 @@ open class DatabaseAccessorConfig {
     }
     //</editor-fold>
 
-    //<editor-fold desc="Azure DB accessors">
-    @Bean
-    open fun backOfficeDatabaseAccessor(): BackOfficeDatabaseAccessor {
-        return AzureBackOfficeDatabaseAccessor(config.me.db.dictsConnString)
-    }
-
     @Bean
     open fun azureCashOperationsDatabaseAccessor(@Value("\${azure.cache.operation.table}") tableName: String)
             : CashOperationsDatabaseAccessor {
-        return AzureCashOperationsDatabaseAccessor(config.me.db.balancesInfoConnString, tableName)
+        return AzureCashOperationsDatabaseAccessor(config.matchingEngine.db.balancesInfoConnString, tableName)
     }
 
     @Bean
     open fun azureMarketOrderDatabaseAccessor(@Value("\${azure.market.order.table}") tableName: String)
             : MarketOrderDatabaseAccessor {
-        return AzureMarketOrderDatabaseAccessor(config.me.db.hTradesConnString, tableName)
+        return AzureMarketOrderDatabaseAccessor(config.matchingEngine.db.hTradesConnString, tableName)
     }
 
     @Bean
     open fun azureReservedVolumesDatabaseAccessor(@Value("\${azure.reserved.volumes.table}") tableName: String)
             : ReservedVolumesDatabaseAccessor {
-        return AzureReservedVolumesDatabaseAccessor(config.me.db.reservedVolumesConnString, tableName)
+        return AzureReservedVolumesDatabaseAccessor(config.matchingEngine.db.reservedVolumesConnString, tableName)
     }
 
     @Bean
     open fun azureSettingsDatabaseAccessor(@Value("\${azure.settings.database.accessor.table}") tableName: String)
             : SettingsDatabaseAccessor {
-        return AzureSettingsDatabaseAccessor(config.me.db.matchingEngineConnString, tableName)
+        return AzureSettingsDatabaseAccessor(config.matchingEngine.db.matchingEngineConnString, tableName)
     }
 
     @Bean
     open fun settingsHistoryDatabaseAccessor(@Value("\${azure.settings.history.database.accessor.table}") tableName: String): SettingsHistoryDatabaseAccessor {
-        return AzureSettingsHistoryDatabaseAccessor(config.me.db.matchingEngineConnString, tableName)
+        return AzureSettingsHistoryDatabaseAccessor(config.matchingEngine.db.matchingEngineConnString, tableName)
     }
 
     @Bean
@@ -161,12 +156,12 @@ open class DatabaseAccessorConfig {
     open fun azureMonitoringDatabaseAccessor(@Value("\${azure.monitoring.table}") monitoringTable: String,
                                              @Value("\${azure.performance.table}") performanceTable: String)
             : MonitoringDatabaseAccessor {
-        return AzureMonitoringDatabaseAccessor(config.me.db.monitoringConnString, monitoringTable, performanceTable)
+        return AzureMonitoringDatabaseAccessor(config.matchingEngine.db.monitoringConnString, monitoringTable, performanceTable)
     }
 
     @Bean
-    open fun azureDictionariesDatabaseAccessor(): DictionariesDatabaseAccessor {
-        return AzureDictionariesDatabaseAccessor(config.me.db.dictsConnString)
+    open fun grpcDictionariesDatabaseAccessor(): DictionariesDatabaseAccessor {
+        return GrpcDictionariesDatabaseAccessor(config.matchingEngine.grpcEndpoints.dictionariesConnection)
     }
     //</editor-fold>
 
@@ -174,18 +169,18 @@ open class DatabaseAccessorConfig {
     @Bean
     open fun fileOrderBookDatabaseAccessor()
             : OrderBookDatabaseAccessor {
-        return FileOrderBookDatabaseAccessor(config.me.orderBookPath)
+        return FileOrderBookDatabaseAccessor(config.matchingEngine.orderBookPath)
     }
 
     @Bean
     open fun fileProcessedMessagesDatabaseAccessor()
             : FileProcessedMessagesDatabaseAccessor {
-        return FileProcessedMessagesDatabaseAccessor(config.me.processedMessagesPath, config.me.processedMessagesInterval)
+        return FileProcessedMessagesDatabaseAccessor(config.matchingEngine.processedMessagesPath, config.matchingEngine.processedMessagesInterval)
     }
 
     @Bean
     open fun fileStopOrderBookDatabaseAccessor(): FileStopOrderBookDatabaseAccessor {
-        return FileStopOrderBookDatabaseAccessor(config.me.stopOrderBookPath)
+        return FileStopOrderBookDatabaseAccessor(config.matchingEngine.stopOrderBookPath)
     }
     //</editor-fold>
 

@@ -80,7 +80,7 @@ class ApplicationSettingsServiceImpl(private val settingsDatabaseAccessor: Setti
         applicationEventPublisher.publishEvent(ApplicationSettingCreatedOrUpdatedEvent(settingsGroup,
                 setting,
                 previousSetting?.let{toSetting(it)},
-                settingDto.comment!!,
+                settingDto.comment,
                 settingDto.user))
     }
 
