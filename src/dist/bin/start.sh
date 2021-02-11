@@ -29,7 +29,7 @@ EXECSTR="$JAVACMD \
     -Dapp.pid="$$" \
     -Dapp.home="$BASEDIR" \
     -Dbasedir="$BASEDIR" \
-    -jar $BASEDIR/lib/lykke-me-prototype-0.1.jar \
+    -jar $BASEDIR/lib/MyJetWallet.MatchingEngine-1.0.jar \
     $HTTP_CONFIG"
 
 
