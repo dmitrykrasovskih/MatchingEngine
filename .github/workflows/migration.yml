@@ -43,6 +43,7 @@ jobs:
       - name: Publish image
         uses: docker/build-push-action@v1
         with:
+          file: docker/dockerfile
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           path: ./build/distributions
