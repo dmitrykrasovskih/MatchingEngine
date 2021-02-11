@@ -2,7 +2,6 @@ package com.lykke.matching.engine.services.validator.input
 
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.FeeType
 import com.lykke.matching.engine.daos.LimitOrder
 import com.lykke.matching.engine.daos.context.SingleLimitOrderContext
@@ -19,6 +18,7 @@ import com.lykke.matching.engine.messages.wrappers.SingleLimitOrderMessageWrappe
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.services.validators.impl.OrderValidationException
 import com.lykke.matching.engine.services.validators.input.LimitOrderInputValidator
+import com.lykke.matching.engine.utils.createAssetPair
 import com.lykke.matching.engine.utils.getSetting
 import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
 import org.junit.Before
@@ -40,14 +40,15 @@ import kotlin.test.assertEquals
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class LimitOrderInputValidatorTest {
     companion object {
-        val NON_EXISTENT_ASSET_PAIR = AssetPair("BTCOOO", "BTC", "OOO", 8)
-        val DISABLED_ASSET_PAIR = AssetPair("JPYUSD", "JPY", "USD", 8)
-        val MIN_VOLUME_ASSET_PAIR = AssetPair(
+        val NON_EXISTENT_ASSET_PAIR = createAssetPair("", "BTCOOO", "BTC", "OOO", 8)
+        val DISABLED_ASSET_PAIR = createAssetPair("", "JPYUSD", "JPY", "USD", 8)
+        val MIN_VOLUME_ASSET_PAIR = createAssetPair(
+            "",
             "EURUSD", "EUR", "USD", 5,
             BigDecimal.valueOf(0.1), BigDecimal.valueOf(0.2)
         )
-        val MAX_VALUE_ASSET_PAIR = AssetPair("EURCAD", "EUR", "CAD", 2, maxValue = BigDecimal.valueOf(5.0))
-        val BTC_USD_ASSET_PAIR = AssetPair("BTCUSD", "BTC", "USD", 8)
+        val MAX_VALUE_ASSET_PAIR = createAssetPair("", "EURCAD", "EUR", "CAD", 2, maxValue = BigDecimal.valueOf(5.0))
+        val BTC_USD_ASSET_PAIR = createAssetPair("", "BTCUSD", "BTC", "USD", 8)
     }
 
     @Autowired
@@ -127,8 +128,8 @@ class LimitOrderInputValidatorTest {
         val singleLimitContextBuilder = getSingleLimitContextBuilder()
         singleLimitContextBuilder.limitOrder(getLimitOrder(listOf(getNewLimitFee()), "JPYUSD"))
         singleLimitContextBuilder.assetPair(DISABLED_ASSET_PAIR)
-        singleLimitContextBuilder.baseAsset(Asset("JPY", 2))
-        singleLimitContextBuilder.quotingAsset(Asset("USD", 2))
+        singleLimitContextBuilder.baseAsset(Asset("", "JPY", 2))
+        singleLimitContextBuilder.quotingAsset(Asset("", "USD", 2))
 
         //when
         try {
@@ -446,11 +447,11 @@ class LimitOrderInputValidatorTest {
 
         builder.messageId("test")
             .limitOrder(getLimitOrder(listOf(getNewLimitFee())))
-            .assetPair(AssetPair("BTCUSD", "BTC", "USD", 8))
-            .baseAsset(Asset("BTC", 5))
-            .quotingAsset(Asset("USD", 2))
+            .assetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 8))
+            .baseAsset(Asset("", "BTC", 5))
+            .quotingAsset(Asset("", "USD", 2))
             .trustedClient(false)
-            .limitAsset(Asset("BTC", 5))
+            .limitAsset(Asset("", "BTC", 5))
             .cancelOrders(false)
             .processedMessage(ProcessedMessage(MessageType.LIMIT_ORDER.type, 1, "String"))
         return builder

@@ -1,8 +1,6 @@
 package com.lykke.matching.engine.socket.impl
 
-import com.lykke.matching.engine.incoming.MessageRouter
 import com.lykke.matching.engine.messages.MessageType
-import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.socket.ClientHandler
 import com.lykke.matching.engine.socket.ClientsRequestsSocketServer
 import com.lykke.matching.engine.utils.IntUtils
@@ -82,7 +80,6 @@ class ClientHandlerImpl(
         val serializedData = ByteArray(size)
         inputStream.readFully(serializedData, 0, size)
         incomingSize += 1 + size
-//        messageRouter.process(MessageWrapper(clientHostName, type, serializedData, this))
     }
 
     override fun writeOutput(byteArray: ByteArray) {

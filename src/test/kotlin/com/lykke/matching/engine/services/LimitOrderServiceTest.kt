@@ -3,7 +3,6 @@ package com.lykke.matching.engine.services
 import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.FeeSizeType
 import com.lykke.matching.engine.daos.FeeType
 import com.lykke.matching.engine.daos.fee.v2.NewLimitOrderFeeInstruction
@@ -27,6 +26,7 @@ import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrderWrapper
 import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.assertEquals
+import com.lykke.matching.engine.utils.createAssetPair
 import com.lykke.matching.engine.utils.getSetting
 import org.junit.Before
 import org.junit.Test
@@ -86,11 +86,11 @@ class LimitOrderServiceTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client2", "EUR", 1000.0)
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 1000.0)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURCHF", "EUR", "CHF", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCEUR", "BTC", "EUR", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "ETHBTC", "ETH", "BTC", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURCHF", "EUR", "CHF", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCEUR", "BTC", "EUR", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "ETHBTC", "ETH", "BTC", 5))
 
         initServices()
     }
@@ -297,7 +297,7 @@ class LimitOrderServiceTest : AbstractTest() {
     fun testSmallVolume() {
         testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
         testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5,
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5,
                 BigDecimal.valueOf(0.1), BigDecimal.valueOf(0.2)))
 
         initServices()
@@ -1184,7 +1184,7 @@ class LimitOrderServiceTest : AbstractTest() {
         assertEquals("Client1", eventCancelledOrder.first().walletId)
         val eventBalanceUpdate = event.balanceUpdates?.singleOrNull { it.walletId == "Client1" }
         assertNotNull(eventBalanceUpdate)
-        assertEquals("0", eventBalanceUpdate!!.newReserved)
+        assertEquals("0", eventBalanceUpdate.newReserved)
     }
 
     @Test
@@ -1478,7 +1478,7 @@ class LimitOrderServiceTest : AbstractTest() {
     @Test
     fun testOverflowedRemainingVolume() {
         testDictionariesDatabaseAccessor.addAsset(Asset("", "PKT", 12))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "PKTETH", "PKT", "ETH", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "PKTETH", "PKT", "ETH", 5))
         testBalanceHolderWrapper.updateBalance("Client1", "ETH", 1.0)
         testBalanceHolderWrapper.updateBalance("Client2", "PKT", 3.0)
 
@@ -1535,7 +1535,7 @@ class LimitOrderServiceTest : AbstractTest() {
         testDictionariesDatabaseAccessor.addAsset(Asset("", "LKK1Y", 2))
         testDictionariesDatabaseAccessor.addAsset(Asset("", "LKK", 2))
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "LKK1YLKK", "LKK1Y", "LKK", 4))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "LKK1YLKK", "LKK1Y", "LKK", 4))
 
         testBalanceHolderWrapper.updateBalance("Client1", "LKK1Y", 5495.03)
         testBalanceHolderWrapper.updateBalance("Client2", "LKK", 10000.0)
@@ -1629,7 +1629,7 @@ class LimitOrderServiceTest : AbstractTest() {
     @Test
     fun testOrderMaxValue() {
         testBalanceHolderWrapper.updateBalance("Client1", "BTC", 1.1)
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8,
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 8,
                 maxValue = BigDecimal.valueOf(10000.0)))
         assetPairsCache.update()
 
@@ -1648,7 +1648,7 @@ class LimitOrderServiceTest : AbstractTest() {
     @Test
     fun testOrderMaxVolume() {
         testBalanceHolderWrapper.updateBalance("Client1", "BTC", 1.1)
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8,
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 8,
                 maxVolume = BigDecimal.valueOf(1.0)))
         assetPairsCache.update()
 

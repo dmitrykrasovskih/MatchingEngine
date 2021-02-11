@@ -3,6 +3,7 @@ package com.lykke.matching.engine.services.validator
 import com.lykke.matching.engine.balance.util.TestBalanceHolderWrapper
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
+import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.services.validators.ReservedCashInOutOperationValidator
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.utils.proto.createProtobufTimestampBuilder

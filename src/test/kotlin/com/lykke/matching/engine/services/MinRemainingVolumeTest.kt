@@ -3,20 +3,19 @@ package com.lykke.matching.engine.services
 import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.IncomingLimitOrder
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
-import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderStatus as OutgoingOrderStatus
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrderWrapper
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderWrapper
+import com.lykke.matching.engine.utils.createAssetPair
 import com.lykke.matching.engine.utils.getSetting
 import org.junit.Before
 import org.junit.Test
@@ -30,6 +29,7 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
 import kotlin.test.assertEquals
+import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderStatus as OutgoingOrderStatus
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [(TestApplicationContext::class), (MinRemainingVolumeTest.Config::class)])
@@ -66,7 +66,7 @@ class MinRemainingVolumeTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client1", "BTC", 1.0)
         testBalanceHolderWrapper.updateBalance("Client1", "USD", 10000.0)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8, BigDecimal.valueOf(0.01)))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 8, BigDecimal.valueOf(0.01)))
         initServices()
     }
 

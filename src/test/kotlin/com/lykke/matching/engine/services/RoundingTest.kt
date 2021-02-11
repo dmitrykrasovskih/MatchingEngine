@@ -3,13 +3,14 @@ package com.lykke.matching.engine.services
 import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.outgoing.messages.MarketOrderWithTrades
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrderWrapper
+import com.lykke.matching.engine.utils.assertEquals
+import com.lykke.matching.engine.utils.createAssetPair
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -20,10 +21,8 @@ import org.springframework.context.annotation.Primary
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
-import kotlin.test.assertNotNull
-import com.lykke.matching.engine.utils.assertEquals
 import kotlin.test.assertEquals
-
+import kotlin.test.assertNotNull
 
 
 @RunWith(SpringRunner::class)
@@ -51,12 +50,12 @@ class RoundingTest: AbstractTest() {
 
     @Before
     fun setUp() {
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURJPY", "EUR", "JPY", 3))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 3))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCCHF", "BTC", "CHF", 3))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCEUR", "BTC", "EUR", 3))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCLKK", "BTC", "LKK", 2))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURJPY", "EUR", "JPY", 3))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 3))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCCHF", "BTC", "CHF", 3))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCEUR", "BTC", "EUR", 3))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCLKK", "BTC", "LKK", 2))
         initServices()
     }
 
@@ -386,6 +385,6 @@ class RoundingTest: AbstractTest() {
 
         val limitOrder = testOrderDatabaseAccessor.getOrders("BTCEUR", true).singleOrNull()
         assertNotNull(limitOrder)
-        assertEquals(BigDecimal.valueOf(1000.0 - 0.00043722), limitOrder!!.remainingVolume)
+        assertEquals(BigDecimal.valueOf(1000.0 - 0.00043722), limitOrder.remainingVolume)
     }
 }

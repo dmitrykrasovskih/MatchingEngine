@@ -6,7 +6,6 @@ import com.lykke.matching.engine.deduplication.ProcessedMessagesCache
 import com.lykke.matching.engine.holders.CurrentTransactionDataHolder
 import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
 import com.lykke.matching.engine.holders.MessageSequenceNumberHolder
-import com.lykke.matching.engine.incoming.MessageRouter
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.outgoing.database.TransferOperationSaveService
 import com.lykke.matching.engine.performance.PerformanceStatsHolder
@@ -27,9 +26,6 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
         val MONITORING_LOGGER = ThrottlingLogger.getLogger("${MessageProcessor::class.java.name}.monitoring")
         val METRICS_LOGGER = MetricsLogger.getLogger()
     }
-
-    @Autowired
-    private lateinit var messageRouter: MessageRouter
 
     @Autowired
     private lateinit var preProcessedMessageQueue: BlockingQueue<MessageWrapper>

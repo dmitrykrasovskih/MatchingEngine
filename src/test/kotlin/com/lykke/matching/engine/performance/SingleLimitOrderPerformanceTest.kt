@@ -1,10 +1,10 @@
 package com.lykke.matching.engine.performance
 
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.PrintUtils
+import com.lykke.matching.engine.utils.createAssetPair
 import org.junit.Ignore
 import org.junit.Test
 import java.math.BigDecimal
@@ -27,11 +27,11 @@ class SingleLimitOrderPerformanceTest: AbstractPerformanceTest()  {
 
         applicationSettingsCache.createOrUpdateSettingValue(AvailableSettingGroup.TRUSTED_CLIENTS, "Client3", "Client3", true)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURCHF", "EUR", "CHF", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCEUR", "BTC", "EUR", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "ETHBTC", "ETH", "BTC", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURCHF", "EUR", "CHF", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCEUR", "BTC", "EUR", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "ETHBTC", "ETH", "BTC", 5))
     }
 
     @Test
@@ -91,7 +91,7 @@ class SingleLimitOrderPerformanceTest: AbstractPerformanceTest()  {
         val counter = ActionTimeCounter()
         testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
         testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
-        counter.executeAction {  testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5,
+        counter.executeAction {  testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5,
                 BigDecimal.valueOf(0.1), BigDecimal.valueOf(0.2)))}
         initServices()
 
@@ -235,7 +235,7 @@ class SingleLimitOrderPerformanceTest: AbstractPerformanceTest()  {
         val counter = ActionTimeCounter()
 
         testDictionariesDatabaseAccessor.addAsset(Asset("", "PKT", 12))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "PKTETH", "PKT", "ETH", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "PKTETH", "PKT", "ETH", 5))
         testBalanceHolderWrapper.updateBalance("Client1", "ETH", 1.0)
         testBalanceHolderWrapper.updateBalance("Client2", "PKT", 3.0)
 

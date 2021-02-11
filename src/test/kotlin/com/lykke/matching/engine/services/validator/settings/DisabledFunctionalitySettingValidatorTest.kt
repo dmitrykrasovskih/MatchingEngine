@@ -2,10 +2,10 @@ package com.lykke.matching.engine.services.validator.settings
 
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.services.validators.settings.impl.DisabledFunctionalitySettingValidator
+import com.lykke.matching.engine.utils.createAssetPair
 import com.lykke.matching.engine.web.dto.DisabledFunctionalityRuleDto
 import com.lykke.matching.engine.web.dto.OperationType
 import org.junit.Test
@@ -24,19 +24,13 @@ import org.springframework.test.context.junit4.SpringRunner
 class DisabledFunctionalitySettingValidatorTest {
 
     @TestConfiguration
-    open class Config {
+    class Config {
+
         @Bean
         @Primary
         fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
             val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
-            testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 5))
-            return testDictionariesDatabaseAccessor
-        }
-
-        @Bean
-        @Primary
-        fun testDictionariesDatabaseAccessor(): testDictionariesDatabaseAccessor {
-            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
+            testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 5))
             testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 8))
             testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 4))
             return testDictionariesDatabaseAccessor
@@ -48,32 +42,92 @@ class DisabledFunctionalitySettingValidatorTest {
 
     @Test(expected = ValidationException::class)
     fun testEmptyRuleIsInvalid() {
-        disabledFunctionalitySettingValidator.validate(DisabledFunctionalityRuleDto(null, null, "", null, true, "test", "test"))
+        disabledFunctionalitySettingValidator.validate(
+            DisabledFunctionalityRuleDto(
+                null,
+                null,
+                "",
+                null,
+                true,
+                "test",
+                "test"
+            )
+        )
     }
 
     @Test(expected = ValidationException::class)
     fun testAssetDoesNotExist() {
-        disabledFunctionalitySettingValidator.validate(DisabledFunctionalityRuleDto(null, "TEST", "", OperationType.CASH_IN.name, true, "test", "test"))
+        disabledFunctionalitySettingValidator.validate(
+            DisabledFunctionalityRuleDto(
+                null,
+                "TEST",
+                "",
+                OperationType.CASH_IN.name,
+                true,
+                "test",
+                "test"
+            )
+        )
     }
 
     @Test(expected = ValidationException::class)
     fun testAssetPairDoesNotExist() {
-        disabledFunctionalitySettingValidator.validate(DisabledFunctionalityRuleDto(null, "TEST", "", OperationType.CASH_OUT.name, true, "test", "test"))
+        disabledFunctionalitySettingValidator.validate(
+            DisabledFunctionalityRuleDto(
+                null,
+                "TEST",
+                "",
+                OperationType.CASH_OUT.name,
+                true,
+                "test",
+                "test"
+            )
+        )
     }
 
     @Test(expected = ValidationException::class)
     fun operationDoesNotExist() {
-        disabledFunctionalitySettingValidator.validate(DisabledFunctionalityRuleDto(null, "TEST", "", "NOT_EXIST", true, "test", "test"))
+        disabledFunctionalitySettingValidator.validate(
+            DisabledFunctionalityRuleDto(
+                null,
+                "TEST",
+                "",
+                "NOT_EXIST",
+                true,
+                "test",
+                "test"
+            )
+        )
 
     }
 
     @Test(expected = ValidationException::class)
     fun nonTradOperationSuppliedWithAssetPair() {
-        disabledFunctionalitySettingValidator.validate(DisabledFunctionalityRuleDto(null, null, "BTCUSD", OperationType.CASH_OUT.name, true, "test", "test"))
+        disabledFunctionalitySettingValidator.validate(
+            DisabledFunctionalityRuleDto(
+                null,
+                null,
+                "BTCUSD",
+                OperationType.CASH_OUT.name,
+                true,
+                "test",
+                "test"
+            )
+        )
     }
 
     @Test
     fun validRule() {
-        disabledFunctionalitySettingValidator.validate(DisabledFunctionalityRuleDto(null, "BTC", "BTCUSD", OperationType.TRADE.name, true, "test", "test"))
+        disabledFunctionalitySettingValidator.validate(
+            DisabledFunctionalityRuleDto(
+                null,
+                "BTC",
+                "BTCUSD",
+                OperationType.TRADE.name,
+                true,
+                "test",
+                "test"
+            )
+        )
     }
 }

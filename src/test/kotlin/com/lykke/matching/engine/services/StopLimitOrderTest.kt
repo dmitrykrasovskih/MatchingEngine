@@ -3,11 +3,11 @@ package com.lykke.matching.engine.services
 import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.IncomingLimitOrder
 import com.lykke.matching.engine.daos.order.LimitOrderType
 import com.lykke.matching.engine.daos.order.OrderTimeInForce
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
+import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
 import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.order.ExpiryOrdersQueue
@@ -23,6 +23,7 @@ import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderCancelWrapper
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderWrapper
 import com.lykke.matching.engine.utils.assertEquals
+import com.lykke.matching.engine.utils.createAssetPair
 import com.lykke.matching.engine.utils.getSetting
 import org.junit.Before
 import org.junit.Test
@@ -52,7 +53,7 @@ class StopLimitOrderTest : AbstractTest() {
     class Config {
         @Bean
         @Primary
-        fun testDictionariesDatabaseAccessor(): testDictionariesDatabaseAccessor {
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
             val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
 
             testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
@@ -78,9 +79,9 @@ class StopLimitOrderTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client1", "USD", 1000.0)
         testBalanceHolderWrapper.updateReservedBalance("Client1", "USD", 0.0)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 6))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 6))
         testDictionariesDatabaseAccessor.addAssetPair(
-            AssetPair(
+            createAssetPair("",
                 "BTCEUR",
                 "BTC",
                 "USD",
@@ -891,7 +892,7 @@ class StopLimitOrderTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 10000.0)
 
         testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 2))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 2))
         initServices()
 
         multiLimitOrderService.processMessage(
@@ -938,8 +939,17 @@ class StopLimitOrderTest : AbstractTest() {
         assertBalance("Client1", "USD", reserved = 990.0)
         assertBalance("Client1", "EUR", reserved = 5.0)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 5, BigDecimal.valueOf(0.0001)))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 2, BigDecimal.valueOf(5.0)))
+        testDictionariesDatabaseAccessor.addAssetPair(
+            createAssetPair(
+                "",
+                "BTCUSD",
+                "BTC",
+                "USD",
+                5,
+                BigDecimal.valueOf(0.0001)
+            )
+        )
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 2, BigDecimal.valueOf(5.0)))
 
         initServices()
 
@@ -1225,13 +1235,13 @@ class StopLimitOrderTest : AbstractTest() {
 
         val cacheIncomingOrder = genericLimitOrderService.getOrder("IncomingLimitOrder")
         assertNotNull(cacheIncomingOrder)
-        assertEquals(OrderStatus.Processing.name, cacheIncomingOrder!!.status)
+        assertEquals(OrderStatus.Processing.name, cacheIncomingOrder.status)
         assertEquals(BigDecimal.valueOf(1), cacheIncomingOrder.remainingVolume)
 
         val dbIncomingOrder = ordersDatabaseAccessorsHolder.primaryAccessor.loadLimitOrders()
             .singleOrNull { it.externalId == "IncomingLimitOrder" }
         assertNotNull(dbIncomingOrder)
-        assertEquals(OrderStatus.Processing.name, dbIncomingOrder!!.status)
+        assertEquals(OrderStatus.Processing.name, dbIncomingOrder.status)
         assertEquals(BigDecimal.valueOf(1), dbIncomingOrder.remainingVolume)
 
         assertEquals(1, clientsEventsQueue.size)

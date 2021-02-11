@@ -3,7 +3,6 @@ package com.lykke.matching.engine.services
 import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.IncomingLimitOrder
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
@@ -13,6 +12,7 @@ import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderWrapper
+import com.lykke.matching.engine.utils.createAssetPair
 import com.lykke.matching.engine.utils.getSetting
 import org.junit.Before
 import org.junit.Test
@@ -60,7 +60,7 @@ class NegativePriceTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client", "USD", 1.0)
         testBalanceHolderWrapper.updateReservedBalance("Client", "USD", 0.0)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
 
         initServices()
     }

@@ -2,10 +2,10 @@ package com.lykke.matching.engine.holders
 
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.database.DictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.services.DisabledFunctionalityRulesService
+import com.lykke.matching.engine.utils.createAssetPair
 import com.lykke.matching.engine.web.dto.DeleteSettingRequestDto
 import com.lykke.matching.engine.web.dto.DisabledFunctionalityRuleDto
 import com.lykke.matching.engine.web.dto.OperationType
@@ -49,8 +49,8 @@ class DisabledFunctionalityRulesHolderTest {
             testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 4))
             testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 4))
             testDictionariesDatabaseAccessor.addAsset(Asset("", "JPY", 4))
-            testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 2))
-            testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURJPY", "EUR", "JPY", 2))
+            testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 2))
+            testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURJPY", "EUR", "JPY", 2))
             return testDictionariesDatabaseAccessor
         }
     }

@@ -1,11 +1,15 @@
 package com.lykke.matching.engine.matching
 
 import com.lykke.matching.engine.config.TestApplicationContext
-import com.lykke.matching.engine.daos.*
+import com.lykke.matching.engine.daos.Asset
+import com.lykke.matching.engine.daos.FeeType
+import com.lykke.matching.engine.daos.LkkTrade
+import com.lykke.matching.engine.daos.WalletOperation
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrderFeeInstructions
 import com.lykke.matching.engine.utils.assertEquals
+import com.lykke.matching.engine.utils.createAssetPair
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -271,7 +275,7 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
 
         val uncompletedLimitOrder = matchingResult.uncompletedLimitOrder
         assertNotNull(uncompletedLimitOrder)
-        assertEquals("uncompleted", uncompletedLimitOrder!!.id)
+        assertEquals("uncompleted", uncompletedLimitOrder.id)
         assertEquals(OrderStatus.Processing.name, uncompletedLimitOrder.status)
         assertEquals(BigDecimal.valueOf(-8.9), uncompletedLimitOrder.remainingVolume)
         assertEquals(BigDecimal.valueOf(8.9), uncompletedLimitOrder.reservedLimitVolume!!)
@@ -306,7 +310,7 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
 
         val uncompletedLimitOrder = matchingResult.uncompletedLimitOrder
         assertNotNull(uncompletedLimitOrder)
-        assertEquals("uncompleted", uncompletedLimitOrder!!.id)
+        assertEquals("uncompleted", uncompletedLimitOrder.id)
         assertEquals(OrderStatus.Processing.name, uncompletedLimitOrder.status)
         assertEquals(BigDecimal.valueOf(8.1), uncompletedLimitOrder.remainingVolume)
         assertEquals(BigDecimal.valueOf(9.81), uncompletedLimitOrder.reservedLimitVolume!!)
@@ -814,7 +818,7 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
     fun testMatchLimitOrderSellFullBalance() {
         testDictionariesDatabaseAccessor.addAsset(Asset("", "LKK1Y", 2))
         testDictionariesDatabaseAccessor.addAsset(Asset("", "LKK", 2))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "LKK1YLKK", "LKK1Y", "LKK", 4))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "LKK1YLKK", "LKK1Y", "LKK", 4))
         initExecutionContext()
 
         testBalanceHolderWrapper.updateBalance("Client1", "LKK1Y", 5495.03)

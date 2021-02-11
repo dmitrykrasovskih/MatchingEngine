@@ -1,12 +1,12 @@
 package com.lykke.matching.engine.performance
 
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.IncomingLimitOrder
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderWrapper
 import com.lykke.matching.engine.utils.PrintUtils
+import com.lykke.matching.engine.utils.createAssetPair
 import org.junit.Ignore
 import org.junit.Test
 import java.math.BigDecimal
@@ -22,11 +22,11 @@ class MultiLimitOrderServicePerformanceTest : AbstractPerformanceTest() {
         testBalanceHolderWrapper.updateBalance("Client2", "EUR", 1000.0)
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 1000.0)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURCHF", "EUR", "CHF", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "TIMEUSD", "TIME", "USD", 6))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCEUR", "BTC", "EUR", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCCHF", "BTC", "CHF", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURCHF", "EUR", "CHF", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "TIMEUSD", "TIME", "USD", 6))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCEUR", "BTC", "EUR", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCCHF", "BTC", "CHF", 8))
 
         testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
         testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
@@ -53,7 +53,7 @@ class MultiLimitOrderServicePerformanceTest : AbstractPerformanceTest() {
         testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
         testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
         testDictionariesDatabaseAccessor.addAssetPair(
-            AssetPair(
+            createAssetPair(
                 "", "EURUSD", "EUR", "USD", 5,
                 BigDecimal.valueOf(0.1), BigDecimal.valueOf(0.2)
             )

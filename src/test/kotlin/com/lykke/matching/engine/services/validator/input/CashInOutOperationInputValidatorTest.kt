@@ -5,6 +5,7 @@ import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.daos.FeeType
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
+import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.cache.ApplicationSettingsCache
 import com.lykke.matching.engine.grpc.TestStreamObserver
 import com.lykke.matching.engine.incoming.parsers.data.CashInOutParsedData

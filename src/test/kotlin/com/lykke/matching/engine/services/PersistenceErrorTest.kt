@@ -3,7 +3,6 @@ package com.lykke.matching.engine.services
 import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.IncomingLimitOrder
 import com.lykke.matching.engine.daos.LimitOrder
 import com.lykke.matching.engine.daos.order.LimitOrderType
@@ -17,6 +16,7 @@ import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrderWrapper
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderCancelWrapper
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderWrapper
+import com.lykke.matching.engine.utils.createAssetPair
 import com.lykke.matching.engine.utils.getSetting
 import org.junit.After
 import org.junit.Before
@@ -75,8 +75,8 @@ class PersistenceErrorTest : AbstractTest() {
             testBalanceHolderWrapper.updateBalance(clientId, "BTC", 1.0)
         }
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5, BigDecimal.valueOf(0.05)))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5, BigDecimal.valueOf(0.05)))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 5))
 
         initServices()
 
@@ -480,7 +480,7 @@ class PersistenceErrorTest : AbstractTest() {
 
     private fun assertOrder(order: LimitOrder?, status: OrderStatus) {
         assertNotNull(order)
-        assertEquals(status.name, order!!.status)
+        assertEquals(status.name, order.status)
     }
 
 

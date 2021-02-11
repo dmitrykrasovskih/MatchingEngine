@@ -1,7 +1,10 @@
 package com.lykke.matching.engine.services.validator
 
 import com.lykke.matching.engine.config.TestApplicationContext
-import com.lykke.matching.engine.daos.*
+import com.lykke.matching.engine.daos.Asset
+import com.lykke.matching.engine.daos.FeeType
+import com.lykke.matching.engine.daos.LimitOrder
+import com.lykke.matching.engine.daos.MarketOrder
 import com.lykke.matching.engine.daos.fee.v2.NewFeeInstruction
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
@@ -10,6 +13,7 @@ import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.services.AssetOrderBook
 import com.lykke.matching.engine.services.validators.MarketOrderValidator
 import com.lykke.matching.engine.services.validators.impl.OrderValidationException
+import com.lykke.matching.engine.utils.createAssetPair
 import com.lykke.matching.engine.utils.getSetting
 import com.lykke.matching.engine.utils.proto.createProtobufTimestampBuilder
 import com.lykke.matching.engine.utils.proto.toDate
@@ -45,20 +49,14 @@ class MarketOrderValidatorTest {
     class Config {
 
         @Bean
-        @Primary
         fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
             val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
             testDictionariesDatabaseAccessor.addAsset(Asset("", BASE_ASSET_ID, 2))
             testDictionariesDatabaseAccessor.addAsset(Asset("", QUOTING_ASSET_ID, 2))
             testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 2))
-            return testDictionariesDatabaseAccessor
-        }
-
-        @Bean
-        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
-            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
             testDictionariesDatabaseAccessor.addAssetPair(
-                AssetPair(
+                createAssetPair(
+                    "",
                     ASSET_PAIR_ID,
                     BASE_ASSET_ID,
                     QUOTING_ASSET_ID,
@@ -110,7 +108,7 @@ class MarketOrderValidatorTest {
         val marketOrderBuilder = getDefaultMarketOrderBuilder()
         marketOrderBuilder.assetPairId = "BTCUSD"
         val order = toMarketOrder(marketOrderBuilder.build())
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 2))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 2))
 
         //when
         try {

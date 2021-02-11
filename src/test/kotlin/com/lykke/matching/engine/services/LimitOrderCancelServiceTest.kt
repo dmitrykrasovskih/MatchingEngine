@@ -3,7 +3,6 @@ package com.lykke.matching.engine.services
 import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.order.OrderStatus
@@ -13,6 +12,7 @@ import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.assertEquals
+import com.lykke.matching.engine.utils.createAssetPair
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,8 +57,8 @@ class LimitOrderCancelServiceTest : AbstractTest() {
         testOrderBookWrapper.addLimitOrder(buildLimitOrder(uid = "7", price = 300.0))
         testOrderBookWrapper.addLimitOrder(buildLimitOrder(uid = "8", price = 400.0))
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURCHF", "EUR", "CHF", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURCHF", "EUR", "CHF", 5))
 
         testBalanceHolderWrapper.updateBalance("Client1", "EUR", 1000.0)
         testBalanceHolderWrapper.updateReservedBalance("Client1", "EUR", 1.0)
@@ -115,7 +115,7 @@ class LimitOrderCancelServiceTest : AbstractTest() {
     @Test
     fun testMultiCancel() {
         testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 5))
         testBalanceHolderWrapper.updateBalance("Client2", "BTC", 1.0)
         initServices()
 

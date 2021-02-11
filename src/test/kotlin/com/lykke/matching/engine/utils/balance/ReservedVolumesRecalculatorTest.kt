@@ -3,10 +3,12 @@ package com.lykke.matching.engine.utils.balance
 import com.lykke.matching.engine.balance.util.TestBalanceHolderWrapper
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.order.LimitOrderType
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
-import com.lykke.matching.engine.database.*
+import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
+import com.lykke.matching.engine.database.TestReservedVolumesDatabaseAccessor
+import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
+import com.lykke.matching.engine.database.TestWalletDatabaseAccessor
 import com.lykke.matching.engine.holders.BalancesDatabaseAccessorsHolder
 import com.lykke.matching.engine.notification.BalanceUpdateHandlerTest
 import com.lykke.matching.engine.order.utils.TestOrderBookWrapper
@@ -18,6 +20,7 @@ import com.lykke.matching.engine.outgoing.messages.v2.events.Event
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.assertEquals
+import com.lykke.matching.engine.utils.createAssetPair
 import com.lykke.matching.engine.utils.getSetting
 import org.junit.Before
 import org.junit.Test
@@ -43,21 +46,13 @@ class ReservedVolumesRecalculatorTest {
 
         @Bean
         @Primary
-        fun testDictionariesDatabaseAccessor(): testDictionariesDatabaseAccessor {
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
             val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
             testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
             testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
             testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 8))
-
-            return testDictionariesDatabaseAccessor
-        }
-
-        @Bean
-        @Primary
-        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
-            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
-            testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
-            testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8))
+            testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
+            testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 8))
 
             return testDictionariesDatabaseAccessor
         }
@@ -89,7 +84,7 @@ class ReservedVolumesRecalculatorTest {
     lateinit var balancesDatabaseAccessorsHolder: BalancesDatabaseAccessorsHolder
 
     @Autowired
-    lateinit var testDictionariesDatabaseAccessor: testDictionariesDatabaseAccessor
+    lateinit var testDictionariesDatabaseAccessor: TestDictionariesDatabaseAccessor
 
     @Autowired
     lateinit var testBalanceHolderWrapper: TestBalanceHolderWrapper

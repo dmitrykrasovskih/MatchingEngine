@@ -148,9 +148,9 @@ class MarketOrderService @Autowired constructor(
             order,
             getOrderBook(order),
             messageWrapper.messageId,
-            priceDeviationThreshold = assetPair.marketOrderPriceDeviationThreshold
-                ?: applicationSettingsHolder.marketOrderPriceDeviationThreshold(assetPair.symbol),
-            executionContext = executionContext
+            priceDeviationThreshold = if (assetPair.marketOrderPriceDeviationThreshold > BigDecimal.ZERO)
+            assetPair.marketOrderPriceDeviationThreshold else applicationSettingsHolder.marketOrderPriceDeviationThreshold (assetPair.symbol),
+        executionContext = executionContext
         )
         marketOrderExecutionContext.matchingResult = matchingResult
 

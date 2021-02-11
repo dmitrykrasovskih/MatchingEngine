@@ -2,33 +2,36 @@ package com.lykke.matching.engine.services
 
 import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
-import com.lykke.matching.engine.daos.*
+import com.lykke.matching.engine.daos.Asset
+import com.lykke.matching.engine.daos.FeeSizeType
+import com.lykke.matching.engine.daos.FeeType
 import com.lykke.matching.engine.daos.fee.v2.NewLimitOrderFeeInstruction
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
 import com.lykke.matching.engine.outgoing.messages.MarketOrderWithTrades
 import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderRejectReason
-import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderStatus as OutgoingOrderStatus
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrderWrapper
+import com.lykke.matching.engine.utils.assertEquals
+import com.lykke.matching.engine.utils.createAssetPair
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
 import kotlin.test.assertEquals
-import com.lykke.matching.engine.utils.assertEquals
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.TestConfiguration
 import kotlin.test.assertNull
+import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderStatus as OutgoingOrderStatus
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [(TestApplicationContext::class), (FeeTest.Config::class)])
@@ -55,8 +58,8 @@ class FeeTest: AbstractTest() {
 
     @Before
     fun setUp() {
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 8))
 
         initServices()
     }
@@ -139,7 +142,7 @@ class FeeTest: AbstractTest() {
 
     @Test
     fun testBuyLimitOrderFeeAnotherAsset() {
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCEUR", "BTC", "EUR", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCEUR", "BTC", "EUR", 8))
 
         testBalanceHolderWrapper.updateBalance(clientId = "Client1", assetId = "BTC", balance = 0.1)
         testBalanceHolderWrapper.updateReservedBalance(clientId = "Client1", assetId = "BTC", reservedBalance =  0.05)
@@ -498,7 +501,7 @@ class FeeTest: AbstractTest() {
 
     @Test
     fun testNotEnoughFundsForFeeAnotherAsset() {
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCEUR", "BTC", "EUR", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCEUR", "BTC", "EUR", 8))
 
         testBalanceHolderWrapper.updateBalance(clientId = "Client2", assetId = "BTC", balance = 0.015)
         testBalanceHolderWrapper.updateBalance(clientId = "Client2", assetId = "EUR", balance = 1.26)

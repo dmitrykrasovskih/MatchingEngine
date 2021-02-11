@@ -1,9 +1,9 @@
 package com.lykke.matching.engine.performance
 
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.PrintUtils
+import com.lykke.matching.engine.utils.createAssetPair
 import org.junit.Ignore
 import org.junit.Test
 import java.math.BigDecimal
@@ -24,16 +24,16 @@ class MarketOrderPerformanceTest : AbstractPerformanceTest() {
         testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 8))
         testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC1", 8))
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURJPY", "EUR", "JPY", 3))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCCHF", "BTC", "CHF", 3))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCLKK", "BTC", "LKK", 6))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTC1USD", "BTC1", "USD", 3))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCCHF", "BTC", "CHF", 3))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "SLRBTC", "SLR", "BTC", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "LKKEUR", "LKK", "EUR", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "LKKGBP", "LKK", "GBP", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURJPY", "EUR", "JPY", 3))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCCHF", "BTC", "CHF", 3))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCLKK", "BTC", "LKK", 6))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTC1USD", "BTC1", "USD", 3))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCCHF", "BTC", "CHF", 3))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "SLRBTC", "SLR", "BTC", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "LKKEUR", "LKK", "EUR", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "LKKGBP", "LKK", "GBP", 5))
     }
 
     @Test
@@ -203,7 +203,7 @@ class MarketOrderPerformanceTest : AbstractPerformanceTest() {
         testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
         testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
         testDictionariesDatabaseAccessor.addAssetPair(
-            AssetPair(
+            createAssetPair(
                 "", "EURUSD", "EUR", "USD",
                 5, BigDecimal.valueOf(0.1), BigDecimal.valueOf(0.2)
             )

@@ -3,17 +3,17 @@ package com.lykke.matching.engine.services
 import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
 import com.lykke.matching.engine.outgoing.messages.MarketOrderWithTrades
-import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderStatus as OutgoingOrderStatus
 import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderType
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrderWrapper
+import com.lykke.matching.engine.utils.assertEquals
+import com.lykke.matching.engine.utils.createAssetPair
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -25,8 +25,8 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
 import kotlin.test.assertEquals
-import com.lykke.matching.engine.utils.assertEquals
 import kotlin.test.assertFalse
+import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderStatus as OutgoingOrderStatus
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [(TestApplicationContext::class), (MarketOrderService_Dust_Test.Config::class)])
@@ -61,17 +61,17 @@ class MarketOrderService_Dust_Test: AbstractTest() {
     @Before
     fun setUp() {
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURJPY", "EUR", "JPY", 3))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCLKK", "BTC", "LKK", 6))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTC1USD", "BTC1", "USD", 3))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTC1LKK", "BTC1", "LKK", 6))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCCHF", "BTC", "CHF", 3))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "SLRBTC", "SLR", "BTC", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "SLRBTC1", "SLR", "BTC1", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "LKKEUR", "LKK", "EUR", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "LKKGBP", "LKK", "GBP", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURJPY", "EUR", "JPY", 3))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCLKK", "BTC", "LKK", 6))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTC1USD", "BTC1", "USD", 3))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTC1LKK", "BTC1", "LKK", 6))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCCHF", "BTC", "CHF", 3))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "SLRBTC", "SLR", "BTC", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "SLRBTC1", "SLR", "BTC1", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "LKKEUR", "LKK", "EUR", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "LKKGBP", "LKK", "GBP", 5))
         initServices()
     }
 

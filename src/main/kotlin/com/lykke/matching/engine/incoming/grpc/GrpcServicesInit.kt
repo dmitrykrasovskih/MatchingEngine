@@ -1,13 +1,8 @@
 package com.lykke.matching.engine.incoming.grpc
 
 import com.lykke.matching.engine.AppInitialData
-import com.lykke.matching.engine.holders.AssetsHolder
-import com.lykke.matching.engine.holders.AssetsPairsHolder
-import com.lykke.matching.engine.holders.BalancesHolder
-import com.lykke.matching.engine.incoming.MessageRouter
 import com.lykke.matching.engine.messages.MessageProcessor
 import com.lykke.matching.engine.messages.wrappers.*
-import com.lykke.matching.engine.services.GenericLimitOrderService
 import com.lykke.matching.engine.utils.config.Config
 import com.lykke.utils.AppVersion
 import com.lykke.utils.logging.MetricsLogger
@@ -18,8 +13,10 @@ import org.springframework.stereotype.Component
 import java.util.concurrent.BlockingQueue
 
 @Component
-class GrpcServicesInit(private val messageProcessor: MessageProcessor,
-                       private val appInitialData: AppInitialData) : Runnable {
+class GrpcServicesInit(
+    private val messageProcessor: MessageProcessor,
+    private val appInitialData: AppInitialData
+) : Runnable {
 
     @Autowired
     private lateinit var config: Config
@@ -46,16 +43,25 @@ class GrpcServicesInit(private val messageProcessor: MessageProcessor,
     override fun run() {
         messageProcessor.start()
 
-        MetricsLogger.getLogger().logWarning("Spot.${config.matchingEngine.name} ${AppVersion.VERSION} : " +
-                "Started : ${appInitialData.ordersCount} orders, ${appInitialData.stopOrdersCount} " +
-                "stop orders,${appInitialData.balancesCount} " +
-                "balances for ${appInitialData.clientsCount} clients")
+        MetricsLogger.getLogger().logWarning(
+            "Spot.${config.matchingEngine.name} ${AppVersion.VERSION} : " +
+                    "Started : ${appInitialData.ordersCount} orders, ${appInitialData.stopOrdersCount} " +
+                    "stop orders,${appInitialData.balancesCount} " +
+                    "balances for ${appInitialData.clientsCount} clients"
+        )
 
         LOGGER.info("Starting gRpc services")
         with(config.matchingEngine.grpcEndpoints) {
-            ServerBuilder.forPort(cashApiServicePort).addService(CashApiService(cashInOutInputQueue, cashTransferInputQueue)).build().start()
+            ServerBuilder.forPort(cashApiServicePort)
+                .addService(CashApiService(cashInOutInputQueue, cashTransferInputQueue)).build().start()
             LOGGER.info("Starting CashApiService at $cashApiServicePort port")
-            ServerBuilder.forPort(tradingApiServicePort).addService(TradingApiService(limitOrderInputQueue, limitOrderCancelInputQueue, preProcessedMessageQueue)).build().start()
+            ServerBuilder.forPort(tradingApiServicePort).addService(
+                TradingApiService(
+                    limitOrderInputQueue,
+                    limitOrderCancelInputQueue,
+                    preProcessedMessageQueue
+                )
+            ).build().start()
         }
     }
 }

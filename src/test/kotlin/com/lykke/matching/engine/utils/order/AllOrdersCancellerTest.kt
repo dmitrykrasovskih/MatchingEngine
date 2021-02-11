@@ -3,15 +3,16 @@ package com.lykke.matching.engine.utils.order
 import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.order.LimitOrderType
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
+import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
 import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.assertEquals
 import com.lykke.matching.engine.utils.balance.ReservedVolumesRecalculator
+import com.lykke.matching.engine.utils.createAssetPair
 import com.lykke.matching.engine.utils.getSetting
 import org.junit.Before
 import org.junit.Test
@@ -35,7 +36,7 @@ class AllOrdersCancellerTest : AbstractTest() {
     class Config {
         @Bean
         @Primary
-        fun testDictionariesDatabaseAccessor(): testDictionariesDatabaseAccessor {
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
             val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
 
             testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 8))
@@ -73,10 +74,10 @@ class AllOrdersCancellerTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client1", "USD", 10000.0)
         testBalanceHolderWrapper.updateBalance("Client2", "BTC", 0.5)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 2))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCEUR", "BTC", "EUR", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "LKK1YLKK", "LKK1Y", "LKK", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 2))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCEUR", "BTC", "EUR", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "LKK1YLKK", "LKK1Y", "LKK", 5))
 
         initServices()
     }

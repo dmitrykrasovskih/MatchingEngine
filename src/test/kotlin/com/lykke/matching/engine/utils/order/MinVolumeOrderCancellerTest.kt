@@ -3,9 +3,9 @@ package com.lykke.matching.engine.utils.order
 import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.IncomingLimitOrder
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
+import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
 import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
 import com.lykke.matching.engine.utils.MessageBuilder
@@ -13,6 +13,7 @@ import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderWrapper
 import com.lykke.matching.engine.utils.assertEquals
 import com.lykke.matching.engine.utils.balance.ReservedVolumesRecalculator
+import com.lykke.matching.engine.utils.createAssetPair
 import com.lykke.matching.engine.utils.getSetting
 import org.junit.Before
 import org.junit.Test
@@ -43,7 +44,7 @@ class MinVolumeOrderCancellerTest : AbstractTest() {
 
         @Bean
         @Primary
-        fun testDictionariesDatabaseAccessor(): testDictionariesDatabaseAccessor {
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
             val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
 
             testDictionariesDatabaseAccessor.addAsset(Asset("", "BTC", 8))
@@ -86,9 +87,9 @@ class MinVolumeOrderCancellerTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 3000.0)
         testBalanceHolderWrapper.updateBalance("ClientForPartiallyMatching", "USD", 3000.0)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 2))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCEUR", "BTC", "EUR", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 2))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCEUR", "BTC", "EUR", 5))
 
         initServices()
     }
@@ -222,8 +223,8 @@ class MinVolumeOrderCancellerTest : AbstractTest() {
         )
 
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 5, BigDecimal.valueOf(0.0001)))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 2, BigDecimal.valueOf(5.0)))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 5, BigDecimal.valueOf(0.0001)))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 2, BigDecimal.valueOf(5.0)))
         initServices()
 
         testTrustedClientsLimitOrderListener.clear()

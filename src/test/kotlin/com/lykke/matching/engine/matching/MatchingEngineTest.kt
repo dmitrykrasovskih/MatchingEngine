@@ -12,6 +12,7 @@ import com.lykke.matching.engine.order.transaction.ExecutionContextFactory
 import com.lykke.matching.engine.order.utils.TestOrderBookWrapper
 import com.lykke.matching.engine.services.GenericLimitOrderService
 import com.lykke.matching.engine.utils.assertEquals
+import com.lykke.matching.engine.utils.createAssetPair
 import org.apache.log4j.Logger
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -78,9 +79,9 @@ abstract class MatchingEngineTest {
         testBalanceHolderWrapper.updateBalance("Client1", "USD", 1000.0)
         testBalanceHolderWrapper.updateBalance("Client2", "EUR", 1000.0)
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCCHF", "BTC", "CHF", 3))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCCHF", "BTC", "CHF", 3))
 
         initExecutionContext()
     }

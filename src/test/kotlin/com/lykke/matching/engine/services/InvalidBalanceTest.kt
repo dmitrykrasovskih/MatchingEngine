@@ -3,7 +3,6 @@ package com.lykke.matching.engine.services
 import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
-import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.daos.IncomingLimitOrder
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
@@ -19,6 +18,7 @@ import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrderWrapper
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderWrapper
 import com.lykke.matching.engine.utils.assertEquals
+import com.lykke.matching.engine.utils.createAssetPair
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -60,7 +60,7 @@ class InvalidBalanceTest : AbstractTest() {
 
     @Before
     fun setUp() {
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "ETHUSD", "ETH", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "ETHUSD", "ETH", "USD", 5))
         initServices()
     }
 

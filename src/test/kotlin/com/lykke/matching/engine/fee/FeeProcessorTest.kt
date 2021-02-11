@@ -3,7 +3,10 @@ package com.lykke.matching.engine.fee
 import com.lykke.matching.engine.balance.BalancesGetter
 import com.lykke.matching.engine.balance.util.TestBalanceHolderWrapper
 import com.lykke.matching.engine.config.TestApplicationContext
-import com.lykke.matching.engine.daos.*
+import com.lykke.matching.engine.daos.Asset
+import com.lykke.matching.engine.daos.FeeSizeType
+import com.lykke.matching.engine.daos.FeeType
+import com.lykke.matching.engine.daos.WalletOperation
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildFeeInstruction
@@ -11,12 +14,15 @@ import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildFeeInstruct
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrderFeeInstruction
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrderFeeInstructions
 import com.lykke.matching.engine.utils.assertEquals
+import com.lykke.matching.engine.utils.createAssetPair
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Primary
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
@@ -30,8 +36,8 @@ import kotlin.test.assertNull
 @SpringBootTest(classes = [(TestApplicationContext::class), (FeeProcessorTest.Config::class)])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class FeeProcessorTest {
-
-    private val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
+    @Autowired
+    lateinit var  testDictionariesDatabaseAccessor: TestDictionariesDatabaseAccessor
 
     @Autowired
     private lateinit var feeProcessor: FeeProcessor
@@ -45,6 +51,14 @@ class FeeProcessorTest {
 
     @TestConfiguration
     class Config {
+        @Bean
+        @Primary
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
+            val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
+            testDictionariesDatabaseAccessor.addAsset(Asset("","USD", 2))
+
+            return testDictionariesDatabaseAccessor
+        }
     }
 
     @Before
@@ -58,7 +72,7 @@ class FeeProcessorTest {
         testBalanceHolderWrapper.updateBalance("Client2", "EUR", 10.0)
 
         testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
 
         val operations = LinkedList<WalletOperation>()
         operations.add(WalletOperation("", "", "Client1", "USD", BigDecimal.valueOf(-10.0)))
@@ -266,7 +280,7 @@ class FeeProcessorTest {
         testBalanceHolderWrapper.updateBalance("Client2", "EUR", 0.09)
 
         testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
 
         val operations = LinkedList<WalletOperation>()
         operations.add(WalletOperation("", "", "Client1", "USD", BigDecimal.valueOf(-0.5)))
@@ -335,7 +349,7 @@ class FeeProcessorTest {
     @Test
     fun testAbsoluteFeeCashout() {
         testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
 
         val operations = LinkedList<WalletOperation>()
         operations.add(WalletOperation("", "", "Client1", "USD", BigDecimal.valueOf(-0.5)))
@@ -366,7 +380,7 @@ class FeeProcessorTest {
     @Test
     fun testPercentFeeCashout() {
         testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
 
         val operations = LinkedList<WalletOperation>()
         operations.add(WalletOperation("", "", "Client1", "USD", BigDecimal.valueOf(-0.5)))

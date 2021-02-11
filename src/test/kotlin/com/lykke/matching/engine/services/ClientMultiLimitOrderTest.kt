@@ -2,7 +2,10 @@ package com.lykke.matching.engine.services
 
 import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
-import com.lykke.matching.engine.daos.*
+import com.lykke.matching.engine.daos.Asset
+import com.lykke.matching.engine.daos.FeeSizeType
+import com.lykke.matching.engine.daos.FeeType
+import com.lykke.matching.engine.daos.IncomingLimitOrder
 import com.lykke.matching.engine.daos.fee.v2.NewLimitOrderFeeInstruction
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
@@ -18,12 +21,12 @@ import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrderFeeInstructions
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderWrapper
 import com.lykke.matching.engine.utils.assertEquals
+import com.lykke.matching.engine.utils.createAssetPair
 import com.lykke.matching.engine.utils.getSetting
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
@@ -58,15 +61,14 @@ class ClientMultiLimitOrderTest : AbstractTest() {
     @Autowired
     private lateinit var messageBuilder: MessageBuilder
 
-    @Qualifier("TestSettingsDatabaseAccessor")
     @Autowired
     private lateinit var testSettingDatabaseAccessor: TestSettingsDatabaseAccessor
 
     @Before
     fun setUp() {
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "EURUSD", "EUR", "USD", 5))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5))
 
-        testDictionariesDatabaseAccessor.addAssetPair(AssetPair("", "BTCUSD", "BTC", "USD", 8))
+        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 8))
 
         testBalanceHolderWrapper.updateBalance("Client1", "BTC", 1.0)
         testBalanceHolderWrapper.updateBalance("Client1", "USD", 3000.0)

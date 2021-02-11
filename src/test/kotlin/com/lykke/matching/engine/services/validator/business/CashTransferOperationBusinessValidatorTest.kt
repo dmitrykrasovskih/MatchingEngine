@@ -5,6 +5,7 @@ import com.lykke.matching.engine.balance.util.TestBalanceHolderWrapper
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.daos.context.CashTransferContext
+import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.grpc.TestStreamObserver
 import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.incoming.parsers.impl.CashTransferContextParser
