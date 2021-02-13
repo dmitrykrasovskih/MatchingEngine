@@ -11,8 +11,6 @@ data class RabbitMqConfigs (
     val reservedCashOperations: RabbitConfig,
     @SerializedName("Transfers")
     val transfers: RabbitConfig,
-    @SerializedName("SwapOperations")
-    val swapOperations: RabbitConfig,
     @SerializedName("BalanceUpdates")
     val balanceUpdates: RabbitConfig,
     @SerializedName("MarketOrders")
