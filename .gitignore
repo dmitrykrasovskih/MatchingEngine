@@ -24,3 +24,13 @@ build/
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar
 
+/src/main/grpc/com/myjetwallet/messages/incoming/socket/OrderCancelServiceGrpc.java
+/src/main/grpc/com/myjetwallet/messages/incoming/grpc/TradingServiceGrpc.java
+/src/main/grpc/com/myjetwallet/messages/incoming/grpc/CashServiceGrpc.java
+/src/main/grpc/com/matching/engine/database/grpc/AssetsGrpc.java
+/src/main/grpc/com/matching/engine/database/grpc/AssetPairsGrpc.java
+/src/main/java/com/matching/engine/database/grpc/GrpcDictionaries.java
+/src/main/java/com/myjetwallet/messages/incoming/grpc/GrpcIncomingApi.java
+/src/main/java/com/myjetwallet/messages/incoming/grpc/GrpcIncomingMessages.java
+/src/main/java/com/myjetwallet/messages/incoming/socket/SocketIncomingApi.java
+/src/main/java/com/myjetwallet/messages/incoming/socket/SocketIncomingMessages.java
