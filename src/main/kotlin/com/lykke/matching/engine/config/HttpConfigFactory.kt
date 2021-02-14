@@ -1,8 +1,10 @@
 package com.lykke.matching.engine.config
 
-import com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE
-import com.google.gson.GsonBuilder
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.lykke.matching.engine.utils.config.Config
+import com.lykke.matching.engine.utils.config.MatchingEngine
 import org.apache.log4j.Logger
 import org.springframework.core.env.Environment
 import java.io.BufferedReader
@@ -36,14 +38,20 @@ class HttpConfigFactory {
                 var inputLine = inputStream.readLine()
 
                 while (inputLine != null) {
-                    response.append(inputLine)
+                    response.append(inputLine).append("\n")
                     inputLine = inputStream.readLine()
                 }
 
                 inputStream.close()
 
-                val gson = GsonBuilder().setFieldNamingPolicy(UPPER_CAMEL_CASE).create()
-                return gson.fromJson(response.toString(), Config::class.java)
+                val mapper = ObjectMapper(YAMLFactory())
+                mapper.findAndRegisterModules()
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                mapper.configure(DeserializationFeature.UNWRAP_ROOT_VALUE, true)
+                return mapper.readValue(
+                    response.toString(),
+                    MatchingEngine::class.java
+                ).MatchingEngine
             } catch (e: Exception) {
                 throw ConfigurationException("Unable to read config from $httpString: ${e.message}")
             } finally {

@@ -6,7 +6,7 @@ import org.springframework.core.env.Environment
 import org.springframework.stereotype.Component
 
 @Component("Config")
-class ConfigFactory(private val environment: Environment): FactoryBean<Config> {
+class ConfigFactory(private val environment: Environment) : FactoryBean<Config> {
     companion object {
         private val LOCAL_CONFIG_PROFILE = "local_config"
         private var config: Config? = null

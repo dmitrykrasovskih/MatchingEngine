@@ -9,6 +9,7 @@ internal object ResourceFileConfigParser {
         val mapper = ObjectMapper(YAMLFactory())
         mapper.findAndRegisterModules()
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        mapper.configure(DeserializationFeature.UNWRAP_ROOT_VALUE, true)
         return mapper.readValue(
             ResourceFileConfigParser::class.java.classLoader.getResource(fileName).readText(),
             classOfT
