@@ -63,8 +63,8 @@ class ApplicationSettingsServiceTest : AbstractTest() {
             allSettingGroups.find { it.groupName == AvailableSettingGroup.DISABLED_ASSETS.settingGroupName }
         assertNotNull(disabledAssets)
 
-        assertEquals("testClient", trustedClients!!.settings.first().value)
-        assertEquals("BTC", disabledAssets!!.settings.first().value)
+        assertEquals("testClient", trustedClients.settings.first().value)
+        assertEquals("BTC", disabledAssets.settings.first().value)
     }
 
     @Test
@@ -82,7 +82,7 @@ class ApplicationSettingsServiceTest : AbstractTest() {
 
         //then
         assertNotNull(settingsGroup)
-        assertEquals(1, settingsGroup!!.settings.size)
+        assertEquals(1, settingsGroup.settings.size)
         assertEquals("testClient", settingsGroup.settings.first().value)
     }
 
@@ -101,7 +101,7 @@ class ApplicationSettingsServiceTest : AbstractTest() {
 
         //then
         assertNotNull(setting)
-        assertEquals("testClient", setting!!.value)
+        assertEquals("testClient", setting.value)
     }
 
     @Test
@@ -123,7 +123,7 @@ class ApplicationSettingsServiceTest : AbstractTest() {
         //then
         val dbSetting = testSettingsDatabaseAccessor.getSetting(AvailableSettingGroup.TRUSTED_CLIENTS, "settingName")
         assertNotNull(dbSetting)
-        assertEquals("test", dbSetting!!.value)
+        assertEquals("test", dbSetting.value)
 
         assertTrue(applicationSettingsHolder.isTrustedClient("test"))
         assertEquals(1, settingsListener.getSettingChangeSize())

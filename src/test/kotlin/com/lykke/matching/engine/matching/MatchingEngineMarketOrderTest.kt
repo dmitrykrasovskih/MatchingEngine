@@ -387,7 +387,7 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
 
         val uncompletedLimitOrder = matchingResult.uncompletedLimitOrder
         assertNotNull(uncompletedLimitOrder)
-        assertEquals("uncompleted", uncompletedLimitOrder!!.id)
+        assertEquals("uncompleted", uncompletedLimitOrder.id)
         assertEquals(OrderStatus.Processing.name, uncompletedLimitOrder.status)
         assertEquals(BigDecimal.valueOf(-8.9), uncompletedLimitOrder.remainingVolume)
         assertEquals(BigDecimal.valueOf(8.9), uncompletedLimitOrder.reservedLimitVolume!!)
@@ -438,7 +438,7 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
 
         val uncompletedLimitOrder = matchingResult.uncompletedLimitOrder
         assertNotNull(uncompletedLimitOrder)
-        assertEquals("uncompleted", uncompletedLimitOrder!!.id)
+        assertEquals("uncompleted", uncompletedLimitOrder.id)
         assertEquals(OrderStatus.Processing.name, uncompletedLimitOrder.status)
         assertEquals(BigDecimal.valueOf(8.1), uncompletedLimitOrder.remainingVolume)
         assertEquals(BigDecimal.valueOf(9.81), uncompletedLimitOrder.reservedLimitVolume!!)
@@ -474,7 +474,7 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
 
         val uncompletedLimitOrder = matchingResult.uncompletedLimitOrder
         assertNotNull(uncompletedLimitOrder)
-        assertEquals("uncompleted", uncompletedLimitOrder!!.id)
+        assertEquals("uncompleted", uncompletedLimitOrder.id)
         assertEquals(OrderStatus.Processing.name, uncompletedLimitOrder.status)
         assertEquals(BigDecimal.valueOf(-15.9664), uncompletedLimitOrder.remainingVolume)
         assertEquals(BigDecimal.valueOf(15.9664), uncompletedLimitOrder.reservedLimitVolume!!)
@@ -509,7 +509,7 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
 
         val uncompletedLimitOrder = matchingResult.uncompletedLimitOrder
         assertNotNull(uncompletedLimitOrder)
-        assertEquals("uncompleted", uncompletedLimitOrder!!.id)
+        assertEquals("uncompleted", uncompletedLimitOrder.id)
         assertEquals(OrderStatus.Processing.name, uncompletedLimitOrder.status)
         assertEquals(BigDecimal.valueOf(25.4553), uncompletedLimitOrder.remainingVolume)
         assertEquals(BigDecimal.valueOf(30.81), uncompletedLimitOrder.reservedLimitVolume!!)
