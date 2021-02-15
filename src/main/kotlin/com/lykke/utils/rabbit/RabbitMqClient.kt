@@ -27,7 +27,7 @@ abstract class RabbitMqClient(
         val host = config.host
         val port = config.port
         val exchangeName = config.exchange
-        val uri = getUriWithoutCredentials(config.uri) ?: "${config.host}:$port"
+        val uri = getUriWithoutCredentials(config.uri) ?: "$host:$port"
 
         val logSuffix = "$uri, exchange: $exchangeName${logSuffix()}"
 

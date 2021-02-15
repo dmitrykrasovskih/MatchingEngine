@@ -22,7 +22,7 @@ import java.util.stream.Stream
 class AllOrdersCanceller @Autowired constructor(private val genericLimitOrderService: GenericLimitOrderService,
                                                 private val genericStopLimitOrderService: GenericStopLimitOrderService,
                                                 private val limitOrdersCancelExecutor: LimitOrdersCancelExecutor,
-                                                @Value("#{Config.me.cancelAllOrders}") private val cancelAllOrders: Boolean) : ApplicationRunner {
+                                                @Value("#{Config.matchingEngine.cancelAllOrders}") private val cancelAllOrders: Boolean) : ApplicationRunner {
 
     companion object {
         private val LOGGER = Logger.getLogger(AllOrdersCanceller::class.java.name)

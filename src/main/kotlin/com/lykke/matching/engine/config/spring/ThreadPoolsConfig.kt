@@ -19,13 +19,7 @@ import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 import org.springframework.scheduling.config.ScheduledTaskRegistrar
-import java.util.concurrent.BlockingQueue
-import java.util.concurrent.Future
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.ExecutionException
-import java.util.concurrent.CancellationException
-import java.util.concurrent.SynchronousQueue
+import java.util.concurrent.*
 
 
 @Configuration
@@ -58,7 +52,7 @@ class ThreadPoolsConfig : SchedulingConfigurer {
 
     @Bean
     open fun clientRequestThreadPool(@Value("\${concurrent.client.request.pool.core.pool.size}") corePoolSize: Int,
-                                     @Value("#{Config.me.socket.maxConnections}") maxPoolSize: Int): ThreadPoolTaskExecutor {
+                                     @Value("#{Config.matchingEngine.socket.maxConnections}") maxPoolSize: Int): ThreadPoolTaskExecutor {
         val threadPoolTaskExecutor = ThreadPoolTaskExecutor()
         threadPoolTaskExecutor.threadNamePrefix = "client-connection-"
         threadPoolTaskExecutor.setQueueCapacity(0)
@@ -77,7 +71,7 @@ class ThreadPoolsConfig : SchedulingConfigurer {
 
     @Bean
     open fun orderBookSubscribersThreadPool(@Value("\${concurrent.orderbook.subscribers.pool.core.pool.size}") corePoolSize: Int,
-                                            @Value("#{Config.me.serverOrderBookMaxConnections}") maxPoolSize: Int?): ThreadPoolTaskExecutor? {
+                                            @Value("#{Config.matchingEngine.serverOrderBookMaxConnections}") maxPoolSize: Int?): ThreadPoolTaskExecutor? {
         if (config.matchingEngine.serverOrderBookPort == null) {
             return null
         }

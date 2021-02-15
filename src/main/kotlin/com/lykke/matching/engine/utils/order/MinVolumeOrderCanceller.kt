@@ -24,7 +24,7 @@ import java.util.stream.Stream
 class MinVolumeOrderCanceller @Autowired constructor(private val assetsPairsHolder: AssetsPairsHolder,
                                                      private val genericLimitOrderService: GenericLimitOrderService,
                                                      private val limitOrdersCancelExecutor: LimitOrdersCancelExecutor,
-                                                     @Value("#{Config.me.cancelMinVolumeOrders}")
+                                                     @Value("#{Config.matchingEngine.cancelMinVolumeOrders}")
                                                      private val cancelMinVolumeOrders: Boolean) : ApplicationRunner {
 
     companion object {

@@ -25,7 +25,7 @@ class QueueSizeLogger @Autowired constructor(private val queues: Map<String, Blo
         val LOG_THREAD_NAME = "QueueSizeLogger"
     }
 
-    @Scheduled(fixedRateString = "#{Config.me.queueConfig.queueSizeLoggerInterval}",  initialDelayString = "#{Config.me.queueConfig.queueSizeLoggerInterval}")
+    @Scheduled(fixedRateString = "#{Config.matchingEngine.queueConfig.queueSizeLoggerInterval}",  initialDelayString = "#{Config.matchingEngine.queueConfig.queueSizeLoggerInterval}")
     private fun log() {
         try {
             Thread.currentThread().name = LOG_THREAD_NAME

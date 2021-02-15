@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled
 class BestPriceUpdater(private val genericLimitOrderService: GenericLimitOrderService,
                        private val bestPriceDatabaseAccessor: BestPriceDatabaseAccessor) {
 
-    @Scheduled(fixedRateString = "#{Config.me.bestPricesInterval}")
+    @Scheduled(fixedRateString = "#{Config.matchingEngine.bestPricesInterval}")
     fun update() {
         bestPriceDatabaseAccessor.updateBestPrices(genericLimitOrderService.buildMarketProfile())
     }

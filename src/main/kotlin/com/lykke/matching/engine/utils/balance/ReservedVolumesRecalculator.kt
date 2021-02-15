@@ -34,7 +34,7 @@ class ReservedVolumesRecalculator @Autowired constructor(
     private val assetsPairsHolder: AssetsPairsHolder,
     private val balancesHolder: BalancesHolder,
     private val applicationSettingsHolder: ApplicationSettingsHolder,
-    @Value("#{Config.me.correctReservedVolumes}") private val correctReservedVolumes: Boolean,
+    @Value("#{Config.matchingEngine.correctReservedVolumes}") private val correctReservedVolumes: Boolean,
     private val messageSequenceNumberHolder: MessageSequenceNumberHolder,
     private val messageSender: MessageSender
 ) : ApplicationRunner {

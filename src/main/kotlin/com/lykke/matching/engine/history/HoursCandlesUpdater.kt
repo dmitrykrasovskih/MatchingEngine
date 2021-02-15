@@ -5,7 +5,7 @@ import org.springframework.scheduling.annotation.Scheduled
 
 class HoursCandlesUpdater(private val tradesInfoService: TradesInfoService) {
 
-    @Scheduled(fixedRateString = "#{Config.me.hoursCandleSaverInterval}")
+    @Scheduled(fixedRateString = "#{Config.matchingEngine.hoursCandleSaverInterval}")
     fun update() {
         tradesInfoService.saveHourCandles()
     }

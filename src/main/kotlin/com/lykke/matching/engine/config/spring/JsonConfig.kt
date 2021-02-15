@@ -13,10 +13,10 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Configuration
-open class JsonConfig {
+class JsonConfig {
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    open fun gson(): Gson {
+    fun gson(): Gson {
         return GsonBuilder()
                 .registerTypeAdapter(Date::class.java, GmtDateTypeAdapter())
                 .registerTypeAdapter(BigDecimal::class.java, BigDecimalAdapter())
@@ -60,5 +60,5 @@ class GmtDateTypeAdapter : JsonSerializer<Date>, JsonDeserializer<Date> {
 
 class SpringfoxJsonToGsonAdapter : JsonSerializer<Json> {
     override fun serialize(json: Json, type: Type, context: JsonSerializationContext): JsonElement
-            = JsonParser().parse(json.value())
+            = JsonParser.parseString(json.value())
 }
