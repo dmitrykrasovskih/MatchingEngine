@@ -22,7 +22,7 @@ import com.lykke.matching.engine.incoming.preprocessor.impl.CashTransferPreproce
 import com.lykke.matching.engine.incoming.preprocessor.impl.SingleLimitOrderPreprocessor
 import com.lykke.matching.engine.matching.MatchingEngine
 import com.lykke.matching.engine.messages.wrappers.LimitOrderCancelMessageWrapper
-import com.lykke.matching.engine.messages.wrappers.SingleLimitOrderMessageWrapper
+import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.messages.wrappers.socket.LimitOrderMassCancelMessageWrapper
 import com.lykke.matching.engine.notification.*
 import com.lykke.matching.engine.order.ExecutionDataApplyService
@@ -769,7 +769,7 @@ class TestApplicationContext {
     @Bean
     fun singleLimitOrderPreprocessor(
         singleLimitOrderContextParser: SingleLimitOrderContextParser,
-        preProcessedMessageQueue: BlockingQueue<SingleLimitOrderMessageWrapper>,
+        preProcessedMessageQueue: BlockingQueue<MessageWrapper>,
         messageProcessingStatusHolder: MessageProcessingStatusHolder
     ): SingleLimitOrderPreprocessor {
         return SingleLimitOrderPreprocessor(

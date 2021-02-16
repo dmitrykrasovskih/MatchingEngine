@@ -1,15 +1,11 @@
 package com.lykke.matching.engine.incoming.preprocessor
 
-import com.lykke.matching.engine.daos.LimitOrder
 import com.lykke.matching.engine.daos.context.SingleLimitOrderContext
 import com.lykke.matching.engine.grpc.TestStreamObserver
 import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
 import com.lykke.matching.engine.incoming.parsers.ContextParser
-import com.lykke.matching.engine.incoming.parsers.data.LimitOrderCancelOperationParsedData
-import com.lykke.matching.engine.incoming.parsers.data.ParsedData
 import com.lykke.matching.engine.incoming.parsers.data.SingleLimitOrderParsedData
 import com.lykke.matching.engine.incoming.parsers.impl.SingleLimitOrderContextParser
-import com.lykke.matching.engine.incoming.preprocessor.impl.SingleLimitOrderPreprocessor
 import com.lykke.matching.engine.messages.MessageStatus
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.messages.wrappers.SingleLimitOrderMessageWrapper
@@ -31,7 +27,7 @@ class AbstractMessagePreprocessorTest {
     class TestMessagePreprocessor(
         contextParser: ContextParser<SingleLimitOrderParsedData, SingleLimitOrderMessageWrapper>,
         messageProcessingStatusHolder: MessageProcessingStatusHolder,
-        preProcessedMessageQueue: BlockingQueue<SingleLimitOrderMessageWrapper>,
+        preProcessedMessageQueue: BlockingQueue<MessageWrapper>,
         private val preProcessSuccess: Boolean
     ) :
         AbstractMessagePreprocessor<SingleLimitOrderParsedData, SingleLimitOrderMessageWrapper>(
@@ -45,24 +41,29 @@ class AbstractMessagePreprocessorTest {
             return preProcessSuccess
         }
 
-        override fun writeResponse(messageWrapper: SingleLimitOrderMessageWrapper, status: MessageStatus, message: String?) {
+        override fun writeResponse(
+            messageWrapper: SingleLimitOrderMessageWrapper,
+            status: MessageStatus,
+            message: String?
+        ) {
             messageWrapper.writeResponse(status, message)
         }
     }
 
-    private lateinit var queue: BlockingQueue<SingleLimitOrderMessageWrapper>
+    private lateinit var queue: BlockingQueue<MessageWrapper>
     private lateinit var clientHandler: TestStreamObserver<GrpcIncomingMessages.LimitOrderResponse>
     private lateinit var messageWrapper: SingleLimitOrderMessageWrapper
 
     @Before
     fun setUp() {
-        queue = LinkedBlockingQueue<SingleLimitOrderMessageWrapper>()
+        queue = LinkedBlockingQueue<MessageWrapper>()
         clientHandler = TestStreamObserver()
         messageWrapper = SingleLimitOrderMessageWrapper(
             GrpcIncomingMessages.LimitOrder.getDefaultInstance(),
             clientHandler,
             true,
-            context = SingleLimitOrderContext.Builder().messageId("MessageID").limitOrder(MessageBuilder.buildLimitOrder()).build()
+            context = SingleLimitOrderContext.Builder().messageId("MessageID")
+                .limitOrder(MessageBuilder.buildLimitOrder()).build()
         )
     }
 
@@ -83,8 +84,9 @@ class AbstractMessagePreprocessorTest {
         isHealthStatusOk: Boolean,
         preProcessSuccess: Boolean = true
     ): TestMessagePreprocessor {
-        val contextParser = Mockito.mock(SingleLimitOrderContextParser::class.java) { SingleLimitOrderParsedData(messageWrapper, "") }
-                as SingleLimitOrderContextParser
+        val contextParser =
+            Mockito.mock(SingleLimitOrderContextParser::class.java) { SingleLimitOrderParsedData(messageWrapper, "") }
+                    as SingleLimitOrderContextParser
         return TestMessagePreprocessor(
             contextParser,
             createStatusHolder(isMessageProcessingEnabled, isHealthStatusOk),
