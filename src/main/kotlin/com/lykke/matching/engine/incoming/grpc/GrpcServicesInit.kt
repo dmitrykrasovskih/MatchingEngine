@@ -1,6 +1,7 @@
 package com.lykke.matching.engine.incoming.grpc
 
 import com.lykke.matching.engine.AppInitialData
+import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.messages.MessageProcessor
 import com.lykke.matching.engine.messages.wrappers.*
 import com.lykke.matching.engine.utils.config.Config
@@ -36,6 +37,9 @@ class GrpcServicesInit(
     @Autowired
     private lateinit var preProcessedMessageQueue: BlockingQueue<MessageWrapper>
 
+    @Autowired
+    private lateinit var balancesHolder: BalancesHolder
+
     companion object {
         private val LOGGER = ThrottlingLogger.getLogger(GrpcServicesInit::class.java.name)
     }
@@ -65,6 +69,10 @@ class GrpcServicesInit(
                 )
             ).build().start()
             LOGGER.info("Started TradingApiService at $tradingApiServicePort port")
+
+            ServerBuilder.forPort(balancesServicePort)
+                .addService(BalancesService(balancesHolder)).build().start()
+            LOGGER.info("Started BalancesService at $balancesServicePort port")
         }
     }
 }

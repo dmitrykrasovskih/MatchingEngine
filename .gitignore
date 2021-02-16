@@ -34,3 +34,5 @@ build/
 /src/main/java/com/myjetwallet/messages/incoming/grpc/GrpcIncomingMessages.java
 /src/main/java/com/myjetwallet/messages/incoming/socket/SocketIncomingApi.java
 /src/main/java/com/myjetwallet/messages/incoming/socket/SocketIncomingMessages.java
+/src/main/grpc/com/myjetwallet/messages/incoming/grpc/BalancesServiceGrpc.java
+/src/main/java/com/matching/engine/database/grpc/BalancesMessages.java

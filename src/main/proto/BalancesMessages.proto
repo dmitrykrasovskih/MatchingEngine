@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package com.myjetwallet.balances;
+
+option java_package = "com.matching.engine.database.grpc";
+option java_outer_classname = "BalancesMessages";
+
+import "google/protobuf/timestamp.proto";
+
+message BalancesGetAllRequest {
+    string brokerId = 1;
+    string walletId = 2;
+}
+
+message BalancesGetByAssetIdRequest {
+    string brokerId = 2;
+    string walletId = 3;
+    string assetId = 4;
+}
+
+message BalancesGetAllResponse {
+    string walletId = 1;
+    repeated Balance balances = 2;
+    google.protobuf.Timestamp timestamp = 3;
+}
+
+message BalancesGetByAssetIdResponse {
+    string walletId = 1;
+    Balance balance = 2;
+    google.protobuf.Timestamp timestamp = 3;
+}
+
+message Balance {
+    string assetId = 1;
+    string amount = 2;
+    string reserved = 3;
+}
