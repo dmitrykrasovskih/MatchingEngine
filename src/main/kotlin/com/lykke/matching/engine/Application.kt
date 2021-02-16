@@ -5,13 +5,13 @@ import org.springframework.stereotype.Component
 
 @Component
 class Application {
-    @Autowired
-    lateinit var clientsRequestsSocketServer: Runnable
+//    @Autowired
+//    lateinit var clientsRequestsSocketServer: Runnable
     @Autowired
     lateinit var grpcServicesInit: Runnable
 
     fun run () {
-        clientsRequestsSocketServer.run()
         grpcServicesInit.run()
+//        clientsRequestsSocketServer.run()
     }
 }
