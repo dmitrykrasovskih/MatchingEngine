@@ -12,6 +12,7 @@ import com.lykke.matching.engine.incoming.preprocessor.AbstractMessagePreprocess
 import com.lykke.matching.engine.messages.MessageStatus
 import com.lykke.matching.engine.messages.MessageStatus.DUPLICATE
 import com.lykke.matching.engine.messages.wrappers.CashInOutOperationMessageWrapper
+import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.services.validators.input.CashInOutOperationInputValidator
 import com.lykke.matching.engine.utils.NumberUtils
@@ -28,7 +29,7 @@ import java.util.concurrent.BlockingQueue
 @Component
 class CashInOutPreprocessor(
     cashInOutContextParser: CashInOutContextParser,
-    preProcessedMessageQueue: BlockingQueue<CashInOutOperationMessageWrapper>,
+    preProcessedMessageQueue: BlockingQueue<MessageWrapper>,
     private val cashOperationIdDatabaseAccessor: CashOperationIdDatabaseAccessor,
     private val cashInOutOperationPreprocessorPersistenceManager: PersistenceManager,
     private val processedMessagesCache: ProcessedMessagesCache,

@@ -15,7 +15,7 @@ import java.util.concurrent.BlockingQueue
 @Component
 class LimitOrderMassCancelOperationPreprocessor(limitOrderMassCancelOperationContextParser: LimitOrderMassCancelOperationContextParser,
                                                 messageProcessingStatusHolder: MessageProcessingStatusHolder,
-                                                preProcessedMessageQueue: BlockingQueue<LimitOrderMassCancelMessageWrapper>,
+                                                preProcessedMessageQueue: BlockingQueue<MessageWrapper>,
                                                 @Qualifier("limitOrderMassCancelPreProcessingLogger")
                                                 private val logger: ThrottlingLogger) :
         AbstractMessagePreprocessor<LimitOrderMassCancelOperationParsedData, LimitOrderMassCancelMessageWrapper>(limitOrderMassCancelOperationContextParser,

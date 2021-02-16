@@ -1,8 +1,8 @@
 package com.lykke.matching.engine.messages
 
 enum class MessageStatus(val type: Int){
-    OK(0),
     MESSAGE_PROCESSING_DISABLED(1),
+    OK(2),
     LOW_BALANCE(401),
     ALREADY_PROCESSED(402),
     DISABLED_ASSET(403),

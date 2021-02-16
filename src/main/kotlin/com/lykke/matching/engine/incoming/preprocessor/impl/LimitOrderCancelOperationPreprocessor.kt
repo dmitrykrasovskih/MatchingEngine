@@ -9,6 +9,7 @@ import com.lykke.matching.engine.incoming.parsers.data.LimitOrderCancelOperation
 import com.lykke.matching.engine.incoming.preprocessor.AbstractMessagePreprocessor
 import com.lykke.matching.engine.messages.MessageStatus
 import com.lykke.matching.engine.messages.wrappers.LimitOrderCancelMessageWrapper
+import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.services.validators.input.LimitOrderCancelOperationInputValidator
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
@@ -23,7 +24,7 @@ class LimitOrderCancelOperationPreprocessor(
     limitOrderCancelOperationContextParser: ContextParser<LimitOrderCancelOperationParsedData, LimitOrderCancelMessageWrapper>,
     val limitOrderCancelOperationValidator: LimitOrderCancelOperationInputValidator,
     messageProcessingStatusHolder: MessageProcessingStatusHolder,
-    preProcessedMessageQueue: BlockingQueue<LimitOrderCancelMessageWrapper>,
+    preProcessedMessageQueue: BlockingQueue<MessageWrapper>,
     val limitOrderCancelOperationPreprocessorPersistenceManager: PersistenceManager,
     val processedMessagesCache: ProcessedMessagesCache,
     @Qualifier("limitOrderCancelPreProcessingLogger")

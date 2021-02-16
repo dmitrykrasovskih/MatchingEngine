@@ -50,7 +50,7 @@ class SingleLimitOrderService(
 
         val actualWalletVersion = balancesHolder.getBalanceVersion(
             order.clientId,
-            if (order.isBuySide()) assetPair.quotingAssetId else assetPair.quotingAssetId
+            if (order.isBuySide()) assetPair.quotingAssetId else assetPair.baseAssetId
         )
         if (parsedMessage.walletVersion >= 0 && actualWalletVersion != parsedMessage.walletVersion) {
             LOGGER.error(
@@ -58,8 +58,8 @@ class SingleLimitOrderService(
             )
             messageWrapper.writeResponse(
                 MessageStatus.INVALID_WALLET_VERSION,
-                order.id,
                 "Invalid wallet version",
+                order.id,
                 actualWalletVersion
             )
             return
@@ -98,25 +98,25 @@ class SingleLimitOrderService(
             LOGGER.error("$message (order external id: ${order.externalId})")
             messageWrapper.writeResponse(
                 MessageStatus.RUNTIME,
-                processedOrder.order.id,
-                message
+                message,
+                processedOrder.order.id
             )
             return
         }
 
         if (processedOrder.accepted) {
             messageWrapper.writeResponse(
-                MessageStatus.OK, processedOrder.order.id, null,
+                MessageStatus.OK, null, processedOrder.order.id,
                 balancesHolder.getBalanceVersion(
                     order.clientId,
-                    if (order.isBuySide()) assetPair.quotingAssetId else assetPair.quotingAssetId
+                    if (order.isBuySide()) assetPair.quotingAssetId else assetPair.baseAssetId
                 )
             )
         } else {
             messageWrapper.writeResponse(
                 MessageStatusUtils.toMessageStatus(processedOrder.order.status),
-                processedOrder.order.id,
-                processedOrder.reason
+                processedOrder.reason,
+                processedOrder.order.id
             )
         }
 

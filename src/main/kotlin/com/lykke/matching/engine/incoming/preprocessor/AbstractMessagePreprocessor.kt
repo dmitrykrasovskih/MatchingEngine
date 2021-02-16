@@ -11,7 +11,7 @@ import java.util.concurrent.BlockingQueue
 
 abstract class AbstractMessagePreprocessor<T : ParsedData, WrapperType : MessageWrapper>(private val contextParser: ContextParser<T, WrapperType>,
                                                            private val messageProcessingStatusHolder: MessageProcessingStatusHolder,
-                                                           private val preProcessedMessageQueue: BlockingQueue<WrapperType>,
+                                                           private val preProcessedMessageQueue: BlockingQueue<MessageWrapper>,
                                                            private val logger: ThrottlingLogger) : MessagePreprocessor<WrapperType> {
 
     companion object {

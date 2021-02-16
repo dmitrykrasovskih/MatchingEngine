@@ -6,6 +6,7 @@ import com.lykke.matching.engine.incoming.parsers.data.SingleLimitOrderParsedDat
 import com.lykke.matching.engine.incoming.parsers.impl.SingleLimitOrderContextParser
 import com.lykke.matching.engine.incoming.preprocessor.AbstractMessagePreprocessor
 import com.lykke.matching.engine.messages.MessageStatus
+import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.messages.wrappers.SingleLimitOrderMessageWrapper
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.services.validators.impl.OrderValidationException
@@ -21,7 +22,7 @@ import java.util.concurrent.BlockingQueue
 @Component
 class SingleLimitOrderPreprocessor(
     singleLimitOrderContextParser: SingleLimitOrderContextParser,
-    preProcessedMessageQueue: BlockingQueue<SingleLimitOrderMessageWrapper>,
+    preProcessedMessageQueue: BlockingQueue<MessageWrapper>,
     private val messageProcessingStatusHolder: MessageProcessingStatusHolder,
     @Qualifier("singleLimitOrderPreProcessingLogger")
     private val logger: ThrottlingLogger

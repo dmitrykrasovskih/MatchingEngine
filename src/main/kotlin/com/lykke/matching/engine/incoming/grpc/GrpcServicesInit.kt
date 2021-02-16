@@ -51,10 +51,12 @@ class GrpcServicesInit(
         )
 
         LOGGER.info("Starting gRpc services")
+
         with(config.matchingEngine.grpcEndpoints) {
             ServerBuilder.forPort(cashApiServicePort)
                 .addService(CashApiService(cashInOutInputQueue, cashTransferInputQueue)).build().start()
-            LOGGER.info("Starting CashApiService at $cashApiServicePort port")
+            LOGGER.info("Started CashApiService at $cashApiServicePort port")
+
             ServerBuilder.forPort(tradingApiServicePort).addService(
                 TradingApiService(
                     limitOrderInputQueue,
@@ -62,6 +64,7 @@ class GrpcServicesInit(
                     preProcessedMessageQueue
                 )
             ).build().start()
+            LOGGER.info("Started TradingApiService at $tradingApiServicePort port")
         }
     }
 }
