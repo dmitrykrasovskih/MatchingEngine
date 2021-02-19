@@ -1,8 +1,7 @@
 package com.lykke.matching.engine.services.validators.impl
 
-import com.lykke.matching.engine.daos.v2.FeeInstruction
-import com.lykke.matching.engine.daos.MarketOrder
 import com.lykke.matching.engine.daos.LimitOrder
+import com.lykke.matching.engine.daos.MarketOrder
 import com.lykke.matching.engine.daos.fee.v2.NewFeeInstruction
 import com.lykke.matching.engine.fee.checkFee
 import com.lykke.matching.engine.holders.ApplicationSettingsHolder
@@ -12,7 +11,7 @@ import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.services.validators.MarketOrderValidator
 import com.lykke.matching.engine.services.validators.common.OrderValidationUtils
 import com.lykke.matching.engine.utils.NumberUtils
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
@@ -20,15 +19,21 @@ import java.util.concurrent.PriorityBlockingQueue
 
 @Component
 class MarketOrderValidatorImpl
-@Autowired constructor(private val assetsPairsHolder: AssetsPairsHolder,
-                       private val assetsHolder: AssetsHolder,
-                       private val applicationSettingsHolder: ApplicationSettingsHolder) : MarketOrderValidator {
+@Autowired constructor(
+    private val assetsPairsHolder: AssetsPairsHolder,
+    private val assetsHolder: AssetsHolder,
+    private val applicationSettingsHolder: ApplicationSettingsHolder
+) : MarketOrderValidator {
 
     companion object {
-        private val LOGGER = Logger.getLogger(MarketOrderValidatorImpl::class.java.name)
+        private val LOGGER = LogManager.getLogger(MarketOrderValidatorImpl::class.java.name)
     }
 
-    override fun performValidation(order: MarketOrder, orderBook: PriorityBlockingQueue<LimitOrder>, feeInstructions: List<NewFeeInstruction>?) {
+    override fun performValidation(
+        order: MarketOrder,
+        orderBook: PriorityBlockingQueue<LimitOrder>,
+        feeInstructions: List<NewFeeInstruction>?
+    ) {
         isAssetKnown(order)
         isAssetEnabled(order)
         isVolumeValid(order)
@@ -79,7 +84,8 @@ class MarketOrderValidatorImpl
     private fun isAssetEnabled(order: MarketOrder) {
         val assetPair = getAssetPair(order)
         if (applicationSettingsHolder.isAssetDisabled(assetPair.baseAssetId)
-                || applicationSettingsHolder.isAssetDisabled(assetPair.quotingAssetId)) {
+            || applicationSettingsHolder.isAssetDisabled(assetPair.quotingAssetId)
+        ) {
             LOGGER.info("Disabled asset $order")
             throw OrderValidationException(OrderStatus.DisabledAsset)
         }

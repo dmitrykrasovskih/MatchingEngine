@@ -1,23 +1,20 @@
 package com.lykke.matching.engine.database.common
 
-import com.lykke.matching.engine.database.OrderBookDatabaseAccessor
-import com.lykke.matching.engine.database.PersistenceManager
-import com.lykke.matching.engine.database.ProcessedMessagesDatabaseAccessor
-import com.lykke.matching.engine.database.StopOrderBookDatabaseAccessor
-import com.lykke.matching.engine.database.WalletDatabaseAccessor
+import com.lykke.matching.engine.database.*
 import com.lykke.matching.engine.database.common.entity.PersistenceData
 import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.utils.logging.MetricsLogger
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 
-class DefaultPersistenceManager(private val walletDatabaseAccessor: WalletDatabaseAccessor,
-                                private val orderBookDatabaseAccessor: OrderBookDatabaseAccessor,
-                                private val stopOrderBookDatabaseAccessor: StopOrderBookDatabaseAccessor,
-                                private val fileProcessedMessagesDatabaseAccessor: ProcessedMessagesDatabaseAccessor)
-    : PersistenceManager {
+class DefaultPersistenceManager(
+    private val walletDatabaseAccessor: WalletDatabaseAccessor,
+    private val orderBookDatabaseAccessor: OrderBookDatabaseAccessor,
+    private val stopOrderBookDatabaseAccessor: StopOrderBookDatabaseAccessor,
+    private val fileProcessedMessagesDatabaseAccessor: ProcessedMessagesDatabaseAccessor
+) : PersistenceManager {
 
     companion object {
-        private val LOGGER = Logger.getLogger(DefaultPersistenceManager::class.java.name)
+        private val LOGGER = LogManager.getLogger(DefaultPersistenceManager::class.java.name)
         private val METRICS_LOGGER = MetricsLogger.getLogger()
     }
 

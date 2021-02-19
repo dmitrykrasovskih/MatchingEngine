@@ -1,17 +1,17 @@
 package com.lykke.utils.files.clean
 
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.io.FileFilter
 import java.text.ParseException
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 internal class DaysThresholdFileFilter(thresholdDays: Int, applyToArchive: Boolean) : FileFilter {
 
     private companion object {
-        private val LOGGER = Logger.getLogger(DaysThresholdFileFilter::class.java.name)
+        private val LOGGER = LogManager.getLogger(DaysThresholdFileFilter::class.java.name)
     }
 
     private val thresholdMs = TimeUnit.DAYS.toMillis(thresholdDays.toLong())
@@ -48,7 +48,9 @@ internal class DaysThresholdFileFilter(thresholdDays: Int, applyToArchive: Boole
     private fun parseDate(fileName: String): Date {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd")
         val fileType = fileName.split(".").toList().last()
-        return if (fileType == "log") dateFormat.parse(dateFormat.format(Date())) else SimpleDateFormat("yyyy-MM-dd").parse(fileType)
+        return if (fileType == "log") dateFormat.parse(dateFormat.format(Date())) else SimpleDateFormat("yyyy-MM-dd").parse(
+            fileType
+        )
     }
 
     init {

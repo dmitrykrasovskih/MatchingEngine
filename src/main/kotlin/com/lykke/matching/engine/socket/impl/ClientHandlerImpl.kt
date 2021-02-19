@@ -4,7 +4,7 @@ import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.socket.ClientHandler
 import com.lykke.matching.engine.socket.ClientsRequestsSocketServer
 import com.lykke.matching.engine.utils.IntUtils
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.DataInputStream
@@ -13,18 +13,21 @@ import java.net.Socket
 import java.time.LocalDateTime
 
 class ClientHandlerImpl(
-        private val socket: Socket,
-        private val socketServer: ClientsRequestsSocketServer,
-        private val lifeTimeMinutes: Long) : Thread(ClientHandlerImpl::class.java.name), ClientHandler {
+    private val socket: Socket,
+    private val socketServer: ClientsRequestsSocketServer,
+    private val lifeTimeMinutes: Long
+) : Thread(ClientHandlerImpl::class.java.name), ClientHandler {
 
     companion object {
-        val LOGGER = Logger.getLogger(ClientHandlerImpl::class.java.name)
+        val LOGGER = LogManager.getLogger(ClientHandlerImpl::class.java.name)
     }
 
     @Volatile
     private var incomingSize: Long = 0
+
     @Volatile
     private var outgoingSize: Long = 0
+
     @Volatile
     private var lastMessageAt: LocalDateTime = LocalDateTime.now()
 

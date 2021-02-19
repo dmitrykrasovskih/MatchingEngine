@@ -3,20 +3,16 @@ package com.lykke.utils.files.clean
 import com.lykke.utils.files.clean.config.LogFilesCleanerConfig
 import com.lykke.utils.files.clean.config.LogFilesCleanerParams
 import com.lykke.utils.files.clean.db.azure.AzureLogFilesDatabaseAccessor
-import org.apache.log4j.Logger
-import java.io.File
-import kotlin.concurrent.fixedRateTimer
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.InputStream
-import java.io.OutputStream
+import org.apache.logging.log4j.LogManager
+import java.io.*
 import java.util.concurrent.TimeUnit
 import java.util.zip.GZIPOutputStream
+import kotlin.concurrent.fixedRateTimer
 
 class LogFilesCleaner private constructor(private val params: LogFilesCleanerParams) {
 
     companion object {
-        private val LOGGER = Logger.getLogger(LogFilesCleaner::class.java.name)
+        private val LOGGER = LogManager.getLogger(LogFilesCleaner::class.java.name)
         internal const val ARCHIVE_FILE_NAME_SUFFIX = ".gz"
 
         private fun startWithParams(params: LogFilesCleanerParams) {
@@ -48,16 +44,26 @@ class LogFilesCleaner private constructor(private val params: LogFilesCleanerPar
                 if (config.blobContainerName == null) {
                     throw IllegalArgumentException("blobContainerName is null")
                 }
-                startWithParams(LogFilesCleanerParams(period,
+                startWithParams(
+                    LogFilesCleanerParams(
+                        period,
                         config.directory,
                         AzureLogFilesDatabaseAccessor(config.connectionString, config.blobContainerName),
                         config.archiveDaysThreshold,
-                        config.uploadDaysThreshold))
+                        config.uploadDaysThreshold
+                    )
+                )
                 return
             }
 
             if (config.archiveDaysThreshold != null) {
-                startWithParams(LogFilesCleanerParams(period, config.directory, archiveDaysThreshold = config.archiveDaysThreshold))
+                startWithParams(
+                    LogFilesCleanerParams(
+                        period,
+                        config.directory,
+                        archiveDaysThreshold = config.archiveDaysThreshold
+                    )
+                )
                 return
             }
 
@@ -86,7 +92,11 @@ class LogFilesCleaner private constructor(private val params: LogFilesCleanerPar
 
     private fun archiveFiles(directory: File) {
         val filesToArchive = directory.listFiles(params.filterToArchive)
-        LOGGER.debug("Files filtered to archive and delete: ${filesToArchive.size} ${if (filesToArchive.isNotEmpty()) filesToArchive.map { it.name }.toString() else ""}")
+        LOGGER.debug(
+            "Files filtered to archive and delete: ${filesToArchive.size} ${
+                if (filesToArchive.isNotEmpty()) filesToArchive.map { it.name }.toString() else ""
+            }"
+        )
 
         filesToArchive.forEach { file ->
             val archived = try {
@@ -106,7 +116,11 @@ class LogFilesCleaner private constructor(private val params: LogFilesCleanerPar
 
     private fun uploadFiles(directory: File) {
         val filesToUpload = directory.listFiles(params.filterToUpload)
-        LOGGER.debug("Files filtered to upload and delete: ${filesToUpload.size} ${if (filesToUpload.isNotEmpty()) filesToUpload.map { it.name }.toString() else ""}")
+        LOGGER.debug(
+            "Files filtered to upload and delete: ${filesToUpload.size} ${
+                if (filesToUpload.isNotEmpty()) filesToUpload.map { it.name }.toString() else ""
+            }"
+        )
 
         filesToUpload.forEach { file ->
             val uploaded = try {

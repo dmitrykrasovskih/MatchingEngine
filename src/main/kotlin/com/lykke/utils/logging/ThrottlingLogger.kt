@@ -1,9 +1,8 @@
 package com.lykke.utils.logging
 
 import com.lykke.utils.logging.config.ThrottlingLoggerConfig
-import org.apache.log4j.Logger
-import java.lang.Exception
-import java.util.Date
+import org.apache.logging.log4j.LogManager
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.fixedRateTimer
@@ -11,7 +10,7 @@ import kotlin.concurrent.fixedRateTimer
 class ThrottlingLogger private constructor(private val name: String) {
 
     companion object {
-        private val LOGGER = Logger.getLogger(ThrottlingLogger::class.java.name)
+        private val LOGGER = LogManager.getLogger(ThrottlingLogger::class.java.name)
 
         private const val DEFAULT_TTL_MINUTES = 60
         private val DEFAULT_CLEANER_INTERVAL = TimeUnit.HOURS.toMillis(3)
@@ -43,7 +42,12 @@ class ThrottlingLogger private constructor(private val name: String) {
         fun getLogger(name: String): ThrottlingLogger = ThrottlingLogger(name)
 
         init {
-            fixedRateTimer(name = "ThrottlingLoggerCleaner", initialDelay = cleanerInterval, period = cleanerInterval, daemon = true) {
+            fixedRateTimer(
+                name = "ThrottlingLoggerCleaner",
+                initialDelay = cleanerInterval,
+                period = cleanerInterval,
+                daemon = true
+            ) {
                 try {
                     clearSentMessageTimestamps(messagesTtlMinutes)
                 } catch (e: Exception) {
@@ -53,7 +57,7 @@ class ThrottlingLogger private constructor(private val name: String) {
         }
     }
 
-    private val logger: Logger = Logger.getLogger(name)
+    private val logger = LogManager.getLogger(name)
 
     fun debug(message: String) {
         logger.debug(message)

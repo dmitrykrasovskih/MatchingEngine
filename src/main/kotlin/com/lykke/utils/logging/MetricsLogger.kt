@@ -2,10 +2,10 @@ package com.lykke.utils.logging
 
 import com.lykke.utils.logging.config.SlackNotificationConfig
 import com.lykke.utils.queue.azure.AzureQueueWriter
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Date
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
 import kotlin.concurrent.fixedRateTimer
@@ -13,7 +13,7 @@ import kotlin.concurrent.fixedRateTimer
 class MetricsLogger private constructor() {
 
     companion object {
-        private val LOGGER = Logger.getLogger(MetricsLogger::class.java.name)
+        private val LOGGER = LogManager.getLogger(MetricsLogger::class.java.name)
         private val DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
         private const val TYPE_ERROR = "Errors"
         private const val TYPE_WARNING = "Warnings"
@@ -33,7 +33,11 @@ class MetricsLogger private constructor() {
             throttlingLimit = config.throttlingLimitSeconds * 1000
             sender = senderName
 
-            fixedRateTimer(name = "MetricsLoggerCleaner", initialDelay = config.cleanerInterval, period = config.cleanerInterval) {
+            fixedRateTimer(
+                name = "MetricsLoggerCleaner",
+                initialDelay = config.cleanerInterval,
+                period = config.cleanerInterval
+            ) {
                 clearSentMessageTimestamps(config.messagesTtlMinutes)
             }
         }
@@ -82,7 +86,13 @@ class MetricsLogger private constructor() {
         if (messageWasSentWithinTimeout(type, message)) {
             return
         }
-        ERROR_QUEUE.put(Error(type, sender, "${LocalDateTime.now().format(DATE_TIME_FORMATTER)}: $message ${exception?.message ?: ""}"))
+        ERROR_QUEUE.put(
+            Error(
+                type,
+                sender,
+                "${LocalDateTime.now().format(DATE_TIME_FORMATTER)}: $message ${exception?.message ?: ""}"
+            )
+        )
         sentTimestamps["$type-$message"] = Date().time
     }
 

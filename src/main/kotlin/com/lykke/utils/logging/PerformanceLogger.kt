@@ -2,7 +2,7 @@ package com.lykke.utils.logging
 
 import com.lykke.utils.number.PrintUtils
 import com.lykke.utils.number.RoundingUtils
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.Logger
 
 class PerformanceLogger {
 
@@ -24,7 +24,12 @@ class PerformanceLogger {
 
     constructor(logger: Logger, logCount: Long, logMsgPrefix: String = "") : this(logger, null, logCount, logMsgPrefix)
 
-    constructor(throttlingLogger: ThrottlingLogger, logCount: Long, logMsgPrefix: String = "") : this(null, throttlingLogger, logCount, logMsgPrefix)
+    constructor(throttlingLogger: ThrottlingLogger, logCount: Long, logMsgPrefix: String = "") : this(
+        null,
+        throttlingLogger,
+        logCount,
+        logMsgPrefix
+    )
 
     private var startTime: Long? = null
     private var startPersistTime: Long? = null
@@ -58,13 +63,22 @@ class PerformanceLogger {
 
             if (count % logCount == 0L) {
                 val prefix = if (logMsgPrefix.isNotEmpty()) "$logMsgPrefix$logCount. " else ""
-                log(prefix + "Total: ${PrintUtils.convertToString(totalTime)}. " +
-                        " Persist: ${PrintUtils.convertToString(totalPersistTime)}, ${RoundingUtils.roundForPrint2(100 * totalPersistTime / totalTime)} %")
+                log(
+                    prefix + "Total: ${PrintUtils.convertToString(totalTime)}. " +
+                            " Persist: ${PrintUtils.convertToString(totalPersistTime)}, ${
+                                RoundingUtils.roundForPrint2(
+                                    100 * totalPersistTime / totalTime
+                                )
+                            } %"
+                )
                 totalPersistTime = 0.0
                 totalTime = 0.0
             }
         } catch (e: Exception) {
-            error("Unable to fix time (count: $count, startTime: $startTime, endTime: $endTime, startPersistTime: $startPersistTime, endPersistTime: $endPersistTime, logCount: $logCount)", e)
+            error(
+                "Unable to fix time (count: $count, startTime: $startTime, endTime: $endTime, startPersistTime: $startPersistTime, endPersistTime: $endPersistTime, logCount: $logCount)",
+                e
+            )
         }
         startTime = null
         endTime = null

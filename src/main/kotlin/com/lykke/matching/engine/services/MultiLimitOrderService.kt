@@ -22,7 +22,7 @@ import com.lykke.matching.engine.order.transaction.ExecutionContextFactory
 import com.lykke.matching.engine.services.utils.MultiOrderFilter
 import com.lykke.matching.engine.utils.proto.toDate
 import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.util.*
@@ -42,7 +42,7 @@ class MultiLimitOrderService(
 ) : AbstractService {
 
     companion object {
-        private val LOGGER = Logger.getLogger(MultiLimitOrderService::class.java.name)
+        private val LOGGER = LogManager.getLogger(MultiLimitOrderService::class.java.name)
     }
 
     override fun processMessage(genericMessageWrapper: MessageWrapper) {
@@ -100,7 +100,7 @@ class MultiLimitOrderService(
         messageWrapper.writeResponse(OK, null, processedOrders)
     }
 
-    override fun writeResponse(genericMessageWrapper: MessageWrapper, status: MessageStatus){
+    override fun writeResponse(genericMessageWrapper: MessageWrapper, status: MessageStatus) {
         val messageWrapper = genericMessageWrapper as MultiLimitOrderMessageWrapper
         messageWrapper.writeResponse(status)
     }

@@ -2,7 +2,7 @@ package com.lykke.matching.engine.utils.monitoring
 
 import com.lykke.matching.engine.daos.monitoring.MonitoringResult
 import com.sun.management.OperatingSystemMXBean
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.Logger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
@@ -32,16 +32,16 @@ class MonitoringStatsCollector {
             val threadsCount = Thread.getAllStackTraces().keys.size
 
             return MonitoringResult(
-                    vmCpuLoad = vmCpuLoad,
-                    totalCpuLoad = totalCpuLoad,
-                    totalMemory = totalMemory,
-                    freeMemory = freeMemory,
-                    maxHeap = maxHeap,
-                    freeHeap = freeHeap,
-                    totalHeap = totalHeap,
-                    totalSwap = totalSwap,
-                    freeSwap = freeSwap,
-                    threadsCount = threadsCount
+                vmCpuLoad = vmCpuLoad,
+                totalCpuLoad = totalCpuLoad,
+                totalMemory = totalMemory,
+                freeMemory = freeMemory,
+                maxHeap = maxHeap,
+                freeHeap = freeHeap,
+                totalHeap = totalHeap,
+                totalSwap = totalSwap,
+                freeSwap = freeSwap,
+                threadsCount = threadsCount
             )
         } catch (e: Exception) {
             LOGGER.error("Unable to gather monitoring stats: ${e.message}")

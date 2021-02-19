@@ -7,7 +7,7 @@ import com.lykke.matching.engine.database.redis.accessor.impl.RedisWalletDatabas
 import com.lykke.matching.engine.exception.MatchingEngineException
 import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.utils.config.Config
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
@@ -17,9 +17,11 @@ import java.util.*
 
 @Component
 @Order(1)
-class AccountsMigrationService @Autowired constructor (private val balancesHolder: BalancesHolder,
-                                                       private val config: Config,
-                                                       private val redisWalletDatabaseAccessor: Optional<RedisWalletDatabaseAccessor>): ApplicationRunner {
+class AccountsMigrationService @Autowired constructor(
+    private val balancesHolder: BalancesHolder,
+    private val config: Config,
+    private val redisWalletDatabaseAccessor: Optional<RedisWalletDatabaseAccessor>
+) : ApplicationRunner {
     override fun run(args: ApplicationArguments?) {
         if (config.matchingEngine.walletsMigration) {
             migrateAccounts()
@@ -27,12 +29,13 @@ class AccountsMigrationService @Autowired constructor (private val balancesHolde
     }
 
     companion object {
-        private val LOGGER = Logger.getLogger(AccountsMigrationService::class.java.name)
+        private val LOGGER = LogManager.getLogger(AccountsMigrationService::class.java.name)
     }
 
     private val azureAccountsTableName = config.matchingEngine.db.accountsTableName
-            ?: AzureWalletDatabaseAccessor.DEFAULT_BALANCES_TABLE_NAME
-    private val azureDatabaseAccessor = AzureWalletDatabaseAccessor(config.matchingEngine.db.balancesInfoConnString, azureAccountsTableName)
+        ?: AzureWalletDatabaseAccessor.DEFAULT_BALANCES_TABLE_NAME
+    private val azureDatabaseAccessor =
+        AzureWalletDatabaseAccessor(config.matchingEngine.db.balancesInfoConnString, azureAccountsTableName)
 
     fun migrateAccounts() {
         if (!config.matchingEngine.walletsMigration) {
@@ -123,7 +126,8 @@ class AccountsMigrationService @Autowired constructor (private val balancesHolde
         val azureBalances = azureWallet.balances
         val redisBalances = redisWallet.balances
 
-        val onlyAzureAssets = azureBalances.keys.filterNot { redisBalances.keys.contains(it) || azureBalances[it]!!.balance.signum() == 0 }
+        val onlyAzureAssets =
+            azureBalances.keys.filterNot { redisBalances.keys.contains(it) || azureBalances[it]!!.balance.signum() == 0 }
         val onlyRedisAssets = redisBalances.keys.filterNot { azureBalances.keys.contains(it) }
 
         if (onlyAzureAssets.isNotEmpty() || onlyRedisAssets.isNotEmpty()) {

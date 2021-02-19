@@ -5,16 +5,17 @@ import com.lykke.matching.engine.daos.wallet.Wallet
 import com.lykke.matching.engine.database.WalletDatabaseAccessor
 import com.lykke.matching.engine.database.redis.connection.RedisConnection
 import com.lykke.utils.logging.MetricsLogger
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.nustaq.serialization.FSTConfiguration
 import redis.clients.jedis.Jedis
 import redis.clients.jedis.Transaction
 import java.util.*
 
-class RedisWalletDatabaseAccessor(private val redisConnection: RedisConnection, private val balancesDatabase: Int) : WalletDatabaseAccessor {
+class RedisWalletDatabaseAccessor(private val redisConnection: RedisConnection, private val balancesDatabase: Int) :
+    WalletDatabaseAccessor {
 
     companion object {
-        private val LOGGER = Logger.getLogger(RedisWalletDatabaseAccessor::class.java.name)
+        private val LOGGER = LogManager.getLogger(RedisWalletDatabaseAccessor::class.java.name)
         private val METRICS_LOGGER = MetricsLogger.getLogger()
         private const val KEY_PREFIX_BALANCE = "Balances:"
         private const val KEY_SEPARATOR = ":"
@@ -47,7 +48,13 @@ class RedisWalletDatabaseAccessor(private val redisConnection: RedisConnection, 
                     if (key.removePrefix("$KEY_PREFIX_BALANCE${balance.clientId}$KEY_SEPARATOR") != balance.asset) {
                         throw Exception("Invalid assetId: ${balance.asset}, balance key: $key")
                     }
-                    val clientBalances = result.getOrPut(balance.clientId) { Wallet(balance.brokerId, balance.accountId, balance.clientId) }
+                    val clientBalances = result.getOrPut(balance.clientId) {
+                        Wallet(
+                            balance.brokerId,
+                            balance.accountId,
+                            balance.clientId
+                        )
+                    }
                     clientBalances.balances[balance.asset] = balance
                     balancesCount++
                 } catch (e: Exception) {

@@ -8,7 +8,7 @@ import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.order.process.common.CancelRequest
 import com.lykke.matching.engine.order.process.common.LimitOrdersCancelExecutor
 import com.lykke.matching.engine.services.GenericLimitOrderService
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.ApplicationArguments
@@ -21,14 +21,16 @@ import java.util.stream.Stream
 
 @Component
 @Order(5)
-class MinVolumeOrderCanceller @Autowired constructor(private val assetsPairsHolder: AssetsPairsHolder,
-                                                     private val genericLimitOrderService: GenericLimitOrderService,
-                                                     private val limitOrdersCancelExecutor: LimitOrdersCancelExecutor,
-                                                     @Value("#{Config.matchingEngine.cancelMinVolumeOrders}")
-                                                     private val cancelMinVolumeOrders: Boolean) : ApplicationRunner {
+class MinVolumeOrderCanceller @Autowired constructor(
+    private val assetsPairsHolder: AssetsPairsHolder,
+    private val genericLimitOrderService: GenericLimitOrderService,
+    private val limitOrdersCancelExecutor: LimitOrdersCancelExecutor,
+    @Value("#{Config.matchingEngine.cancelMinVolumeOrders}")
+    private val cancelMinVolumeOrders: Boolean
+) : ApplicationRunner {
 
     companion object {
-        private val LOGGER = Logger.getLogger(MinVolumeOrderCanceller::class.java.name)
+        private val LOGGER = LogManager.getLogger(MinVolumeOrderCanceller::class.java.name)
     }
 
     override fun run(args: ApplicationArguments?) {
@@ -45,7 +47,9 @@ class MinVolumeOrderCanceller @Autowired constructor(private val assetsPairsHold
             val ordersToCancel = getOrdersToCancel()
             LOGGER.info("Starting orders cancellation (orders count: ${ordersToCancel.size})")
 
-            limitOrdersCancelExecutor.cancelOrdersAndApply(CancelRequest(ordersToCancel,
+            limitOrdersCancelExecutor.cancelOrdersAndApply(
+                CancelRequest(
+                    ordersToCancel,
                     emptyList(),
                     operationId,
                     operationId,
@@ -53,7 +57,9 @@ class MinVolumeOrderCanceller @Autowired constructor(private val assetsPairsHold
                     Date(),
                     null,
                     null,
-                    LOGGER))
+                    LOGGER
+                )
+            )
         } catch (e: BalanceException) {
             LOGGER.error("Unable to process wallet operations due to invalid balance: ${e.message}", e)
             return
@@ -64,12 +70,12 @@ class MinVolumeOrderCanceller @Autowired constructor(private val assetsPairsHold
 
     private fun getOrdersToCancel(): List<LimitOrder> {
         return genericLimitOrderService.getAllOrderBooks()
-                .values
-                .stream()
-                .map { it.copy() }
-                .flatMap { Stream.concat(it.getSellOrderBook().stream(), it.getBuyOrderBook().stream()) }
-                .filter { isOrderToCancel(it) }
-                .collect(Collectors.toList())
+            .values
+            .stream()
+            .map { it.copy() }
+            .flatMap { Stream.concat(it.getSellOrderBook().stream(), it.getBuyOrderBook().stream()) }
+            .filter { isOrderToCancel(it) }
+            .collect(Collectors.toList())
     }
 
     private fun isOrderToCancel(order: LimitOrder): Boolean {
@@ -94,7 +100,7 @@ class MinVolumeOrderCanceller @Autowired constructor(private val assetsPairsHold
     }
 
     private fun isOrderVolumeTooSmall(assetPair: AssetPair, order: LimitOrder) =
-            assetPair.minVolume != null && order.getAbsRemainingVolume() < assetPair.minVolume
+        assetPair.minVolume != null && order.getAbsRemainingVolume() < assetPair.minVolume
 
     private fun generateOperationId() = UUID.randomUUID().toString()
 }

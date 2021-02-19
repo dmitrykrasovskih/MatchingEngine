@@ -8,25 +8,27 @@ import com.lykke.matching.engine.utils.PrintUtils
 import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import com.rabbitmq.client.*
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.Logger
 import org.springframework.context.ApplicationEventPublisher
 import java.util.concurrent.BlockingQueue
 
-abstract class AbstractRabbitMqPublisher<T>(private val uri: String,
-                                            private val exchangeName: String,
-                                            private val queueName: String,
-                                            private val queue: BlockingQueue<out T>,
-                                            private val appName: String,
-                                            private val appVersion: String,
-                                            private val exchangeType: BuiltinExchangeType,
-                                            private val LOGGER: ThrottlingLogger,
-                                            private val MESSAGES_LOGGER: Logger,
-                                            private val METRICS_LOGGER: MetricsLogger,
-                                            private val STATS_LOGGER: Logger,
-                                            private val applicationEventPublisher: ApplicationEventPublisher,
+abstract class AbstractRabbitMqPublisher<T>(
+    private val uri: String,
+    private val exchangeName: String,
+    private val queueName: String,
+    private val queue: BlockingQueue<out T>,
+    private val appName: String,
+    private val appVersion: String,
+    private val exchangeType: BuiltinExchangeType,
+    private val LOGGER: ThrottlingLogger,
+    private val MESSAGES_LOGGER: Logger,
+    private val METRICS_LOGGER: MetricsLogger,
+    private val STATS_LOGGER: Logger,
+    private val applicationEventPublisher: ApplicationEventPublisher,
 
-                                            /** null if do not need to log */
-                                            private val messageDatabaseLogger: DatabaseLogger<T>? = null): Runnable {
+    /** null if do not need to log */
+    private val messageDatabaseLogger: DatabaseLogger<T>? = null
+) : Runnable {
 
     companion object {
         private const val LOG_COUNT = 1000
@@ -42,7 +44,7 @@ abstract class AbstractRabbitMqPublisher<T>(private val uri: String,
 
 
     @Volatile
-    private  var currentlyPublishedItem: T? = null
+    private var currentlyPublishedItem: T? = null
 
     private fun connect(): Boolean {
         val factory = ConnectionFactory()
@@ -62,7 +64,10 @@ abstract class AbstractRabbitMqPublisher<T>(private val uri: String,
             return true
         } catch (e: Exception) {
             publishFailureEvent(null)
-            LOGGER.error("Unable to connect to RabbitMQ: ${factory.host}:${factory.port}, exchange: $exchangeName: ${e.message}", e)
+            LOGGER.error(
+                "Unable to connect to RabbitMQ: ${factory.host}:${factory.port}, exchange: $exchangeName: ${e.message}",
+                e
+            )
             return false
         }
     }
@@ -83,7 +88,12 @@ abstract class AbstractRabbitMqPublisher<T>(private val uri: String,
                 }
 
                 val startPersistTime = System.nanoTime()
-                channel!!.basicPublish(exchangeName, rabbitPublishRequest.routingKey, rabbitPublishRequest.props, rabbitPublishRequest.body)
+                channel!!.basicPublish(
+                    exchangeName,
+                    rabbitPublishRequest.routingKey,
+                    rabbitPublishRequest.props,
+                    rabbitPublishRequest.body
+                )
 
                 val endPersistTime = System.nanoTime()
                 val endTime = System.nanoTime()
@@ -136,16 +146,19 @@ abstract class AbstractRabbitMqPublisher<T>(private val uri: String,
         totalTime += (endTime - startTime).toDouble() / LOG_COUNT
 
         if (messagesCount % LOG_COUNT == 0L) {
-            STATS_LOGGER.info("Exchange: $exchangeName. Messages: $LOG_COUNT. Total: ${PrintUtils.convertToString(totalTime)}. " +
-                    " Persist: ${PrintUtils.convertToString(totalPersistTime)}, ${NumberUtils.roundForPrint2(100 * totalPersistTime / totalTime)} %")
+            STATS_LOGGER.info(
+                "Exchange: $exchangeName. Messages: $LOG_COUNT. Total: ${PrintUtils.convertToString(totalTime)}. " +
+                        " Persist: ${PrintUtils.convertToString(totalPersistTime)}, ${NumberUtils.roundForPrint2(100 * totalPersistTime / totalTime)} %"
+            )
             totalPersistTime = 0.0
             totalTime = 0.0
         }
     }
 
-    inner class RmqBlockListener: BlockedListener {
+    inner class RmqBlockListener : BlockedListener {
         override fun handleBlocked(reason: String?) {
-            val message = "Rabbit mq publisher for queue $queueName received socket block signal from broker, reason: $reason"
+            val message =
+                "Rabbit mq publisher for queue $queueName received socket block signal from broker, reason: $reason"
             LOGGER.error(message)
             METRICS_LOGGER.logError(message)
             publishFailureEvent(currentlyPublishedItem)

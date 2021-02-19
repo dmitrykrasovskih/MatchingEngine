@@ -2,11 +2,11 @@ package com.lykke.matching.engine.services.events.listeners
 
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.holders.ApplicationSettingsHolder
-import com.lykke.matching.engine.services.events.ApplicationSettingDeletedEvent
 import com.lykke.matching.engine.services.events.ApplicationGroupDeletedEvent
 import com.lykke.matching.engine.services.events.ApplicationSettingCreatedOrUpdatedEvent
+import com.lykke.matching.engine.services.events.ApplicationSettingDeletedEvent
 import com.lykke.utils.logging.MetricsLogger
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import javax.annotation.PostConstruct
@@ -15,7 +15,7 @@ import javax.annotation.PostConstruct
 class MessageProcessingSwitchListener(val applicationSettingsHolder: ApplicationSettingsHolder) {
 
     private companion object {
-        val LOGGER = Logger.getLogger(MessageProcessingSwitchListener::class.java.name)
+        val LOGGER = LogManager.getLogger(MessageProcessingSwitchListener::class.java.name)
         val METRICS_LOGGER = MetricsLogger.getLogger()
         val LOG_MESSAGE_FORMAT = "Message processing has been %s, " +
                 "by user: %s, comment: %s"
@@ -26,12 +26,13 @@ class MessageProcessingSwitchListener(val applicationSettingsHolder: Application
     @EventListener
     private fun messageProcessingSwitchChanged(settingChangedEvent: ApplicationSettingCreatedOrUpdatedEvent) {
         if (settingChangedEvent.settingGroup != AvailableSettingGroup.MESSAGE_PROCESSING_SWITCH
-                || settingChangedEvent.previousSetting == null && !settingChangedEvent.setting.enabled
-                || settingChangedEvent.previousSetting?.enabled == settingChangedEvent.setting.enabled) {
+            || settingChangedEvent.previousSetting == null && !settingChangedEvent.setting.enabled
+            || settingChangedEvent.previousSetting?.enabled == settingChangedEvent.setting.enabled
+        ) {
             return
         }
 
-        val action =  if (applicationSettingsHolder.isMessageProcessingEnabled()) START_ACTION else STOP_ACTION
+        val action = if (applicationSettingsHolder.isMessageProcessingEnabled()) START_ACTION else STOP_ACTION
         val message = getLogMessageMessage(action, settingChangedEvent.user, settingChangedEvent.comment)
         LOGGER.info(message)
         METRICS_LOGGER.logWarning(message)
@@ -40,7 +41,8 @@ class MessageProcessingSwitchListener(val applicationSettingsHolder: Application
     @EventListener
     private fun messageProcessingSwitchRemoved(deleteSettingEvent: ApplicationSettingDeletedEvent) {
         if (deleteSettingEvent.settingGroup != AvailableSettingGroup.MESSAGE_PROCESSING_SWITCH
-                || !deleteSettingEvent.deletedSetting.enabled) {
+            || !deleteSettingEvent.deletedSetting.enabled
+        ) {
             return
         }
 
@@ -52,7 +54,8 @@ class MessageProcessingSwitchListener(val applicationSettingsHolder: Application
     @EventListener
     private fun messageProcessingSwitchGroupRemoved(deleteSettingGroupEvent: ApplicationGroupDeletedEvent) {
         if (deleteSettingGroupEvent.settingGroup != AvailableSettingGroup.MESSAGE_PROCESSING_SWITCH ||
-                !deleteSettingGroupEvent.deletedSettings.any { it.enabled }) {
+            !deleteSettingGroupEvent.deletedSettings.any { it.enabled }
+        ) {
             return
         }
 

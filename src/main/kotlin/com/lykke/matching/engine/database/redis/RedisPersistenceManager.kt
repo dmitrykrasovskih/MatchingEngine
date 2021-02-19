@@ -7,7 +7,10 @@ import com.lykke.matching.engine.database.common.entity.PersistenceData
 import com.lykke.matching.engine.database.common.strategy.OrdersPersistInSecondaryDbStrategy
 import com.lykke.matching.engine.database.common.strategy.PersistOrdersDuringRedisTransactionStrategy
 import com.lykke.matching.engine.database.reconciliation.events.AccountPersistEvent
-import com.lykke.matching.engine.database.redis.accessor.impl.*
+import com.lykke.matching.engine.database.redis.accessor.impl.RedisCashOperationIdDatabaseAccessor
+import com.lykke.matching.engine.database.redis.accessor.impl.RedisMessageSequenceNumberDatabaseAccessor
+import com.lykke.matching.engine.database.redis.accessor.impl.RedisProcessedMessagesDatabaseAccessor
+import com.lykke.matching.engine.database.redis.accessor.impl.RedisWalletDatabaseAccessor
 import com.lykke.matching.engine.database.redis.connection.RedisConnection
 import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.holders.CurrentTransactionDataHolder
@@ -16,27 +19,28 @@ import com.lykke.matching.engine.performance.PerformanceStatsHolder
 import com.lykke.matching.engine.utils.PrintUtils
 import com.lykke.matching.engine.utils.config.Config
 import com.lykke.utils.logging.MetricsLogger
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.util.CollectionUtils
 import redis.clients.jedis.Transaction
 import redis.clients.jedis.exceptions.JedisException
 
 class RedisPersistenceManager(
-        private val primaryBalancesAccessor: RedisWalletDatabaseAccessor,
-        private val redisProcessedMessagesDatabaseAccessor: RedisProcessedMessagesDatabaseAccessor,
-        private val redisProcessedCashOperationIdDatabaseAccessor: RedisCashOperationIdDatabaseAccessor,
-        private val persistOrdersStrategy: PersistOrdersDuringRedisTransactionStrategy,
-        private val ordersPersistInSecondaryDbStrategy: OrdersPersistInSecondaryDbStrategy?,
-        private val redisMessageSequenceNumberDatabaseAccessor: RedisMessageSequenceNumberDatabaseAccessor,
-        private val persistedWalletsApplicationEventPublisher: SimpleApplicationEventPublisher<AccountPersistEvent>,
-        private val redisConnection: RedisConnection,
-        private val config: Config,
-        private val currentTransactionDataHolder: CurrentTransactionDataHolder,
-        private val performanceStatsHolder: PerformanceStatsHolder) : PersistenceManager {
+    private val primaryBalancesAccessor: RedisWalletDatabaseAccessor,
+    private val redisProcessedMessagesDatabaseAccessor: RedisProcessedMessagesDatabaseAccessor,
+    private val redisProcessedCashOperationIdDatabaseAccessor: RedisCashOperationIdDatabaseAccessor,
+    private val persistOrdersStrategy: PersistOrdersDuringRedisTransactionStrategy,
+    private val ordersPersistInSecondaryDbStrategy: OrdersPersistInSecondaryDbStrategy?,
+    private val redisMessageSequenceNumberDatabaseAccessor: RedisMessageSequenceNumberDatabaseAccessor,
+    private val persistedWalletsApplicationEventPublisher: SimpleApplicationEventPublisher<AccountPersistEvent>,
+    private val redisConnection: RedisConnection,
+    private val config: Config,
+    private val currentTransactionDataHolder: CurrentTransactionDataHolder,
+    private val performanceStatsHolder: PerformanceStatsHolder
+) : PersistenceManager {
 
     companion object {
-        private val LOGGER = Logger.getLogger(RedisPersistenceManager::class.java.name)
-        private val REDIS_PERFORMANCE_LOGGER = Logger.getLogger("${RedisPersistenceManager::class.java.name}.redis")
+        private val LOGGER = LogManager.getLogger(RedisPersistenceManager::class.java.name)
+        private val REDIS_PERFORMANCE_LOGGER = LogManager.getLogger("${RedisPersistenceManager::class.java.name}.redis")
         private val METRICS_LOGGER = MetricsLogger.getLogger()
     }
 
@@ -62,7 +66,8 @@ class RedisPersistenceManager(
             persistProcessedMessages(transaction, data.processedMessage)
 
             if (data.processedMessage?.type == MessageType.CASH_IN_OUT_OPERATION.type ||
-                    data.processedMessage?.type == MessageType.CASH_TRANSFER_OPERATION.type) {
+                data.processedMessage?.type == MessageType.CASH_TRANSFER_OPERATION.type
+            ) {
                 persistProcessedCashMessage(transaction, data.processedMessage)
             }
 
@@ -76,14 +81,21 @@ class RedisPersistenceManager(
 
             transaction.exec()
             val commitTime = System.nanoTime()
-            val nonRedisOrdersPersistTime = if (persistOrdersStrategy.isRedisTransactionUsed()) 0 else endPersistOrders - startPersistOrders
+            val nonRedisOrdersPersistTime =
+                if (persistOrdersStrategy.isRedisTransactionUsed()) 0 else endPersistOrders - startPersistOrders
             val messageId = data.processedMessage?.messageId
-            REDIS_PERFORMANCE_LOGGER.debug("Total: ${PrintUtils.convertToString2((commitTime - startTime - nonRedisOrdersPersistTime).toDouble())}" +
-                    ", persist: ${PrintUtils.convertToString2((persistTime - startTime - nonRedisOrdersPersistTime).toDouble())}" +
-                    (if(nonRedisOrdersPersistTime != 0L) ", non redis orders persist time: ${PrintUtils.convertToString2(nonRedisOrdersPersistTime.toDouble())}" else "") +
-                    ", commit: ${PrintUtils.convertToString2((commitTime - persistTime).toDouble())}" +
-                    ", persisted data summary: ${data.getSummary()}" +
-                    (if (messageId != null) ", messageId: ($messageId)" else ""))
+            REDIS_PERFORMANCE_LOGGER.debug(
+                "Total: ${PrintUtils.convertToString2((commitTime - startTime - nonRedisOrdersPersistTime).toDouble())}" +
+                        ", persist: ${PrintUtils.convertToString2((persistTime - startTime - nonRedisOrdersPersistTime).toDouble())}" +
+                        (if (nonRedisOrdersPersistTime != 0L) ", non redis orders persist time: ${
+                            PrintUtils.convertToString2(
+                                nonRedisOrdersPersistTime.toDouble()
+                            )
+                        }" else "") +
+                        ", commit: ${PrintUtils.convertToString2((commitTime - persistTime).toDouble())}" +
+                        ", persisted data summary: ${data.getSummary()}" +
+                        (if (messageId != null) ", messageId: ($messageId)" else "")
+            )
 
             currentTransactionDataHolder.getMessageType()?.let {
                 performanceStatsHolder.addPersistTime(it.type, commitTime - startTime)

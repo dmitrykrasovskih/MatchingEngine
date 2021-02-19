@@ -7,14 +7,19 @@ import com.lykke.utils.alivestatus.exception.CheckAppInstanceRunningException
 import com.lykke.utils.azure.getOrCreateTable
 import com.microsoft.azure.storage.table.CloudTable
 import com.microsoft.azure.storage.table.TableOperation
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import java.net.InetAddress
-import java.util.Date
+import java.util.*
 
 
-internal class AzureAliveStatusDatabaseAccessor(private val connectionString: String, private val tableName: String, private val appName: String, private val lifeTime: Long) : AliveStatusDatabaseAccessor {
+internal class AzureAliveStatusDatabaseAccessor(
+    private val connectionString: String,
+    private val tableName: String,
+    private val appName: String,
+    private val lifeTime: Long
+) : AliveStatusDatabaseAccessor {
     companion object {
-        private val LOGGER = Logger.getLogger(AzureAliveStatusDatabaseAccessor::class.java.name)
+        private val LOGGER = LogManager.getLogger(AzureAliveStatusDatabaseAccessor::class.java.name)
         internal const val PARTITION_KEY = "AliveStatus"
     }
 
@@ -28,7 +33,15 @@ internal class AzureAliveStatusDatabaseAccessor(private val connectionString: St
             val now = Date()
 
             if (currentAliveStatus?.running == true && currentAliveStatus.lastAliveTime != null && currentAliveStatus.lastAliveTime!!.time > now.time - lifeTime) {
-                throw CheckAppInstanceRunningException("Another app instance is already running", AliveStatus(currentAliveStatus.startTime!!, currentAliveStatus.lastAliveTime!!, currentAliveStatus.ip!!, currentAliveStatus.running))
+                throw CheckAppInstanceRunningException(
+                    "Another app instance is already running",
+                    AliveStatus(
+                        currentAliveStatus.startTime!!,
+                        currentAliveStatus.lastAliveTime!!,
+                        currentAliveStatus.ip!!,
+                        currentAliveStatus.running
+                    )
+                )
             }
 
             val ip = InetAddress.getLocalHost().hostAddress

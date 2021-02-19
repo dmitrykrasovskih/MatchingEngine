@@ -2,7 +2,7 @@ package com.lykke.matching.engine.database.cache
 
 import com.lykke.matching.engine.daos.AssetPair
 import com.lykke.matching.engine.database.DictionariesDatabaseAccessor
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -10,12 +10,13 @@ import java.util.stream.Collectors
 import kotlin.concurrent.fixedRateTimer
 
 @Component
-class AssetPairsCache @Autowired constructor (
-        private val databaseAccessor: DictionariesDatabaseAccessor,
-        @Value("\${application.assets.pair.cache.update.interval}") updateInterval: Long? = null) : DataCache() {
+class AssetPairsCache @Autowired constructor(
+    private val databaseAccessor: DictionariesDatabaseAccessor,
+    @Value("\${application.assets.pair.cache.update.interval}") updateInterval: Long? = null
+) : DataCache() {
 
     companion object {
-        private val LOGGER = Logger.getLogger(AssetPairsCache::class.java)
+        private val LOGGER = LogManager.getLogger(AssetPairsCache::class.java)
     }
 
     private var assetPairsById: Map<String, AssetPair> = HashMap()
@@ -42,10 +43,10 @@ class AssetPairsCache @Autowired constructor (
 
     fun getAssetPairByAssetId(assetId: String): Set<AssetPair> {
         return assetPairsById
-                .values
-                .stream()
-                .filter { it.quotingAssetId == assetId || it.baseAssetId == assetId}
-                .collect(Collectors.toSet())
+            .values
+            .stream()
+            .filter { it.quotingAssetId == assetId || it.baseAssetId == assetId }
+            .collect(Collectors.toSet())
     }
 
     override fun update() {
@@ -59,13 +60,13 @@ class AssetPairsCache @Autowired constructor (
 
     private fun generateAssetPairsMapByPair(assetPairsById: Map<String, AssetPair>): Map<String, AssetPair> {
         return assetPairsById.values
-                .groupBy { pairKey(it.baseAssetId, it.quotingAssetId) }
-                .mapValues {
-                    if (it.value.size > 1) {
-                        LOGGER.error("Asset pairs count for baseAssetId=${it.value.first().baseAssetId} and quotingAssetId=${it.value.first().quotingAssetId} is more than 1")
-                    }
-                    it.value.first()
+            .groupBy { pairKey(it.baseAssetId, it.quotingAssetId) }
+            .mapValues {
+                if (it.value.size > 1) {
+                    LOGGER.error("Asset pairs count for baseAssetId=${it.value.first().baseAssetId} and quotingAssetId=${it.value.first().quotingAssetId} is more than 1")
                 }
+                it.value.first()
+            }
     }
 
     private fun pairKey(assetId1: String, assetId2: String) = "${assetId1}_$assetId2"

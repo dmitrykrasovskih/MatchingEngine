@@ -7,20 +7,20 @@ import com.lykke.matching.engine.daos.TradeInfo
 import com.lykke.matching.engine.database.CandlesDatabaseAccessor
 import com.lykke.matching.engine.database.HoursCandlesDatabaseAccessor
 import com.lykke.utils.logging.PerformanceLogger
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.util.Date
-import java.util.HashMap
-import java.util.LinkedList
+import java.util.*
 import java.util.concurrent.BlockingQueue
 import kotlin.concurrent.thread
 
-class TradesInfoService(private val candlesDatabaseAccessor: CandlesDatabaseAccessor?,
-                        private val hoursCandlesDatabaseAccessor: HoursCandlesDatabaseAccessor?,
-                        private val tradeInfoQueue: BlockingQueue<TradeInfo>) {
+class TradesInfoService(
+    private val candlesDatabaseAccessor: CandlesDatabaseAccessor?,
+    private val hoursCandlesDatabaseAccessor: HoursCandlesDatabaseAccessor?,
+    private val tradeInfoQueue: BlockingQueue<TradeInfo>
+) {
 
     private val formatter = SimpleDateFormat("yyyyMMddHHmm")
 
@@ -34,8 +34,10 @@ class TradesInfoService(private val candlesDatabaseAccessor: CandlesDatabaseAcce
     private val bid = "Bid"
     private val ask = "Ask"
 
-    private val candlesPerformanceLogger = PerformanceLogger(Logger.getLogger("historyPersistStats"), 1, "saveCandles: ")
-    private val hourCandlesPerformanceLogger = PerformanceLogger(Logger.getLogger("historyPersistStats"), 1, "saveHourCandles: ")
+    private val candlesPerformanceLogger =
+        PerformanceLogger(LogManager.getLogger("historyPersistStats"), 1, "saveCandles: ")
+    private val hourCandlesPerformanceLogger =
+        PerformanceLogger(LogManager.getLogger("historyPersistStats"), 1, "saveHourCandles: ")
 
     fun start() {
         thread(start = true, name = TradesInfoService::class.java.name) {
@@ -94,8 +96,10 @@ class TradesInfoService(private val candlesDatabaseAccessor: CandlesDatabaseAcce
             candlesPerformanceLogger.startPersist()
             keys.forEach { keyTime ->
                 candles[keyTime]?.forEach { asset ->
-                    candlesDatabaseAccessor.writeCandle(Candle(asset.key, keyTime, asset.value.entries.joinToString("|")
-                    { "O=${it.value.openPrice};C=${it.value.closePrice};H=${it.value.highPrice};L=${it.value.lowPrice};T=${it.key}" }))
+                    candlesDatabaseAccessor.writeCandle(
+                        Candle(asset.key, keyTime, asset.value.entries.joinToString("|")
+                        { "O=${it.value.openPrice};C=${it.value.closePrice};H=${it.value.highPrice};L=${it.value.lowPrice};T=${it.key}" })
+                    )
                 }
                 candles.remove(keyTime)
             }

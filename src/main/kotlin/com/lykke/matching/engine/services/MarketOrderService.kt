@@ -24,7 +24,7 @@ import com.lykke.matching.engine.services.validators.impl.OrderValidationExcepti
 import com.lykke.matching.engine.utils.PrintUtils
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
 import com.lykke.matching.engine.utils.proto.toDate
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -49,8 +49,8 @@ class MarketOrderService @Autowired constructor(
     private val balancesHolder: BalancesHolder
 ) : AbstractService {
     companion object {
-        private val LOGGER = Logger.getLogger(MarketOrderService::class.java.name)
-        private val STATS_LOGGER = Logger.getLogger("${MarketOrderService::class.java.name}.stats")
+        private val LOGGER = LogManager.getLogger(MarketOrderService::class.java.name)
+        private val STATS_LOGGER = LogManager.getLogger("${MarketOrderService::class.java.name}.stats")
     }
 
     private var messagesCount: Long = 0
@@ -149,8 +149,10 @@ class MarketOrderService @Autowired constructor(
             getOrderBook(order),
             messageWrapper.messageId,
             priceDeviationThreshold = if (assetPair.marketOrderPriceDeviationThreshold > BigDecimal.ZERO)
-            assetPair.marketOrderPriceDeviationThreshold else applicationSettingsHolder.marketOrderPriceDeviationThreshold (assetPair.symbol),
-        executionContext = executionContext
+                assetPair.marketOrderPriceDeviationThreshold else applicationSettingsHolder.marketOrderPriceDeviationThreshold(
+                assetPair.symbol
+            ),
+            executionContext = executionContext
         )
         marketOrderExecutionContext.matchingResult = matchingResult
 

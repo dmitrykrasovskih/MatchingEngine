@@ -10,7 +10,7 @@ import com.lykke.matching.engine.order.process.common.LimitOrdersCancelExecutor
 import com.lykke.matching.engine.services.validators.business.LimitOrderCancelOperationBusinessValidator
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.stereotype.Service
 import java.util.*
 import java.util.stream.Collectors
@@ -23,7 +23,7 @@ class LimitOrderCancelService(
     private val limitOrdersCancelExecutor: LimitOrdersCancelExecutor
 ) : AbstractService {
     companion object {
-        private val LOGGER = Logger.getLogger(LimitOrderCancelService::class.java.name)
+        private val LOGGER = LogManager.getLogger(LimitOrderCancelService::class.java.name)
     }
 
     override fun processMessage(genericMessageWrapper: MessageWrapper) {

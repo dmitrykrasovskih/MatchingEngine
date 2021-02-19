@@ -2,7 +2,7 @@ package com.lykke.matching.engine.database.cache
 
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.database.DictionariesDatabaseAccessor
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -10,11 +10,12 @@ import kotlin.concurrent.fixedRateTimer
 
 @Component
 class AssetsCache @Autowired constructor(
-        private val databaseAccessor: DictionariesDatabaseAccessor,
-        @Value("\${application.assets.cache.update.interval}") updateInterval: Long? = null) : DataCache() {
+    private val databaseAccessor: DictionariesDatabaseAccessor,
+    @Value("\${application.assets.cache.update.interval}") updateInterval: Long? = null
+) : DataCache() {
 
     companion object {
-        val LOGGER = Logger.getLogger(AssetsCache::class.java)
+        val LOGGER = LogManager.getLogger(AssetsCache::class.java)
     }
 
     private var assetsMap: Map<String, Asset> = HashMap()

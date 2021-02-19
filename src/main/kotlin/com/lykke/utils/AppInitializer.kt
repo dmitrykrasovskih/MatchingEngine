@@ -1,13 +1,13 @@
 package com.lykke.utils
 
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 object AppInitializer {
 
-    private val LOGGER = Logger.getLogger("AppStarter")!!
+    private val LOGGER = LogManager.getLogger("AppStarter")
 
     fun init() {
         val startTime = LocalDateTime.now()

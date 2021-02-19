@@ -3,7 +3,7 @@ package com.lykke.matching.engine
 import com.lykke.matching.engine.utils.config.Config
 import com.lykke.utils.AppVersion
 import com.lykke.utils.logging.MetricsLogger
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.builder.SpringApplicationBuilder
 import org.springframework.context.ConfigurableApplicationContext
@@ -12,7 +12,7 @@ import org.springframework.core.env.SimpleCommandLinePropertySource
 @SpringBootApplication
 open class AppStarter
 
-val LOGGER =  Logger.getLogger("AppStarter")
+val LOGGER = LogManager.getLogger("AppStarter")
 
 fun main(args: Array<String>) {
     try {

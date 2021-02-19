@@ -5,7 +5,7 @@ import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.services.validators.business.CashTransferOperationBusinessValidator
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.utils.NumberUtils
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 
@@ -13,7 +13,7 @@ import java.math.BigDecimal
 class CashTransferOperationBusinessValidatorImpl(private val balancesHolder: BalancesHolder) :
     CashTransferOperationBusinessValidator {
     companion object {
-        private val LOGGER = Logger.getLogger(CashTransferOperationBusinessValidatorImpl::class.java.name)
+        private val LOGGER = LogManager.getLogger(CashTransferOperationBusinessValidatorImpl::class.java.name)
 
     }
 

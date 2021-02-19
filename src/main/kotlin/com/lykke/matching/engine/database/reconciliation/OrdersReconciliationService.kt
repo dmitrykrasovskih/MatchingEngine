@@ -8,7 +8,7 @@ import com.lykke.matching.engine.database.utils.mapOrdersToOrderBookPersistenceD
 import com.lykke.matching.engine.holders.OrdersDatabaseAccessorsHolder
 import com.lykke.matching.engine.holders.StopOrdersDatabaseAccessorsHolder
 import com.lykke.matching.engine.utils.config.Config
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.core.annotation.Order
@@ -16,26 +16,47 @@ import org.springframework.stereotype.Component
 
 @Component
 @Order(1)
-class OrdersReconciliationService(private val config: Config,
-                                  private val ordersDatabaseAccessorsHolder: OrdersDatabaseAccessorsHolder,
-                                  private val stopOrdersDatabaseAccessorsHolder: StopOrdersDatabaseAccessorsHolder,
-                                  private val persistedOrdersApplicationEventPublisher: SimpleApplicationEventPublisher<OrderBookPersistEvent>,
-                                  private val persistedStopApplicationEventPublisher: SimpleApplicationEventPublisher<StopOrderBookPersistEvent>) : ApplicationRunner {
+class OrdersReconciliationService(
+    private val config: Config,
+    private val ordersDatabaseAccessorsHolder: OrdersDatabaseAccessorsHolder,
+    private val stopOrdersDatabaseAccessorsHolder: StopOrdersDatabaseAccessorsHolder,
+    private val persistedOrdersApplicationEventPublisher: SimpleApplicationEventPublisher<OrderBookPersistEvent>,
+    private val persistedStopApplicationEventPublisher: SimpleApplicationEventPublisher<StopOrderBookPersistEvent>
+) : ApplicationRunner {
     private companion object {
-        val LOGGER = Logger.getLogger(OrdersReconciliationService::class.java.name)
+        val LOGGER = LogManager.getLogger(OrdersReconciliationService::class.java.name)
     }
 
     override fun run(args: ApplicationArguments?) {
         val ordersSecondaryAccessor = ordersDatabaseAccessorsHolder.secondaryAccessor
         if (ordersSecondaryAccessor != null && !config.matchingEngine.ordersMigration) {
-            val currentOrderBookSides = ordersSecondaryAccessor.loadLimitOrders().map { OrderBookSide(it.assetPairId, it.isBuySide()) }.toSet()
-            persistedOrdersApplicationEventPublisher.publishEvent(OrderBookPersistEvent(mapOrdersToOrderBookPersistenceDataList(ordersDatabaseAccessorsHolder.primaryAccessor.loadLimitOrders(), currentOrderBookSides, LOGGER)))
+            val currentOrderBookSides =
+                ordersSecondaryAccessor.loadLimitOrders().map { OrderBookSide(it.assetPairId, it.isBuySide()) }.toSet()
+            persistedOrdersApplicationEventPublisher.publishEvent(
+                OrderBookPersistEvent(
+                    mapOrdersToOrderBookPersistenceDataList(
+                        ordersDatabaseAccessorsHolder.primaryAccessor.loadLimitOrders(),
+                        currentOrderBookSides,
+                        LOGGER
+                    )
+                )
+            )
         }
 
         val stopOrdersSecondaryAccessor = stopOrdersDatabaseAccessorsHolder.secondaryAccessor
         if (stopOrdersSecondaryAccessor != null && !config.matchingEngine.ordersMigration) {
-            val currentStopOrderBookSides = stopOrdersSecondaryAccessor.loadStopLimitOrders().map { OrderBookSide(it.assetPairId, it.isBuySide()) }.toSet()
-            persistedStopApplicationEventPublisher.publishEvent(StopOrderBookPersistEvent(mapOrdersToOrderBookPersistenceDataList(stopOrdersDatabaseAccessorsHolder.primaryAccessor.loadStopLimitOrders(), currentStopOrderBookSides, LOGGER)))
+            val currentStopOrderBookSides =
+                stopOrdersSecondaryAccessor.loadStopLimitOrders().map { OrderBookSide(it.assetPairId, it.isBuySide()) }
+                    .toSet()
+            persistedStopApplicationEventPublisher.publishEvent(
+                StopOrderBookPersistEvent(
+                    mapOrdersToOrderBookPersistenceDataList(
+                        stopOrdersDatabaseAccessorsHolder.primaryAccessor.loadStopLimitOrders(),
+                        currentStopOrderBookSides,
+                        LOGGER
+                    )
+                )
+            )
         }
     }
 }

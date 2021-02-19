@@ -3,17 +3,19 @@ package com.lykke.matching.engine.services.utils
 import com.lykke.matching.engine.daos.LimitOrder
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.utils.NumberUtils
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.Logger
 import java.math.BigDecimal
-import java.util.Date
+import java.util.*
+import kotlin.collections.ArrayList
 
-class MultiOrderFilter(private val isTrustedClient: Boolean,
-                       private val baseAssetAvailableBalance: BigDecimal,
-                       private val quotingAssetAvailableBalance: BigDecimal,
-                       private val quotingAssetAccuracy: Int,
-                       private val date: Date,
-                       initialCapacity: Int,
-                       private val LOGGER: Logger
+class MultiOrderFilter(
+    private val isTrustedClient: Boolean,
+    private val baseAssetAvailableBalance: BigDecimal,
+    private val quotingAssetAvailableBalance: BigDecimal,
+    private val quotingAssetAccuracy: Int,
+    private val date: Date,
+    initialCapacity: Int,
+    private val LOGGER: Logger
 ) {
 
     private var notSortedBuySide = false
@@ -130,5 +132,7 @@ class MultiOrderFilter(private val isTrustedClient: Boolean,
     }
 }
 
-private class RejectedOrder(val order: LimitOrder,
-                            val previousStatus: OrderStatus)
+private class RejectedOrder(
+    val order: LimitOrder,
+    val previousStatus: OrderStatus
+)

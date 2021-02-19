@@ -5,7 +5,7 @@ import com.lykke.matching.engine.outgoing.rabbit.events.RabbitReadyEvent
 import com.lykke.matching.engine.utils.monitoring.HealthMonitorEvent
 import com.lykke.matching.engine.utils.monitoring.MonitoredComponent
 import com.lykke.utils.logging.MetricsLogger
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.event.EventListener
@@ -14,13 +14,15 @@ import java.util.concurrent.BlockingQueue
 import java.util.concurrent.locks.ReentrantLock
 import javax.annotation.PostConstruct
 
-class RabbitEventDispatcher<E>(private val dispatcherName: String,
-                               private val inputDeque: BlockingDeque<E>,
-                               private val queueNameToQueue: Map<String, BlockingQueue<E>>) : Thread(dispatcherName) {
+class RabbitEventDispatcher<E>(
+    private val dispatcherName: String,
+    private val inputDeque: BlockingDeque<E>,
+    private val queueNameToQueue: Map<String, BlockingQueue<E>>
+) : Thread(dispatcherName) {
 
     companion object {
         val METRICS_LOGGER = MetricsLogger.getLogger()
-        val LOGGER = Logger.getLogger(RabbitEventDispatcher::class.java)
+        val LOGGER = LogManager.getLogger(RabbitEventDispatcher::class.java)
     }
 
     private var failedEventConsumers = HashSet<String>()
@@ -99,7 +101,13 @@ class RabbitEventDispatcher<E>(private val dispatcherName: String,
 
             if (queueNameToQueue.size == failedEventConsumers.size) {
                 logError("All Rabbit MQ publishers crashed, dispatcher: $dispatcherName")
-                applicationEventPublisher.publishEvent(HealthMonitorEvent(false, MonitoredComponent.RABBIT, dispatcherName))
+                applicationEventPublisher.publishEvent(
+                    HealthMonitorEvent(
+                        false,
+                        MonitoredComponent.RABBIT,
+                        dispatcherName
+                    )
+                )
             }
 
             failedConsumerQueue?.clear()
@@ -125,7 +133,10 @@ class RabbitEventDispatcher<E>(private val dispatcherName: String,
 
             applicationEventPublisher.publishEvent(HealthMonitorEvent(true, MonitoredComponent.RABBIT, dispatcherName))
         } catch (e: Exception) {
-            logException("Error occurred on rabbit dispatcher recovery from maintenance mode for exchange: $dispatcherName", e)
+            logException(
+                "Error occurred on rabbit dispatcher recovery from maintenance mode for exchange: $dispatcherName",
+                e
+            )
         } finally {
             maintenanceModeLock.unlock()
         }
@@ -141,7 +152,7 @@ class RabbitEventDispatcher<E>(private val dispatcherName: String,
         LOGGER.error(message)
     }
 
-    private fun log(message: String){
+    private fun log(message: String) {
         METRICS_LOGGER.logWarning(message)
         LOGGER.info(message)
     }

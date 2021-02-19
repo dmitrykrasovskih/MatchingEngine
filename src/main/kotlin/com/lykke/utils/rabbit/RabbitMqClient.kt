@@ -3,16 +3,16 @@ package com.lykke.utils.rabbit
 import com.rabbitmq.client.Channel
 import com.rabbitmq.client.ConnectionFactory
 import org.apache.commons.lang3.StringUtils
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import java.io.Closeable
 
 abstract class RabbitMqClient(
-        private val config: RabbitMqConfig,
-        private val connector: Connector
+    private val config: RabbitMqConfig,
+    private val connector: Connector
 ) : Closeable, Thread() {
 
     companion object {
-        private val LOGGER = Logger.getLogger(RabbitMqClient::class.java.name)
+        private val LOGGER = LogManager.getLogger(RabbitMqClient::class.java.name)
     }
 
     protected var channel: Channel? = null

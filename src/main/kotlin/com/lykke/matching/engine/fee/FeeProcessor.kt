@@ -11,7 +11,7 @@ import com.lykke.matching.engine.holders.AssetsHolder
 import com.lykke.matching.engine.holders.AssetsPairsHolder
 import com.lykke.matching.engine.services.GenericLimitOrderService
 import com.lykke.matching.engine.utils.NumberUtils
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
@@ -24,7 +24,7 @@ class FeeProcessor(
 ) {
 
     companion object {
-        private val LOGGER = Logger.getLogger(FeeProcessor::class.java.name)
+        private val LOGGER = LogManager.getLogger(FeeProcessor::class.java.name)
         private const val FEE_COEF_ACCURACY = 12
     }
 

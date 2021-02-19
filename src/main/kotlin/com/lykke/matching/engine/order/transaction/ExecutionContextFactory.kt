@@ -9,47 +9,53 @@ import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.services.GenericLimitOrderService
 import com.lykke.matching.engine.services.GenericStopLimitOrderService
 import com.lykke.matching.engine.services.validators.impl.OrderValidationResult
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.Logger
 import org.springframework.stereotype.Component
-import java.util.Date
+import java.util.*
 
 @Component
-class ExecutionContextFactory(private val balancesHolder: BalancesHolder,
-                              private val genericLimitOrderService: GenericLimitOrderService,
-                              private val genericStopLimitOrderService: GenericStopLimitOrderService,
-                              private val assetsHolder: AssetsHolder) {
+class ExecutionContextFactory(
+    private val balancesHolder: BalancesHolder,
+    private val genericLimitOrderService: GenericLimitOrderService,
+    private val genericStopLimitOrderService: GenericStopLimitOrderService,
+    private val assetsHolder: AssetsHolder
+) {
 
-    fun create(messageId: String,
-               requestId: String,
-               messageType: MessageType,
-               processedMessage: ProcessedMessage?,
-               assetPairsById: Map<String, AssetPair>,
-               date: Date,
-               logger: Logger,
-               assetsById: Map<String, Asset> = getAssetsByIdMap(assetPairsById),
-               preProcessorValidationResultsByOrderId: Map<String, OrderValidationResult> = emptyMap()): ExecutionContext {
-        return ExecutionContext(messageId,
-                requestId,
-                messageType,
-                processedMessage,
-                assetPairsById,
-                assetsById,
-                preProcessorValidationResultsByOrderId,
-                balancesHolder.createWalletProcessor(logger),
-                genericLimitOrderService.createCurrentTransactionOrderBooksHolder(),
-                genericStopLimitOrderService.createCurrentTransactionOrderBooksHolder(),
-                date,
-                logger)
+    fun create(
+        messageId: String,
+        requestId: String,
+        messageType: MessageType,
+        processedMessage: ProcessedMessage?,
+        assetPairsById: Map<String, AssetPair>,
+        date: Date,
+        logger: Logger,
+        assetsById: Map<String, Asset> = getAssetsByIdMap(assetPairsById),
+        preProcessorValidationResultsByOrderId: Map<String, OrderValidationResult> = emptyMap()
+    ): ExecutionContext {
+        return ExecutionContext(
+            messageId,
+            requestId,
+            messageType,
+            processedMessage,
+            assetPairsById,
+            assetsById,
+            preProcessorValidationResultsByOrderId,
+            balancesHolder.createWalletProcessor(logger),
+            genericLimitOrderService.createCurrentTransactionOrderBooksHolder(),
+            genericStopLimitOrderService.createCurrentTransactionOrderBooksHolder(),
+            date,
+            logger
+        )
     }
 
     private fun getAssetsByIdMap(assetPairsById: Map<String, AssetPair>): Map<String, Asset> {
         return assetPairsById.values
-                .flatMapTo(mutableSetOf()) {
-                    listOf(it.baseAssetId, it.quotingAssetId)
-                }
-                .asSequence()
-                .map { assetsHolder.getAsset(it) }
-                .groupBy { it.symbol }
-                .mapValues { it.value.single() }
+            .flatMapTo(mutableSetOf()) {
+                listOf(it.baseAssetId, it.quotingAssetId)
+            }
+            .asSequence()
+            .map { assetsHolder.getAsset(it) }
+            .groupBy { it.symbol }
+            .mapValues { it.value.single() }
     }
 }

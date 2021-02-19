@@ -6,7 +6,7 @@ import com.lykke.matching.engine.order.process.common.CancelRequest
 import com.lykke.matching.engine.order.process.common.LimitOrdersCancelExecutor
 import com.lykke.matching.engine.services.GenericLimitOrderService
 import com.lykke.matching.engine.services.GenericStopLimitOrderService
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.ApplicationArguments
@@ -19,13 +19,15 @@ import java.util.stream.Stream
 
 @Component
 @Order(4)
-class AllOrdersCanceller @Autowired constructor(private val genericLimitOrderService: GenericLimitOrderService,
-                                                private val genericStopLimitOrderService: GenericStopLimitOrderService,
-                                                private val limitOrdersCancelExecutor: LimitOrdersCancelExecutor,
-                                                @Value("#{Config.matchingEngine.cancelAllOrders}") private val cancelAllOrders: Boolean) : ApplicationRunner {
+class AllOrdersCanceller @Autowired constructor(
+    private val genericLimitOrderService: GenericLimitOrderService,
+    private val genericStopLimitOrderService: GenericStopLimitOrderService,
+    private val limitOrdersCancelExecutor: LimitOrdersCancelExecutor,
+    @Value("#{Config.matchingEngine.cancelAllOrders}") private val cancelAllOrders: Boolean
+) : ApplicationRunner {
 
     companion object {
-        private val LOGGER = Logger.getLogger(AllOrdersCanceller::class.java.name)
+        private val LOGGER = LogManager.getLogger(AllOrdersCanceller::class.java.name)
     }
 
     override fun run(args: ApplicationArguments?) {
@@ -41,10 +43,14 @@ class AllOrdersCanceller @Autowired constructor(private val genericLimitOrderSer
         val limitOrdersToCancel = getLimitOrders()
         val stopLimitOrdersToCancel = getStopLimitOrders()
 
-        LOGGER.info("Limit orders count: ${limitOrdersToCancel.size}, " +
-                "stop limit orders count: ${stopLimitOrdersToCancel.size}")
+        LOGGER.info(
+            "Limit orders count: ${limitOrdersToCancel.size}, " +
+                    "stop limit orders count: ${stopLimitOrdersToCancel.size}"
+        )
 
-        limitOrdersCancelExecutor.cancelOrdersAndApply(CancelRequest(limitOrdersToCancel,
+        limitOrdersCancelExecutor.cancelOrdersAndApply(
+            CancelRequest(
+                limitOrdersToCancel,
                 stopLimitOrdersToCancel,
                 operationId,
                 operationId,
@@ -52,27 +58,29 @@ class AllOrdersCanceller @Autowired constructor(private val genericLimitOrderSer
                 Date(),
                 null,
                 null,
-                LOGGER))
+                LOGGER
+            )
+        )
 
         LOGGER.info("Completed to cancel all orders")
     }
 
     private fun getLimitOrders(): List<LimitOrder> {
         return genericLimitOrderService.getAllOrderBooks()
-                .values
-                .stream()
-                .map { it.copy() }
-                .flatMap { Stream.concat(it.getSellOrderBook().stream(), it.getBuyOrderBook().stream()) }
-                .collect(Collectors.toList())
+            .values
+            .stream()
+            .map { it.copy() }
+            .flatMap { Stream.concat(it.getSellOrderBook().stream(), it.getBuyOrderBook().stream()) }
+            .collect(Collectors.toList())
     }
 
     private fun getStopLimitOrders(): List<LimitOrder> {
         return genericStopLimitOrderService.getAllOrderBooks()
-                .values
-                .stream()
-                .map { it.copy() }
-                .flatMap { Stream.concat(it.getSellOrderBook().stream(), it.getBuyOrderBook().stream()) }
-                .collect(Collectors.toList())
+            .values
+            .stream()
+            .map { it.copy() }
+            .flatMap { Stream.concat(it.getSellOrderBook().stream(), it.getBuyOrderBook().stream()) }
+            .collect(Collectors.toList())
     }
 
     private fun generateOperationId() = UUID.randomUUID().toString()

@@ -12,7 +12,7 @@ import com.lykke.matching.engine.order.process.StopOrderBookProcessor
 import com.lykke.matching.engine.order.transaction.ExecutionContextFactory
 import com.lykke.matching.engine.utils.PrintUtils
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.stereotype.Service
 import java.util.*
 
@@ -26,8 +26,8 @@ class SingleLimitOrderService(
     private val balancesHolder: BalancesHolder
 ) : AbstractService {
     companion object {
-        private val LOGGER = Logger.getLogger(SingleLimitOrderService::class.java.name)
-        private val STATS_LOGGER = Logger.getLogger("${SingleLimitOrderService::class.java.name}.stats")
+        private val LOGGER = LogManager.getLogger(SingleLimitOrderService::class.java.name)
+        private val STATS_LOGGER = LogManager.getLogger("${SingleLimitOrderService::class.java.name}.stats")
     }
 
     private var messagesCount: Long = 0

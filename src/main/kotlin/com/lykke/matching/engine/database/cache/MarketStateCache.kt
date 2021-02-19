@@ -4,17 +4,18 @@ import com.lykke.matching.engine.daos.TickUpdateInterval
 import com.lykke.matching.engine.database.HistoryTicksDatabaseAccessor
 import com.lykke.matching.engine.history.TickBlobHolder
 import com.lykke.utils.logging.PerformanceLogger
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import java.math.BigDecimal
 import java.util.function.Consumer
 import java.util.stream.Collectors
-import kotlin.collections.HashMap
 
-class MarketStateCache(private val historyTicksDatabaseAccessor: HistoryTicksDatabaseAccessor,
-                       private val frequency: Long) {
+class MarketStateCache(
+    private val historyTicksDatabaseAccessor: HistoryTicksDatabaseAccessor,
+    private val frequency: Long
+) {
 
     companion object {
-        private val performanceLogger = PerformanceLogger(Logger.getLogger("marketStateCache"), 10, "buildTicks: ")
+        private val performanceLogger = PerformanceLogger(LogManager.getLogger("marketStateCache"), 10, "buildTicks: ")
     }
 
     private val assetPairToIntervalTickHolder = HashMap<String, HashMap<TickUpdateInterval, TickBlobHolder>>()
@@ -47,7 +48,7 @@ class MarketStateCache(private val historyTicksDatabaseAccessor: HistoryTicksDat
     fun refresh() {
         val ticks = historyTicksDatabaseAccessor.loadHistoryTicks()
         ticks.forEach {
-            val assetPairToTick = assetPairToIntervalTickHolder.getOrPut(it.assetPair) {HashMap()}
+            val assetPairToTick = assetPairToIntervalTickHolder.getOrPut(it.assetPair) { HashMap() }
             assetPairToTick[it.tickUpdateInterval] = it
         }
     }
@@ -69,11 +70,11 @@ class MarketStateCache(private val historyTicksDatabaseAccessor: HistoryTicksDat
     @Synchronized
     private fun getTicksToPersist(): List<TickBlobHolder> {
         return assetPairToIntervalTickHolder
-                .entries
-                .stream()
-                .flatMap { entry -> entry.value.entries.stream() }
-                .map { entry -> TickBlobHolder(entry.value) }
-                .collect(Collectors.toList())
+            .entries
+            .stream()
+            .flatMap { entry -> entry.value.entries.stream() }
+            .map { entry -> TickBlobHolder(entry.value) }
+            .collect(Collectors.toList())
     }
 
     private fun getUpdateInterval(tickUpdateInterval: TickUpdateInterval): Long {
@@ -81,6 +82,6 @@ class MarketStateCache(private val historyTicksDatabaseAccessor: HistoryTicksDat
     }
 
     private fun isTimeForAddNewTick(tickBlobHolder: TickBlobHolder, currentUpdateTime: Long): Boolean {
-        return getUpdateInterval(tickBlobHolder.tickUpdateInterval) +  tickBlobHolder.lastUpdate <= currentUpdateTime
+        return getUpdateInterval(tickBlobHolder.tickUpdateInterval) + tickBlobHolder.lastUpdate <= currentUpdateTime
     }
 }

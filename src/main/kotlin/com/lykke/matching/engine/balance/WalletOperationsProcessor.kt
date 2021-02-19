@@ -17,7 +17,8 @@ import com.lykke.matching.engine.outgoing.messages.BalanceUpdate
 import com.lykke.matching.engine.outgoing.messages.ClientBalanceUpdate
 import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.utils.logging.MetricsLogger
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.Logger
 import java.math.BigDecimal
 import java.util.*
 import kotlin.collections.HashMap
@@ -32,7 +33,7 @@ class WalletOperationsProcessor(
 ) : BalancesGetter {
 
     companion object {
-        private val LOGGER = Logger.getLogger(WalletOperationsProcessor::class.java.name)
+        private val LOGGER = LogManager.getLogger(WalletOperationsProcessor::class.java.name)
         private val METRICS_LOGGER = MetricsLogger.getLogger()
     }
 

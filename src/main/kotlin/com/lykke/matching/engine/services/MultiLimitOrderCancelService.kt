@@ -8,7 +8,7 @@ import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.messages.wrappers.socket.MultiLimitOrderCancelMessageWrapper
 import com.lykke.matching.engine.order.process.common.CancelRequest
 import com.lykke.matching.engine.order.process.common.LimitOrdersCancelExecutor
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.springframework.stereotype.Service
 import java.util.*
 
@@ -20,7 +20,7 @@ class MultiLimitOrderCancelService(
 ) : AbstractService {
 
     companion object {
-        private val LOGGER = Logger.getLogger(MultiLimitOrderCancelService::class.java.name)
+        private val LOGGER = LogManager.getLogger(MultiLimitOrderCancelService::class.java.name)
     }
 
     override fun processMessage(genericMessageWrapper: MessageWrapper) {

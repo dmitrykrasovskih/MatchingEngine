@@ -3,13 +3,14 @@ package com.lykke.utils.files.clean.db.azure
 import com.lykke.utils.azure.getOrCreateBlob
 import com.lykke.utils.files.clean.db.LogFilesDatabaseAccessor
 import com.microsoft.azure.storage.blob.CloudBlobContainer
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import java.io.File
 
-internal class AzureLogFilesDatabaseAccessor(connectionString: String, blobContainerName: String) : LogFilesDatabaseAccessor {
+internal class AzureLogFilesDatabaseAccessor(connectionString: String, blobContainerName: String) :
+    LogFilesDatabaseAccessor {
 
     companion object {
-        private val LOGGER = Logger.getLogger(AzureLogFilesDatabaseAccessor::class.java.name)
+        private val LOGGER = LogManager.getLogger(AzureLogFilesDatabaseAccessor::class.java.name)
     }
 
     private val blobContainer: CloudBlobContainer = getOrCreateBlob(connectionString, blobContainerName)
