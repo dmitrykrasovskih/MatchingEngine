@@ -1,16 +1,18 @@
 package com.lykke.matching.engine.outgoing.messages.v2.events
 
-import com.lykke.matching.engine.messages.outgoing.OutgoingMessages
-import com.lykke.matching.engine.outgoing.messages.v2.events.common.Header
 import com.lykke.matching.engine.outgoing.messages.v2.events.common.BalanceUpdate
 import com.lykke.matching.engine.outgoing.messages.v2.events.common.CashTransfer
+import com.lykke.matching.engine.outgoing.messages.v2.events.common.Header
+import com.myjetwallet.messages.outgoing.grpc.OutgoingMessages
 
-class CashTransferEvent(header: Header,
-                        val balanceUpdates: List<BalanceUpdate>,
-                        val cashTransfer: CashTransfer) : Event<OutgoingMessages.CashTransferEvent>(header) {
+class CashTransferEvent(
+    header: Header,
+    val balanceUpdates: List<BalanceUpdate>,
+    val cashTransfer: CashTransfer
+) : Event<OutgoingMessages.OutgoingEvent>(header) {
 
-    override fun buildGeneratedMessage(): OutgoingMessages.CashTransferEvent {
-        val builder = OutgoingMessages.CashTransferEvent.newBuilder()
+    override fun buildGeneratedMessage(): OutgoingMessages.OutgoingEvent {
+        val builder = OutgoingMessages.OutgoingEvent.newBuilder()
         builder.setHeader(header.createGeneratedMessageBuilder())
         balanceUpdates.forEach { balanceUpdate ->
             builder.addBalanceUpdates(balanceUpdate.createGeneratedMessageBuilder())

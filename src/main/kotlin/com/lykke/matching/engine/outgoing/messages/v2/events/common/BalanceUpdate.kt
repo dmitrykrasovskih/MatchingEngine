@@ -1,6 +1,6 @@
 package com.lykke.matching.engine.outgoing.messages.v2.events.common
 
-import com.lykke.matching.engine.messages.outgoing.OutgoingMessages
+import com.myjetwallet.messages.outgoing.grpc.OutgoingMessages
 
 class BalanceUpdate(val brokerId: String,
                     val accountId: String,

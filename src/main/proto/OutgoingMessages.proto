@@ -1,12 +1,21 @@
 syntax = "proto3";
 
-package com.lykke.matching.engine.messages.outgoing;
+package com.myjetwallet.messages.outgoing.grpc;
 
 import "google/protobuf/timestamp.proto";
 
-option java_package = "com.lykke.matching.engine.messages.outgoing";
+option java_package = "com.myjetwallet.messages.outgoing.grpc";
 option java_outer_classname = "OutgoingMessages";
-option csharp_namespace = "Antares.ME.Contracts.OutgoingMessages";
+option csharp_namespace = "MyJetWallet.ME.Contracts.OutgoingMessages";
+
+message OutgoingEvent {
+    Header header = 1;
+    repeated BalanceUpdate balanceUpdates = 2;
+    CashIn cashIn = 3;
+    CashOut cashOut = 4;
+    CashTransfer cashTransfer = 5;
+    repeated Order orders = 6;
+}
 
 message Header {
     enum MessageType {
@@ -16,8 +25,8 @@ message Header {
         CASH_TRANSFER = 3;
         ORDER = 4;
     }
-    int32 messageType = 1;
-    
+    MessageType messageType = 1;
+
     int64 sequenceNumber = 2;
     string messageId = 3;
     string requestId = 4;
@@ -38,6 +47,130 @@ message BalanceUpdate {
     uint64 walletVersion = 9;
 }
 
+message CashIn {
+    string walletId = 1;
+    string assetId = 2;
+    string volume = 3;
+    repeated Fee fees = 4;
+    string brokerId = 5;
+    string accountId = 6;
+    uint64 walletVersion = 7;
+}
+
+message CashOut {
+    string walletId = 1;
+    string assetId = 2;
+    string volume = 3;
+    repeated Fee fees = 4;
+    string brokerId = 5;
+    string accountId = 6;
+    uint64 walletVersion = 7;
+}
+
+message CashTransfer {
+    string fromWalletId = 1;
+    string toWalletId = 2;
+    string volume = 3;
+    string overdraftLimit = 4;
+    string assetId = 5;
+    repeated Fee fees = 6;
+    string brokerId = 7;
+    string accountId = 8;
+    uint64 walletVersion = 9;
+}
+
+message Order {
+    message Trade {
+        string tradeId = 1;
+        string baseAssetId = 2;
+        string baseVolume = 3;
+        string price = 4;
+        google.protobuf.Timestamp timestamp = 5;
+        string oppositeOrderId = 6;
+        string oppositeExternalOrderId = 7;
+        string oppositeWalletId = 8;
+        string quotingAssetId = 9;
+        string quotingVolume = 10;
+        int32 index = 11;
+        string absoluteSpread = 12;
+        string relativeSpread = 13;
+
+        enum TradeRole {
+            UNKNOWN_ROLE = 0;
+            MAKER = 1;
+            TAKER = 2;
+        }
+        TradeRole role = 14;
+
+        repeated FeeTransfer fees = 15;
+    }
+
+    enum OrderType {
+        UNKNOWN_ORDER_TYPE = 0;
+        MARKET = 1;
+        LIMIT = 2;
+        STOP_LIMIT = 3;
+    }
+    OrderType orderType = 1;
+
+    string id = 2;
+    string externalId = 3;
+    string assetPairId = 4;
+    string walletId = 5;
+
+    enum OrderSide {
+        UNKNOWN_ORDER_SIDE = 0;
+        BUY = 1;
+        SELL = 2;
+    }
+    OrderSide side = 6;
+
+    string volume = 7;
+    string remainingVolume = 8;
+    string price = 9;
+
+    enum OrderStatus {
+        UNKNOWN_STATUS = 0;
+        PLACED = 1;
+        PARTIALLY_MATCHED = 2;
+        MATCHED = 3;
+        PENDING = 4;
+        CANCELLED = 5;
+        REPLACED = 6;
+        REJECTED = 7;
+        EXECUTED = 8;
+    }
+    OrderStatus status = 10;
+
+    string rejectReason = 11;
+    google.protobuf.Timestamp statusDate = 12;
+    google.protobuf.Timestamp createdAt = 13;
+    google.protobuf.Timestamp registered = 14;
+    google.protobuf.Timestamp lastMatchTime = 15;
+    string lowerLimitPrice = 16;
+    string lowerPrice = 17;
+    string upperLimitPrice = 18;
+    string upperPrice = 19;
+    bool straight = 20;
+    repeated FeeInstruction fees = 21;
+    repeated Trade trades = 22;
+
+    enum OrderTimeInForce {
+        UNKNOWN_ORDER_TIME_IN_FORCE = 0;
+        GTC = 1;
+        GTD = 2;
+        IOC = 3;
+        FOK = 4;
+    }
+    OrderTimeInForce timeInForce = 23;
+    google.protobuf.Timestamp expiryTime = 24;
+    string parentExternalId = 25;
+    string childExternalId = 26;
+    string brokerId = 27;
+    string accountId = 28;
+    uint64 walletVersion = 29;
+}
+
 message Fee {
     FeeInstruction instruction = 1;
     FeeTransfer transfer = 2;
@@ -49,19 +182,19 @@ message FeeInstruction {
         WALLET_FEE = 1;
         EXTERNAL_FEE = 2;
     }
-    int32 type = 1;
-   
+    FeeType type = 1;
+
     string size = 2;
-   
+
     enum FeeSizeType {
         UNKNOWN_FEE_SIZE_TYPE = 0;
         PERCENTAGE = 1;
         ABSOLUTE = 2;
     }
-    int32 sizeType = 3;
-   
+    FeeSizeType sizeType = 3;
+
     string makerSize = 4;
-    int32 makerSizeType = 5;
+    FeeSizeType makerSizeType = 5;
     string sourceWalletId = 6;
     string targetWalletId = 7;
     repeated string assetsIds = 8;
@@ -78,162 +211,18 @@ message FeeTransfer {
     int32 index = 6;
 }
 
-message CashInEvent {
-    message CashIn {
-        string walletId = 1;
-        string assetId = 2;
-        string volume = 3;
-        repeated Fee fees = 4;
-        string brokerId = 5;
-        string accountId = 6;
-        uint64 walletVersion = 7;
-    }
-    Header header = 1;
-    repeated BalanceUpdate balanceUpdates = 2;
-    CashIn cashIn = 3;
-}
-
-message CashOutEvent {
-    message CashOut {
-        string walletId = 1;
-        string assetId = 2;
-        string volume = 3;
-        repeated Fee fees = 4;
-        string brokerId = 5;
-        string accountId = 6;
-        uint64 walletVersion = 7;
-    }
-    Header header = 1;
-    repeated BalanceUpdate balanceUpdates = 2;
-    CashOut cashOut = 3;
-}
-
-message CashTransferEvent {
-    message CashTransfer {
-        string fromWalletId = 1;
-        string toWalletId = 2;
-        string volume = 3;
-        string overdraftLimit = 4;
-        string assetId = 5;
-        repeated Fee fees = 6;
-        string brokerId = 7;
-        string accountId = 8;
-        uint64 walletVersion = 9;
-    }
-    Header header = 1;
-    repeated BalanceUpdate balanceUpdates = 2;
-    CashTransfer cashTransfer = 3;
-}
-
-message ExecutionEvent {
-    message Order {
-        message Trade {
-            string tradeId = 1;
-            string baseAssetId = 2;
-            string baseVolume = 3;
-            string price = 4;
-            google.protobuf.Timestamp timestamp = 5;
-            string oppositeOrderId = 6;
-            string oppositeExternalOrderId = 7;
-            string oppositeWalletId = 8;
-            string quotingAssetId = 9;
-            string quotingVolume = 10;
-            int32 index = 11;
-            string absoluteSpread = 12;
-            string relativeSpread = 13;
-
-            enum TradeRole {
-                UNKNOWN_ROLE = 0;
-                MAKER = 1;
-                TAKER = 2;
-            }
-            int32 role = 14;
-
-            repeated FeeTransfer fees = 15;
-        }
-       
-        enum OrderType {
-            UNKNOWN_ORDER_TYPE = 0;
-            MARKET = 1;
-            LIMIT = 2;
-            STOP_LIMIT = 3;
-        }
-        int32 orderType = 1;
-        
-        string id = 2;
-        string externalId = 3;
-        string assetPairId = 4;
-        string walletId = 5;
-     
-        enum OrderSide {
-            UNKNOWN_ORDER_SIDE = 0;
-            BUY = 1;
-            SELL = 2;
-        }
-        int32 side = 6;
-        
-        string volume = 7;
-        string remainingVolume = 8;
-        string price = 9;
-        
-        enum OrderStatus {
-            UNKNOWN_STATUS = 0;
-            PLACED = 1;
-            PARTIALLY_MATCHED = 2;
-            MATCHED = 3;
-            PENDING = 4;
-            CANCELLED = 5;
-            REPLACED = 6;
-            REJECTED = 7;
-            EXECUTED = 8;
-        }
-        int32 status = 10;
-
-        string rejectReason = 11;
-        google.protobuf.Timestamp statusDate = 12;
-        google.protobuf.Timestamp createdAt = 13;
-        google.protobuf.Timestamp registered = 14;
-        google.protobuf.Timestamp lastMatchTime = 15;
-        string lowerLimitPrice = 16;
-        string lowerPrice = 17;
-        string upperLimitPrice = 18;
-        string upperPrice = 19;
-        bool straight = 20;
-        repeated FeeInstruction fees = 21;
-        repeated Trade trades = 22;
-
-        enum OrderTimeInForce {
-             UNKNOWN_ORDER_TIME_IN_FORCE = 0;
-             GTC = 1;
-             GTD = 2;
-             IOC = 3;
-             FOK = 4;
-        }
-        int32 timeInForce = 23;
-        google.protobuf.Timestamp expiryTime = 24;
-        string parentExternalId = 25;
-        string childExternalId = 26;
-        string brokerId = 27;
-        string accountId = 28;
-        uint64 walletVersion = 29;
-    }
-    Header header = 1;
-    repeated BalanceUpdate balanceUpdates = 2;
-    repeated Order orders = 3;
-}
-
 message OrderBookSnapshot {
-  string asset = 1;
-  bool isBuy = 2;
-  google.protobuf.Timestamp timestamp = 3;
+    string asset = 1;
+    bool isBuy = 2;
+    google.protobuf.Timestamp timestamp = 3;
 
-  message OrderBookLevel {
-    string price = 1;
-    string volume = 2;
-    string walletId = 3;
-    string orderId = 4;
-  }
+    message OrderBookLevel {
+        string price = 1;
+        string volume = 2;
+        string walletId = 3;
+        string orderId = 4;
+    }
 
-  repeated OrderBookLevel levels = 4;
-  string brokerId = 5;
+    repeated OrderBookLevel levels = 4;
+    string brokerId = 5;
 }
