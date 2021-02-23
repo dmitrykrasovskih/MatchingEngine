@@ -113,12 +113,14 @@ class BalancesHolder(
     fun updateBalance(
         processedMessage: ProcessedMessage?,
         messageSequenceNumber: Long?,
+        brokerId: String,
+        accountId: String,
         clientId: String,
         assetId: String,
         balance: BigDecimal
     ): Boolean {
         val currentTransactionBalancesHolder = createCurrentTransactionBalancesHolder()
-        currentTransactionBalancesHolder.updateBalance(clientId, assetId, balance)
+        currentTransactionBalancesHolder.updateBalance(brokerId, accountId, clientId, assetId, balance)
         val balancesData = currentTransactionBalancesHolder.persistenceData()
         val persisted = persistenceManager.persist(
             PersistenceData(
@@ -139,13 +141,15 @@ class BalancesHolder(
     fun updateReservedBalance(
         processedMessage: ProcessedMessage?,
         messageSequenceNumber: Long?,
+        brokerId: String,
+        accountId: String,
         clientId: String,
         assetId: String,
         balance: BigDecimal,
         skipForTrustedClient: Boolean = true
     ): Boolean {
         val currentTransactionBalancesHolder = createCurrentTransactionBalancesHolder()
-        currentTransactionBalancesHolder.updateReservedBalance(clientId, assetId, balance)
+        currentTransactionBalancesHolder.updateReservedBalance(brokerId, accountId, clientId, assetId, balance)
         val balancesData = currentTransactionBalancesHolder.persistenceData()
         val persisted = persistenceManager.persist(
             PersistenceData(

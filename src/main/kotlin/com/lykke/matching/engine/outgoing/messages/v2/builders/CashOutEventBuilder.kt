@@ -1,10 +1,10 @@
 package com.lykke.matching.engine.outgoing.messages.v2.builders
 
+import com.lykke.matching.engine.outgoing.messages.v2.enums.MessageType
+import com.lykke.matching.engine.outgoing.messages.v2.events.CashOutEvent
 import com.lykke.matching.engine.outgoing.messages.v2.events.common.BalanceUpdate
 import com.lykke.matching.engine.outgoing.messages.v2.events.common.CashOut
-import com.lykke.matching.engine.outgoing.messages.v2.events.CashOutEvent
 import com.lykke.matching.engine.outgoing.messages.v2.events.common.Header
-import com.lykke.matching.engine.outgoing.messages.v2.enums.MessageType
 
 class CashOutEventBuilder : EventBuilder<CashOutEventData, CashOutEvent>() {
 
@@ -15,10 +15,14 @@ class CashOutEventBuilder : EventBuilder<CashOutEventData, CashOutEvent>() {
 
     override fun setEventData(eventData: CashOutEventData): EventBuilder<CashOutEventData, CashOutEvent> {
         balanceUpdates = convertBalanceUpdates(eventData.clientBalanceUpdates)
-        cashOut = CashOut(eventData.cashOutOperation.clientId,
-                eventData.cashOutOperation.assetId,
-                bigDecimalToString(eventData.cashOutOperation.amount.abs())!!,
-                convertFees(eventData.internalFees))
+        cashOut = CashOut(
+            eventData.cashOutOperation.brokerId,
+            eventData.cashOutOperation.accountId,
+            eventData.cashOutOperation.clientId,
+            eventData.cashOutOperation.assetId,
+            bigDecimalToString(eventData.cashOutOperation.amount.abs())!!,
+            convertFees(eventData.internalFees)
+        )
         return this
     }
 

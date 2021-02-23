@@ -5,19 +5,36 @@ import com.lykke.matching.engine.daos.wallet.Wallet
 import com.lykke.matching.engine.database.common.entity.BalancesData
 import com.lykke.matching.engine.holders.BalancesHolder
 import java.math.BigDecimal
+import java.math.BigDecimal.ZERO
 
 class CurrentTransactionBalancesHolder(private val balancesHolder: BalancesHolder) {
 
     private val changedBalancesByClientIdAndAssetId = mutableMapOf<String, MutableMap<String, AssetBalance>>()
     private val changedWalletsByClientId = mutableMapOf<String, Wallet>()
 
-    fun updateBalance(clientId: String, assetId: String, balance: BigDecimal) {
-        val walletAssetBalance = getWalletAssetBalance(clientId, assetId)
+    fun updateBalance(
+        brokerId: String,
+        accountId: String,
+        clientId: String,
+        assetId: String,
+        balance: BigDecimal
+    ) {
+        val walletAssetBalance = getWalletAssetBalance(brokerId, accountId, clientId, assetId)
+        walletAssetBalance.assetBalance.brokerId = brokerId
+        walletAssetBalance.assetBalance.accountId = accountId
         walletAssetBalance.assetBalance.balance = balance
     }
 
-    fun updateReservedBalance(clientId: String, assetId: String, balance: BigDecimal) {
-        val walletAssetBalance = getWalletAssetBalance(clientId, assetId)
+    fun updateReservedBalance(
+        brokerId: String,
+        accountId: String,
+        clientId: String,
+        assetId: String,
+        balance: BigDecimal
+    ) {
+        val walletAssetBalance = getWalletAssetBalance(brokerId, accountId, clientId, assetId)
+        walletAssetBalance.assetBalance.brokerId = brokerId
+        walletAssetBalance.assetBalance.accountId = accountId
         walletAssetBalance.assetBalance.reserved = balance
     }
 
@@ -31,16 +48,31 @@ class CurrentTransactionBalancesHolder(private val balancesHolder: BalancesHolde
         balancesHolder.setWallets(changedWalletsByClientId.values)
     }
 
-    fun getWalletAssetBalance(clientId: String, assetId: String): WalletAssetBalance {
+    fun getWalletAssetBalance(
+        brokerId: String,
+        accountId: String,
+        clientId: String,
+        assetId: String
+    ): WalletAssetBalance {
         val wallet = changedWalletsByClientId.getOrPut(clientId) {
-            copyWallet(balancesHolder.wallets[clientId]) ?: Wallet("", "", clientId)
+            copyWallet(balancesHolder.wallets[clientId]) ?: Wallet(brokerId, accountId, clientId)
         }
         val assetBalance = changedBalancesByClientIdAndAssetId
             .getOrPut(clientId) {
                 mutableMapOf()
             }
             .getOrPut(assetId) {
-                wallet.balances.getOrPut(assetId) { AssetBalance(clientId, assetId) }
+                wallet.balances.getOrPut(assetId) {
+                    AssetBalance(
+                        clientId,
+                        assetId,
+                        ZERO,
+                        ZERO,
+                        brokerId,
+                        accountId,
+                        1
+                    )
+                }
             }
         return WalletAssetBalance(wallet, assetBalance)
     }
@@ -56,7 +88,7 @@ class CurrentTransactionBalancesHolder(private val balancesHolder: BalancesHolde
             accountId,
             clientId
         )).balances[assetId]
-            ?: AssetBalance(clientId, assetId)
+            ?: AssetBalance(clientId, assetId, ZERO, ZERO, brokerId, accountId, 1)
     }
 
     private fun copyWallet(wallet: Wallet?): Wallet? {
@@ -75,7 +107,10 @@ class CurrentTransactionBalancesHolder(private val balancesHolder: BalancesHolde
             assetBalance.clientId,
             assetBalance.asset,
             assetBalance.balance,
-            assetBalance.reserved
+            assetBalance.reserved,
+            assetBalance.brokerId,
+            assetBalance.accountId,
+            assetBalance.version
         )
     }
 }

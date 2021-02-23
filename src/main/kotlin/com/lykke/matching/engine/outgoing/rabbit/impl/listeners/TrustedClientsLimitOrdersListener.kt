@@ -36,12 +36,14 @@ class TrustedClientsLimitOrdersListener {
 
     @PostConstruct
     fun initRabbitMqPublisher() {
-        rabbitMqOldService.startPublisher(config.matchingEngine.rabbitMqConfigs.limitOrders,
-                TrustedClientsLimitOrdersListener::class.java.simpleName,
-                trustedClientsLimitOrdersQueue,
-                config.matchingEngine.name,
-                AppVersion.VERSION,
-                BuiltinExchangeType.FANOUT, null)
+        rabbitMqOldService.startPublisher(
+            config.matchingEngine.rabbitMqConfigs.limitOrders,
+            TrustedClientsLimitOrdersListener::class.java.simpleName,
+            trustedClientsLimitOrdersQueue,
+            config.matchingEngine.name,
+            AppVersion.VERSION,
+            BuiltinExchangeType.FANOUT, null
+        )
     }
 
 
@@ -53,7 +55,13 @@ class TrustedClientsLimitOrdersListener {
             rabbitFailureEvent.failedEvent?.let {
                 trustedClientsLimitOrdersQueue.putFirst(it as LimitOrdersReport)
             }
-            applicationEventPublisher.publishEvent(HealthMonitorEvent(false, MonitoredComponent.RABBIT, rabbitFailureEvent.publisherName))
+            applicationEventPublisher.publishEvent(
+                HealthMonitorEvent(
+                    false,
+                    MonitoredComponent.RABBIT,
+                    rabbitFailureEvent.publisherName
+                )
+            )
         }
     }
 
@@ -62,7 +70,13 @@ class TrustedClientsLimitOrdersListener {
         if (rabbitReadyEvent.publisherName == TrustedClientsLimitOrdersListener::class.java.simpleName && failed) {
             failed = false
             logRmqRecover(rabbitReadyEvent.publisherName)
-            applicationEventPublisher.publishEvent(HealthMonitorEvent(true, MonitoredComponent.RABBIT, rabbitReadyEvent.publisherName))
+            applicationEventPublisher.publishEvent(
+                HealthMonitorEvent(
+                    true,
+                    MonitoredComponent.RABBIT,
+                    rabbitReadyEvent.publisherName
+                )
+            )
         }
     }
 }

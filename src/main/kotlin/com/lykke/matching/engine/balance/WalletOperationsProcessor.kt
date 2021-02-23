@@ -49,7 +49,7 @@ class WalletOperationsProcessor(
                 return@forEach
             }
             val changedAssetBalance = changedAssetBalances.getOrPut(generateKey(operation)) {
-                getChangedAssetBalance(operation.clientId, operation.assetId)
+                getChangedAssetBalance(operation.brokerId, operation.accountId, operation.clientId, operation.assetId)
             }
 
             val asset = assetsHolder.getAsset(operation.assetId)
@@ -197,8 +197,13 @@ class WalletOperationsProcessor(
         ) && applicationSettingsHolder.isTrustedClient(operation.clientId)
     }
 
-    private fun getChangedAssetBalance(clientId: String, assetId: String): ChangedAssetBalance {
-        val walletAssetBalance = getCurrentTransactionWalletAssetBalance(clientId, assetId)
+    private fun getChangedAssetBalance(
+        brokerId: String,
+        accountId: String,
+        clientId: String,
+        assetId: String
+    ): ChangedAssetBalance {
+        val walletAssetBalance = getCurrentTransactionWalletAssetBalance(brokerId, accountId, clientId, assetId)
         return ChangedAssetBalance(walletAssetBalance.wallet, walletAssetBalance.assetBalance)
     }
 
@@ -216,8 +221,13 @@ class WalletOperationsProcessor(
         )
     }
 
-    private fun getCurrentTransactionWalletAssetBalance(clientId: String, assetId: String): WalletAssetBalance {
-        return currentTransactionBalancesHolder.getWalletAssetBalance(clientId, assetId)
+    private fun getCurrentTransactionWalletAssetBalance(
+        brokerId: String,
+        accountId: String,
+        clientId: String,
+        assetId: String
+    ): WalletAssetBalance {
+        return currentTransactionBalancesHolder.getWalletAssetBalance(brokerId, accountId, clientId, assetId)
     }
 }
 

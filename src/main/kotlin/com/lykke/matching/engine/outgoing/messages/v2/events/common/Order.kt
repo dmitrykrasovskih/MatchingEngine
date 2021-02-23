@@ -10,6 +10,8 @@ class Order(
     val id: String,
     val externalId: String,
     val assetPairId: String,
+    val brokerId: String,
+    val accountId: String,
     val walletId: String,
     val side: OrderSide,
     val volume: String,
@@ -40,6 +42,8 @@ class Order(
             .setId(id)
             .setExternalId(externalId)
             .setAssetPairId(assetPairId)
+            .setBrokerId(brokerId)
+            .setAccountId(accountId)
             .setWalletId(walletId)
             .setSide(OutgoingMessages.Order.OrderSide.forNumber(side.id))
             .volume = volume

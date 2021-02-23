@@ -35,23 +35,31 @@ class OrderBookListener {
 
     @PostConstruct
     fun initRabbitMqPublisher() {
-        rabbitMqOldService.startPublisher(config.matchingEngine.rabbitMqConfigs.orderBooks,
-                OrderBookListener::class.java.simpleName,
-                rabbitOrderBookQueue,
-                config.matchingEngine.name,
-                AppVersion.VERSION,
-                BuiltinExchangeType.FANOUT)
+        rabbitMqOldService.startPublisher(
+            config.matchingEngine.rabbitMqConfigs.orderBooks,
+            OrderBookListener::class.java.simpleName,
+            rabbitOrderBookQueue,
+            config.matchingEngine.name,
+            AppVersion.VERSION,
+            BuiltinExchangeType.FANOUT
+        )
     }
 
     @EventListener
     fun onFailure(rabbitFailureEvent: RabbitFailureEvent<*>) {
-        if(rabbitFailureEvent.publisherName == OrderBookListener::class.java.simpleName) {
+        if (rabbitFailureEvent.publisherName == OrderBookListener::class.java.simpleName) {
             failed = true
             logRmqFail(rabbitFailureEvent.publisherName)
             rabbitFailureEvent.failedEvent?.let {
                 rabbitOrderBookQueue.putFirst(it as OrderBook)
             }
-            applicationEventPublisher.publishEvent(HealthMonitorEvent(false, MonitoredComponent.RABBIT, rabbitFailureEvent.publisherName))
+            applicationEventPublisher.publishEvent(
+                HealthMonitorEvent(
+                    false,
+                    MonitoredComponent.RABBIT,
+                    rabbitFailureEvent.publisherName
+                )
+            )
         }
     }
 
@@ -60,7 +68,13 @@ class OrderBookListener {
         if (rabbitReadyEvent.publisherName == OrderBookListener::class.java.simpleName && failed) {
             failed = false
             logRmqRecover(rabbitReadyEvent.publisherName)
-            applicationEventPublisher.publishEvent(HealthMonitorEvent(true, MonitoredComponent.RABBIT, rabbitReadyEvent.publisherName))
+            applicationEventPublisher.publishEvent(
+                HealthMonitorEvent(
+                    true,
+                    MonitoredComponent.RABBIT,
+                    rabbitReadyEvent.publisherName
+                )
+            )
         }
     }
 }

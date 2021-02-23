@@ -1,10 +1,10 @@
 package com.lykke.matching.engine.outgoing.messages.v2.builders
 
+import com.lykke.matching.engine.outgoing.messages.v2.enums.MessageType
+import com.lykke.matching.engine.outgoing.messages.v2.events.CashInEvent
 import com.lykke.matching.engine.outgoing.messages.v2.events.common.BalanceUpdate
 import com.lykke.matching.engine.outgoing.messages.v2.events.common.CashIn
-import com.lykke.matching.engine.outgoing.messages.v2.events.CashInEvent
 import com.lykke.matching.engine.outgoing.messages.v2.events.common.Header
-import com.lykke.matching.engine.outgoing.messages.v2.enums.MessageType
 
 class CashInEventBuilder : EventBuilder<CashInEventData, CashInEvent>() {
 
@@ -15,10 +15,14 @@ class CashInEventBuilder : EventBuilder<CashInEventData, CashInEvent>() {
 
     override fun setEventData(eventData: CashInEventData): EventBuilder<CashInEventData, CashInEvent> {
         balanceUpdates = convertBalanceUpdates(eventData.clientBalanceUpdates)
-        cashIn = CashIn(eventData.cashInOperation.clientId,
-                eventData.cashInOperation.assetId,
-                bigDecimalToString(eventData.cashInOperation.amount)!!,
-                convertFees(eventData.internalFees))
+        cashIn = CashIn(
+            eventData.cashInOperation.brokerId,
+            eventData.cashInOperation.accountId,
+            eventData.cashInOperation.clientId,
+            eventData.cashInOperation.assetId,
+            bigDecimalToString(eventData.cashInOperation.amount)!!,
+            convertFees(eventData.internalFees)
+        )
         return this
     }
 

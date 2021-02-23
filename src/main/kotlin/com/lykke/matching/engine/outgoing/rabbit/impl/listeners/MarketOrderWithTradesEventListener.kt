@@ -44,26 +44,37 @@ class MarketOrderWithTradesEventListener {
 
     @PostConstruct
     fun initRabbitMqPublisher() {
-        rabbitMqOldService.startPublisher(config.matchingEngine.rabbitMqConfigs.marketOrders,
-                MarketOrderWithTradesEventListener::class.java.simpleName,
-                marketOrderWithTrades,
-                config.matchingEngine.name,
-                AppVersion.VERSION,
-                BuiltinExchangeType.FANOUT,
-                DatabaseLogger(
-                        AzureMessageLogDatabaseAccessor(config.matchingEngine.db.messageLogConnString,
-                                logTable, logBlobName)))
+        rabbitMqOldService.startPublisher(
+            config.matchingEngine.rabbitMqConfigs.marketOrders,
+            MarketOrderWithTradesEventListener::class.java.simpleName,
+            marketOrderWithTrades,
+            config.matchingEngine.name,
+            AppVersion.VERSION,
+            BuiltinExchangeType.FANOUT,
+            DatabaseLogger(
+                AzureMessageLogDatabaseAccessor(
+                    config.matchingEngine.db.messageLogConnString,
+                    logTable, logBlobName
+                )
+            )
+        )
     }
 
     @EventListener
     fun onFailure(rabbitFailureEvent: RabbitFailureEvent<*>) {
-        if(rabbitFailureEvent.publisherName == MarketOrderWithTradesEventListener::class.java.simpleName) {
+        if (rabbitFailureEvent.publisherName == MarketOrderWithTradesEventListener::class.java.simpleName) {
             failed = true
             logRmqFail(rabbitFailureEvent.publisherName)
             rabbitFailureEvent.failedEvent?.let {
                 marketOrderWithTrades.putFirst(it as MarketOrderWithTrades)
             }
-            applicationEventPublisher.publishEvent(HealthMonitorEvent(false, MonitoredComponent.RABBIT, rabbitFailureEvent.publisherName))
+            applicationEventPublisher.publishEvent(
+                HealthMonitorEvent(
+                    false,
+                    MonitoredComponent.RABBIT,
+                    rabbitFailureEvent.publisherName
+                )
+            )
         }
     }
 
@@ -72,7 +83,13 @@ class MarketOrderWithTradesEventListener {
         if (rabbitReadyEvent.publisherName == MarketOrderWithTradesEventListener::class.java.simpleName && failed) {
             failed = false
             logRmqRecover(rabbitReadyEvent.publisherName)
-            applicationEventPublisher.publishEvent(HealthMonitorEvent(true, MonitoredComponent.RABBIT, rabbitReadyEvent.publisherName))
+            applicationEventPublisher.publishEvent(
+                HealthMonitorEvent(
+                    true,
+                    MonitoredComponent.RABBIT,
+                    rabbitReadyEvent.publisherName
+                )
+            )
         }
     }
 }

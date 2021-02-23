@@ -6,11 +6,13 @@ import com.rabbitmq.client.BuiltinExchangeType
 import java.util.concurrent.BlockingQueue
 
 interface RabbitMqService<T> {
-    fun startPublisher(config: RabbitConfig,
-                       publisherName: String,
-                       queue: BlockingQueue<out T>,
-                       appName: String,
-                       appVersion: String,
-                       exchangeType: BuiltinExchangeType,
-                       messageDatabaseLogger: DatabaseLogger<T>? = null)
+    fun startPublisher(
+        config: RabbitConfig,
+        publisherName: String,
+        queue: BlockingQueue<out T>,
+        appName: String,
+        appVersion: String,
+        exchangeType: BuiltinExchangeType,
+        messageDatabaseLogger: DatabaseLogger<T>? = null
+    )
 }

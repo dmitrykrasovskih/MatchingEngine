@@ -16,18 +16,26 @@ import java.util.concurrent.BlockingQueue
 @Service("rabbitMqOldService")
 @Profile("default")
 @Deprecated("consider to use new message format")
-class RabbitMqOldServiceImpl(private val gson: Gson,
-                             private val applicationEventPublisher: ApplicationEventPublisher,
-                             @Qualifier("rabbitPublishersThreadPool")
-                             private val rabbitPublishersThreadPool: TaskExecutor) : RabbitMqService<Any> {
-    override fun startPublisher(config: RabbitConfig,
-                                publisherName: String,
-                                queue: BlockingQueue<out Any>,
-                                appName: String,
-                                appVersion: String,
-                                exchangeType: BuiltinExchangeType,
-                                messageDatabaseLogger: DatabaseLogger<Any>?) {
-        rabbitPublishersThreadPool.execute(RabbitMqOldFormatPublisher(config.uri, config.exchange, publisherName, queue, appName, appVersion, exchangeType,
-                gson, applicationEventPublisher, messageDatabaseLogger))
+class RabbitMqOldServiceImpl(
+    private val gson: Gson,
+    private val applicationEventPublisher: ApplicationEventPublisher,
+    @Qualifier("rabbitPublishersThreadPool")
+    private val rabbitPublishersThreadPool: TaskExecutor
+) : RabbitMqService<Any> {
+    override fun startPublisher(
+        config: RabbitConfig,
+        publisherName: String,
+        queue: BlockingQueue<out Any>,
+        appName: String,
+        appVersion: String,
+        exchangeType: BuiltinExchangeType,
+        messageDatabaseLogger: DatabaseLogger<Any>?
+    ) {
+        rabbitPublishersThreadPool.execute(
+            RabbitMqOldFormatPublisher(
+                config.uri, config.exchange, publisherName, queue, appName, appVersion, exchangeType,
+                gson, applicationEventPublisher, messageDatabaseLogger
+            )
+        )
     }
 }

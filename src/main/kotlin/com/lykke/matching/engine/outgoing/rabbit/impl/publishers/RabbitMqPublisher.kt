@@ -35,12 +35,7 @@ class RabbitMqPublisher(
     }
 
     override fun getRabbitPublishRequest(item: Event<*>): RabbitPublishRequest {
-        return RabbitPublishRequest(getRoutingKey(item), getBody(item), getLogMessage(item), getProps(item))
-
-    }
-
-    private fun getRoutingKey(item: Event<*>): String {
-        return item.header.messageType.id.toString()
+        return RabbitPublishRequest(getBody(item), getLogMessage(item), getProps(item))
     }
 
     private fun getBody(item: Event<*>): ByteArray {

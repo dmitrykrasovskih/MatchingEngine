@@ -45,26 +45,37 @@ class ReservedCashOperationListener {
 
     @PostConstruct
     fun initRabbitMqPublisher() {
-        rabbitMqOldService.startPublisher(config.matchingEngine.rabbitMqConfigs.reservedCashOperations,
-                ReservedCashOperationListener::class.java.simpleName,
-                reservedCashOperationQueue,
-                config.matchingEngine.name,
-                AppVersion.VERSION,
-                BuiltinExchangeType.FANOUT,
-                DatabaseLogger(
-                        AzureMessageLogDatabaseAccessor(config.matchingEngine.db.messageLogConnString,
-                                logTable, logBlobName)))
+        rabbitMqOldService.startPublisher(
+            config.matchingEngine.rabbitMqConfigs.reservedCashOperations,
+            ReservedCashOperationListener::class.java.simpleName,
+            reservedCashOperationQueue,
+            config.matchingEngine.name,
+            AppVersion.VERSION,
+            BuiltinExchangeType.FANOUT,
+            DatabaseLogger(
+                AzureMessageLogDatabaseAccessor(
+                    config.matchingEngine.db.messageLogConnString,
+                    logTable, logBlobName
+                )
+            )
+        )
     }
 
     @EventListener
     fun onFailure(rabbitFailureEvent: RabbitFailureEvent<*>) {
-        if(rabbitFailureEvent.publisherName == ReservedCashOperationListener::class.java.simpleName) {
-            failed =  true
+        if (rabbitFailureEvent.publisherName == ReservedCashOperationListener::class.java.simpleName) {
+            failed = true
             logRmqFail(rabbitFailureEvent.publisherName)
             rabbitFailureEvent.failedEvent?.let {
                 reservedCashOperationQueue.putFirst(it as ReservedCashOperation)
             }
-            applicationEventPublisher.publishEvent(HealthMonitorEvent(false, MonitoredComponent.RABBIT, rabbitFailureEvent.publisherName))
+            applicationEventPublisher.publishEvent(
+                HealthMonitorEvent(
+                    false,
+                    MonitoredComponent.RABBIT,
+                    rabbitFailureEvent.publisherName
+                )
+            )
         }
     }
 
@@ -73,7 +84,13 @@ class ReservedCashOperationListener {
         if (rabbitReadyEvent.publisherName == ReservedCashOperationListener::class.java.simpleName && failed) {
             failed = false
             logRmqRecover(rabbitReadyEvent.publisherName)
-            applicationEventPublisher.publishEvent(HealthMonitorEvent(true, MonitoredComponent.RABBIT, rabbitReadyEvent.publisherName))
+            applicationEventPublisher.publishEvent(
+                HealthMonitorEvent(
+                    true,
+                    MonitoredComponent.RABBIT,
+                    rabbitReadyEvent.publisherName
+                )
+            )
         }
     }
 }

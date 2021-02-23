@@ -37,16 +37,22 @@ class ClientsEventListener {
     @PostConstruct
     fun initRabbitMqPublisher() {
         config.matchingEngine.rabbitMqConfigs.events.forEachIndexed { index, rabbitConfig ->
-            val clientsEventConsumerQueueName = RabbitEventUtils.getClientEventConsumerQueueName(rabbitConfig.exchange, index)
+            val clientsEventConsumerQueueName =
+                RabbitEventUtils.getClientEventConsumerQueueName(rabbitConfig.exchange, index)
             val queue = applicationContext.getBean(clientsEventConsumerQueueName) as BlockingQueue<Event<*>>
 
-            rabbitMqService.startPublisher(rabbitConfig, clientsEventConsumerQueueName, queue,
-                    config.matchingEngine.name,
-                    AppVersion.VERSION,
-                    BuiltinExchangeType.DIRECT,
-                    DatabaseLogger(
-                            AzureMessageLogDatabaseAccessor(config.matchingEngine.db.messageLogConnString,
-                                    "$logTable$index", "$logBlobName$index")))
+            rabbitMqService.startPublisher(
+                rabbitConfig, clientsEventConsumerQueueName, queue,
+                config.matchingEngine.name,
+                AppVersion.VERSION,
+                BuiltinExchangeType.DIRECT,
+                DatabaseLogger(
+                    AzureMessageLogDatabaseAccessor(
+                        config.matchingEngine.db.messageLogConnString,
+                        "$logTable$index", "$logBlobName$index"
+                    )
+                )
+            )
         }
     }
 }

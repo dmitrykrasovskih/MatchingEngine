@@ -467,6 +467,8 @@ class MarketOrderServiceTest : AbstractTest() {
         balancesHolder.updateBalance(
             ProcessedMessage(MessageType.CASH_IN_OUT_OPERATION.type, System.currentTimeMillis(), "test"),
             0,
+            "",
+            "",
             "Client4",
             "EUR",
             BigDecimal.valueOf(1000.0)

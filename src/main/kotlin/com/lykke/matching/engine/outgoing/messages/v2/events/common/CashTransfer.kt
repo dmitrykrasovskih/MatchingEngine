@@ -3,6 +3,8 @@ package com.lykke.matching.engine.outgoing.messages.v2.events.common
 import com.myjetwallet.messages.outgoing.grpc.OutgoingMessages
 
 class CashTransfer(
+    val brokerId: String,
+    val accountId: String,
     val fromWalletId: String,
     val toWalletId: String,
     val volume: String,
@@ -13,7 +15,9 @@ class CashTransfer(
 
     override fun createGeneratedMessageBuilder(): OutgoingMessages.CashTransfer.Builder {
         val builder = OutgoingMessages.CashTransfer.newBuilder()
-        builder.setFromWalletId(fromWalletId)
+        builder.setBrokerId(brokerId)
+            .setAccountId(accountId)
+            .setFromWalletId(fromWalletId)
             .setToWalletId(toWalletId)
             .setVolume(volume)
             .setOverdraftLimit(overdraftLimit)

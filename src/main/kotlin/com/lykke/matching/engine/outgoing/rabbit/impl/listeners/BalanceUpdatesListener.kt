@@ -26,7 +26,7 @@ class BalanceUpdatesListener {
     private var failed = false
 
     @Autowired
-    private lateinit var  balanceUpdateQueue: BlockingDeque<BalanceUpdate>
+    private lateinit var balanceUpdateQueue: BlockingDeque<BalanceUpdate>
 
     @Autowired
     private lateinit var rabbitMqOldService: RabbitMqService<Any>
@@ -45,27 +45,38 @@ class BalanceUpdatesListener {
 
     @PostConstruct
     fun initRabbitMqPublisher() {
-        rabbitMqOldService.startPublisher(config.matchingEngine.rabbitMqConfigs.balanceUpdates,
-                BalanceUpdatesListener::class.java.simpleName,
-                balanceUpdateQueue,
-                config.matchingEngine.name,
-                AppVersion.VERSION,
-                BuiltinExchangeType.FANOUT,
-                DatabaseLogger(
-                        AzureMessageLogDatabaseAccessor(config.matchingEngine.db.messageLogConnString,
-                                logTable, logBlobName)))
+        rabbitMqOldService.startPublisher(
+            config.matchingEngine.rabbitMqConfigs.balanceUpdates,
+            BalanceUpdatesListener::class.java.simpleName,
+            balanceUpdateQueue,
+            config.matchingEngine.name,
+            AppVersion.VERSION,
+            BuiltinExchangeType.FANOUT,
+            DatabaseLogger(
+                AzureMessageLogDatabaseAccessor(
+                    config.matchingEngine.db.messageLogConnString,
+                    logTable, logBlobName
+                )
+            )
+        )
     }
 
     @EventListener
     fun onFailure(rabbitFailureEvent: RabbitFailureEvent<*>) {
-        if(rabbitFailureEvent.publisherName == BalanceUpdatesListener::class.java.simpleName) {
+        if (rabbitFailureEvent.publisherName == BalanceUpdatesListener::class.java.simpleName) {
             failed = true
             logRmqFail(rabbitFailureEvent.publisherName)
 
             rabbitFailureEvent.failedEvent?.let {
                 balanceUpdateQueue.putFirst(it as BalanceUpdate)
             }
-            applicationEventPublisher.publishEvent(HealthMonitorEvent(false, MonitoredComponent.RABBIT, rabbitFailureEvent.publisherName))
+            applicationEventPublisher.publishEvent(
+                HealthMonitorEvent(
+                    false,
+                    MonitoredComponent.RABBIT,
+                    rabbitFailureEvent.publisherName
+                )
+            )
         }
     }
 
@@ -74,7 +85,13 @@ class BalanceUpdatesListener {
         if (rabbitReadyEvent.publisherName == BalanceUpdatesListener::class.java.simpleName && failed) {
             failed = false
             logRmqRecover(rabbitReadyEvent.publisherName)
-            applicationEventPublisher.publishEvent(HealthMonitorEvent(true, MonitoredComponent.RABBIT, rabbitReadyEvent.publisherName))
+            applicationEventPublisher.publishEvent(
+                HealthMonitorEvent(
+                    true,
+                    MonitoredComponent.RABBIT,
+                    rabbitReadyEvent.publisherName
+                )
+            )
         }
     }
 }

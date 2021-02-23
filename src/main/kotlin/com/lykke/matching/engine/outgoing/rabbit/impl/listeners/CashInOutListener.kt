@@ -45,26 +45,37 @@ class CashInOutListener {
 
     @PostConstruct
     fun initRabbitMqPublisher() {
-        rabbitMqOldService.startPublisher(config.matchingEngine.rabbitMqConfigs.cashOperations,
-                CashInOutListener::class.java.simpleName,
-                rabbitCashInOutQueue,
-                config.matchingEngine.name,
-                AppVersion.VERSION,
-                BuiltinExchangeType.FANOUT,
-                DatabaseLogger(
-                        AzureMessageLogDatabaseAccessor(config.matchingEngine.db.messageLogConnString,
-                                logTable, logBlobName)))
+        rabbitMqOldService.startPublisher(
+            config.matchingEngine.rabbitMqConfigs.cashOperations,
+            CashInOutListener::class.java.simpleName,
+            rabbitCashInOutQueue,
+            config.matchingEngine.name,
+            AppVersion.VERSION,
+            BuiltinExchangeType.FANOUT,
+            DatabaseLogger(
+                AzureMessageLogDatabaseAccessor(
+                    config.matchingEngine.db.messageLogConnString,
+                    logTable, logBlobName
+                )
+            )
+        )
     }
 
     @EventListener
     fun onFailure(rabbitFailureEvent: RabbitFailureEvent<*>) {
-        if(rabbitFailureEvent.publisherName == CashInOutListener::class.java.simpleName) {
+        if (rabbitFailureEvent.publisherName == CashInOutListener::class.java.simpleName) {
             failed = true
             logRmqFail(rabbitFailureEvent.publisherName)
             rabbitFailureEvent.failedEvent?.let {
                 rabbitCashInOutQueue.putFirst(it as CashOperation)
             }
-            applicationEventPublisher.publishEvent(HealthMonitorEvent(false, MonitoredComponent.RABBIT, rabbitFailureEvent.publisherName))
+            applicationEventPublisher.publishEvent(
+                HealthMonitorEvent(
+                    false,
+                    MonitoredComponent.RABBIT,
+                    rabbitFailureEvent.publisherName
+                )
+            )
         }
     }
 
@@ -73,7 +84,13 @@ class CashInOutListener {
         if (rabbitReadyEvent.publisherName == CashInOutListener::class.java.simpleName && failed) {
             failed = false
             logRmqRecover(rabbitReadyEvent.publisherName)
-            applicationEventPublisher.publishEvent(HealthMonitorEvent(true, MonitoredComponent.RABBIT, rabbitReadyEvent.publisherName))
+            applicationEventPublisher.publishEvent(
+                HealthMonitorEvent(
+                    true,
+                    MonitoredComponent.RABBIT,
+                    rabbitReadyEvent.publisherName
+                )
+            )
         }
     }
 }

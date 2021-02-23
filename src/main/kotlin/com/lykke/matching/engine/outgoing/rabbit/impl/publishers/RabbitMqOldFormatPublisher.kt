@@ -6,7 +6,6 @@ import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.MessageProperties
-import org.apache.commons.lang3.StringUtils
 import org.apache.logging.log4j.LogManager
 import org.springframework.context.ApplicationEventPublisher
 import java.util.concurrent.BlockingQueue
@@ -40,6 +39,6 @@ class RabbitMqOldFormatPublisher(
         val jsonString = gson.toJson(item)
         val body = jsonString.toByteArray()
 
-        return RabbitPublishRequest(StringUtils.EMPTY, body, jsonString, MessageProperties.MINIMAL_PERSISTENT_BASIC)
+        return RabbitPublishRequest(body, jsonString, MessageProperties.MINIMAL_PERSISTENT_BASIC)
     }
 }

@@ -45,15 +45,20 @@ class ClientLimitOrdersListener {
 
     @PostConstruct
     fun initRabbitMqPublisher() {
-        rabbitMqOldService.startPublisher(config.matchingEngine.rabbitMqConfigs.trustedLimitOrders,
-                ClientLimitOrdersListener::class.java.simpleName,
-                clientLimitOrdersQueue,
-                config.matchingEngine.name,
-                AppVersion.VERSION,
-                BuiltinExchangeType.FANOUT,
-                DatabaseLogger(
-                        AzureMessageLogDatabaseAccessor(config.matchingEngine.db.messageLogConnString,
-                                logTable, logBlobName)))
+        rabbitMqOldService.startPublisher(
+            config.matchingEngine.rabbitMqConfigs.trustedLimitOrders,
+            ClientLimitOrdersListener::class.java.simpleName,
+            clientLimitOrdersQueue,
+            config.matchingEngine.name,
+            AppVersion.VERSION,
+            BuiltinExchangeType.FANOUT,
+            DatabaseLogger(
+                AzureMessageLogDatabaseAccessor(
+                    config.matchingEngine.db.messageLogConnString,
+                    logTable, logBlobName
+                )
+            )
+        )
     }
 
     @EventListener
@@ -64,7 +69,13 @@ class ClientLimitOrdersListener {
             rabbitFailureEvent.failedEvent?.let {
                 clientLimitOrdersQueue.putFirst(it as LimitOrdersReport)
             }
-            applicationEventPublisher.publishEvent(HealthMonitorEvent(false, MonitoredComponent.RABBIT, rabbitFailureEvent.publisherName))
+            applicationEventPublisher.publishEvent(
+                HealthMonitorEvent(
+                    false,
+                    MonitoredComponent.RABBIT,
+                    rabbitFailureEvent.publisherName
+                )
+            )
         }
     }
 
@@ -73,7 +84,13 @@ class ClientLimitOrdersListener {
         if (rabbitReadyEvent.publisherName == ClientLimitOrdersListener::class.java.simpleName && failed) {
             failed = false
             logRmqRecover(rabbitReadyEvent.publisherName)
-            applicationEventPublisher.publishEvent(HealthMonitorEvent(true, MonitoredComponent.RABBIT, rabbitReadyEvent.publisherName))
+            applicationEventPublisher.publishEvent(
+                HealthMonitorEvent(
+                    true,
+                    MonitoredComponent.RABBIT,
+                    rabbitReadyEvent.publisherName
+                )
+            )
         }
     }
 }

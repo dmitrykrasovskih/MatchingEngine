@@ -1,7 +1,8 @@
 package com.lykke.matching.engine.daos.wallet
 
 import java.math.BigDecimal
-import java.util.HashMap
+import java.math.BigDecimal.ZERO
+import java.util.*
 
 class Wallet {
     val brokerId: String
@@ -27,7 +28,7 @@ class Wallet {
     fun setBalance(asset: String, balance: BigDecimal) {
         val oldBalance = balances[asset]
         if (oldBalance == null) {
-            balances[asset] = AssetBalance(clientId, asset, balance)
+            balances[asset] = AssetBalance(clientId, asset, balance, ZERO, brokerId, accountId, 1)
         } else {
             oldBalance.balance = balance
         }
@@ -36,7 +37,7 @@ class Wallet {
     fun setReservedBalance(asset: String, reservedBalance: BigDecimal) {
         val oldBalance = balances[asset]
         if (oldBalance == null) {
-            balances[asset] = AssetBalance(clientId, asset, reservedBalance, reservedBalance)
+            balances[asset] = AssetBalance(clientId, asset, reservedBalance, reservedBalance, brokerId, accountId, 1)
         } else {
             oldBalance.reserved = reservedBalance
         }
@@ -45,7 +46,7 @@ class Wallet {
     fun increaseWalletVersion(asset: String) {
         val oldBalance = balances[asset]
         if (oldBalance == null) {
-            balances[asset] = AssetBalance(clientId, asset, BigDecimal.ZERO, BigDecimal.ZERO, brokerId, accountId, 1)
+            balances[asset] = AssetBalance(clientId, asset, ZERO, ZERO, brokerId, accountId, 1)
         } else {
             oldBalance.version++
         }
