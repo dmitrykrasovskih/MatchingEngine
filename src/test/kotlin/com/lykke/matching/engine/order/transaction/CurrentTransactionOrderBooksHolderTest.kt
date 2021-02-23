@@ -7,7 +7,7 @@ import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
-import java.util.Date
+import java.util.*
 import kotlin.test.assertEquals
 
 class CurrentTransactionOrderBooksHolderTest {
@@ -18,8 +18,8 @@ class CurrentTransactionOrderBooksHolderTest {
     fun setUp() {
         val genericLimitOrderService = Mockito.mock(GenericLimitOrderService::class.java)
 
-        Mockito.`when`(genericLimitOrderService.getOrderBook("EURUSD"))
-                .thenReturn(AssetOrderBook("EURUSD"))
+        Mockito.`when`(genericLimitOrderService.getOrderBook("", "EURUSD"))
+            .thenReturn(AssetOrderBook("", "EURUSD"))
 
         currentTransactionOrderBooksHolder = CurrentTransactionOrderBooksHolder(genericLimitOrderService)
     }

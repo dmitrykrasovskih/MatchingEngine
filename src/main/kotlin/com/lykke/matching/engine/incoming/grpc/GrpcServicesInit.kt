@@ -1,9 +1,12 @@
 package com.lykke.matching.engine.incoming.grpc
 
 import com.lykke.matching.engine.AppInitialData
+import com.lykke.matching.engine.holders.AssetsHolder
+import com.lykke.matching.engine.holders.AssetsPairsHolder
 import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.messages.MessageProcessor
 import com.lykke.matching.engine.messages.wrappers.*
+import com.lykke.matching.engine.services.GenericLimitOrderService
 import com.lykke.matching.engine.utils.config.Config
 import com.lykke.utils.AppVersion
 import com.lykke.utils.logging.MetricsLogger
@@ -40,6 +43,15 @@ class GrpcServicesInit(
     @Autowired
     private lateinit var balancesHolder: BalancesHolder
 
+    @Autowired
+    private lateinit var genericLimitOrderService: GenericLimitOrderService
+
+    @Autowired
+    private lateinit var assetsHolder: AssetsHolder
+
+    @Autowired
+    private lateinit var assetsPairsHolder: AssetsPairsHolder
+
     companion object {
         private val LOGGER = ThrottlingLogger.getLogger(GrpcServicesInit::class.java.name)
     }
@@ -73,6 +85,11 @@ class GrpcServicesInit(
             ServerBuilder.forPort(balancesServicePort)
                 .addService(BalancesService(balancesHolder)).build().start()
             LOGGER.info("Started BalancesService at $balancesServicePort port")
+
+            ServerBuilder.forPort(orderBooksServicePort)
+                .addService(OrderBooksService(genericLimitOrderService, assetsHolder, assetsPairsHolder)).build()
+                .start()
+            LOGGER.info("Started OrderBooksService at $orderBooksServicePort port")
         }
     }
 }

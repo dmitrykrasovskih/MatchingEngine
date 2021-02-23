@@ -8,7 +8,9 @@ option csharp_namespace = "Antares.ME.Contracts.Api";
 
 package com.myjetwallet.messages.incoming.grpc;
 
+import "google/protobuf/empty.proto";
 import "GrpcIncomingMessages.proto";
+import "OutgoingMessages.proto";
 import "BalancesMessages.proto";
 
 service CashService {
@@ -27,4 +29,8 @@ service TradingService {
 service BalancesService {
     rpc GetAll(com.myjetwallet.balances.BalancesGetAllRequest) returns (com.myjetwallet.balances.BalancesGetAllResponse) {}
     rpc GetByAssetId(com.myjetwallet.balances.BalancesGetByAssetIdRequest) returns (com.myjetwallet.balances.BalancesGetByAssetIdResponse) {}
+}
+
+service OrderBooksService {
+    rpc OrderBookSnapshots(google.protobuf.Empty) returns (stream com.myjetwallet.messages.outgoing.grpc.OrderBookSnapshot) {}
 }

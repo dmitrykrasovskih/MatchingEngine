@@ -122,11 +122,11 @@ class InvalidBalanceTest : AbstractTest() {
         assertEquals(0, testLkkTradeListener.getCount())
         assertEquals(0, tradesInfoListener.getCount())
 
-        assertEquals(0, genericLimitOrderService.getOrderBook("ETHUSD").getOrderBook(true).size)
+        assertEquals(0, genericLimitOrderService.getOrderBook("", "ETHUSD").getOrderBook(true).size)
         assertEquals(0, testOrderDatabaseAccessor.getOrders("ETHUSD", true).size)
-        assertEquals(2, genericLimitOrderService.getOrderBook("ETHUSD").getOrderBook(false).size)
+        assertEquals(2, genericLimitOrderService.getOrderBook("", "ETHUSD").getOrderBook(false).size)
         assertEquals(2, testOrderDatabaseAccessor.getOrders("ETHUSD", false).size)
-        genericLimitOrderService.getOrderBook("ETHUSD").getOrderBook(false).forEach {
+        genericLimitOrderService.getOrderBook("", "ETHUSD").getOrderBook(false).forEach {
             assertEquals("Client2", it.clientId)
             assertEquals(BigDecimal.valueOf(-0.000005), it.remainingVolume)
             assertEquals(OrderStatus.InOrderBook.name, it.status)
@@ -207,9 +207,9 @@ class InvalidBalanceTest : AbstractTest() {
         assertEquals(4, testLkkTradeListener.getQueue().poll().size)
         assertEquals(1, tradesInfoListener.getCount())
 
-        assertEquals(0, genericLimitOrderService.getOrderBook("ETHUSD").getOrderBook(true).size)
+        assertEquals(0, genericLimitOrderService.getOrderBook("", "ETHUSD").getOrderBook(true).size)
         assertEquals(0, testOrderDatabaseAccessor.getOrders("ETHUSD", true).size)
-        assertEquals(0, genericLimitOrderService.getOrderBook("ETHUSD").getOrderBook(false).size)
+        assertEquals(0, genericLimitOrderService.getOrderBook("", "ETHUSD").getOrderBook(false).size)
         assertEquals(0, testOrderDatabaseAccessor.getOrders("ETHUSD", false).size)
 
         assertBalance("Client1", "USD", 0.0, 0.0)

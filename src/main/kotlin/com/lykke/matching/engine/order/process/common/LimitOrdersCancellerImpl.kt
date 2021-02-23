@@ -50,7 +50,7 @@ class LimitOrdersCancellerImpl(private val applicationSettingsHolder: Applicatio
         orderBooksHolder: AbstractTransactionOrderBooksHolder<*, *>
     ) {
         plus(cancelledOrders, replacedOrders).forEach { order ->
-            orderBooksHolder.getChangedOrderBookCopy(order.assetPairId).removeOrder(order)
+            orderBooksHolder.getChangedOrderBookCopy(order.brokerId, order.assetPairId).removeOrder(order)
         }
         orderBooksHolder.addCancelledOrders(cancelledOrders)
         orderBooksHolder.addReplacedOrders(replacedOrders)

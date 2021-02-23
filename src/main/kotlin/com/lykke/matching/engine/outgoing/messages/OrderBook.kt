@@ -3,11 +3,11 @@ package com.lykke.matching.engine.outgoing.messages
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lykke.matching.engine.daos.LimitOrder
 import java.math.BigDecimal
-import java.util.ArrayList
-import java.util.Date
+import java.util.*
 import java.util.concurrent.PriorityBlockingQueue
 
 class OrderBook {
+    val brokerId: String
     val assetPair: String
 
     @get:JsonProperty("isBuy")
@@ -18,13 +18,21 @@ class OrderBook {
 
     val prices: MutableList<Order> = ArrayList()
 
-    constructor(assetPair: String, isBuy: Boolean, timestamp: Date) {
+    constructor(brokerId: String, assetPair: String, isBuy: Boolean, timestamp: Date) {
+        this.brokerId = brokerId
         this.assetPair = assetPair
         this.isBuy = isBuy
         this.timestamp = timestamp
     }
 
-    constructor(assetPair: String, isBuy: Boolean, timestamp: Date, orders: PriorityBlockingQueue<LimitOrder>) {
+    constructor(
+        brokerId: String,
+        assetPair: String,
+        isBuy: Boolean,
+        timestamp: Date,
+        orders: PriorityBlockingQueue<LimitOrder>
+    ) {
+        this.brokerId = brokerId
         this.assetPair = assetPair
         this.isBuy = isBuy
         this.timestamp = timestamp

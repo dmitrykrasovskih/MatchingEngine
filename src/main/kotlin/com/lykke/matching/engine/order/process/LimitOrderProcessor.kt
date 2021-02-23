@@ -79,7 +79,10 @@ class LimitOrderProcessor(
                 order,
                 orderContext.availableLimitAssetBalance!!,
                 orderContext.limitVolume!!,
-                orderContext.executionContext.orderBooksHolder.getChangedCopyOrOriginalOrderBook(order.assetPairId),
+                orderContext.executionContext.orderBooksHolder.getChangedCopyOrOriginalOrderBook(
+                    order.brokerId,
+                    order.assetPairId
+                ),
                 orderContext.executionContext.date
             )
         } catch (e: OrderValidationException) {
@@ -118,7 +121,10 @@ class LimitOrderProcessor(
     private fun processValidOrder(orderContext: LimitOrderExecutionContext): ProcessedOrder {
         val order = orderContext.order
         val orderBook =
-            orderContext.executionContext.orderBooksHolder.getChangedCopyOrOriginalOrderBook(order.assetPairId)
+            orderContext.executionContext.orderBooksHolder.getChangedCopyOrOriginalOrderBook(
+                order.brokerId,
+                order.assetPairId
+            )
         if (orderBook.leadToNegativeSpread(order)) {
             return matchOrder(orderContext)
         }
@@ -136,7 +142,8 @@ class LimitOrderProcessor(
     private fun matchOrder(orderContext: LimitOrderExecutionContext): ProcessedOrder {
         val executionContext = orderContext.executionContext
         val order = orderContext.order
-        val orderBook = executionContext.orderBooksHolder.getChangedCopyOrOriginalOrderBook(order.assetPairId)
+        val orderBook =
+            executionContext.orderBooksHolder.getChangedCopyOrOriginalOrderBook(order.brokerId, order.assetPairId)
         val matchingResult = matchingEngine.match(
             order,
             orderBook.getOrderBook(!order.isBuySide()),
@@ -180,7 +187,7 @@ class LimitOrderProcessor(
             matchingResultHandlingHelper.preProcessCancelledOrdersWalletOperations(orderContext)
             matchingResultHandlingHelper.processCancelledOppositeOrders(orderContext)
             val orderBook = orderContext.executionContext.orderBooksHolder
-                .getChangedOrderBookCopy(orderContext.order.assetPairId)
+                .getChangedOrderBookCopy(orderContext.order.brokerId, orderContext.order.assetPairId)
             orderContext.matchingResult!!.cancelledLimitOrders.forEach {
                 orderBook.removeOrder(it.origin!!)
             }
@@ -302,7 +309,7 @@ class LimitOrderProcessor(
 
         val orderCopy = matchingResult.orderCopy as LimitOrder
         orderContext.executionContext.orderBooksHolder
-            .getChangedOrderBookCopy(orderCopy.assetPairId)
+            .getChangedOrderBookCopy(orderCopy.brokerId, orderCopy.assetPairId)
             .setOrderBook(!orderCopy.isBuySide(), matchingResult.orderBook)
     }
 

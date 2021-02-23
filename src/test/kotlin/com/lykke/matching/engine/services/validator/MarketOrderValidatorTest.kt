@@ -152,7 +152,7 @@ class MarketOrderValidatorTest {
         //when
         try {
             marketOrderValidator.performValidation(
-                order, AssetOrderBook(ASSET_PAIR_ID).getOrderBook(order.isBuySide()),
+                order, AssetOrderBook("", ASSET_PAIR_ID).getOrderBook(order.isBuySide()),
                 listOf(NewFeeInstruction.create(getFeeInstruction()))
             )
         } catch (e: OrderValidationException) {
@@ -238,7 +238,7 @@ class MarketOrderValidatorTest {
     }
 
     private fun getOrderBook(isBuy: Boolean): PriorityBlockingQueue<LimitOrder> {
-        val assetOrderBook = AssetOrderBook(ASSET_PAIR_ID)
+        val assetOrderBook = AssetOrderBook("", ASSET_PAIR_ID)
         val now = Date()
         assetOrderBook.addOrder(
             LimitOrder(

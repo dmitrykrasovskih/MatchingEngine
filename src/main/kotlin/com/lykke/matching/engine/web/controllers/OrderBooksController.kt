@@ -41,8 +41,8 @@ class OrderBooksController {
 
         genericLimitOrderService.getAllOrderBooks().values.forEach {
             val orderBook = it.copy()
-            books.add(OrderBook(orderBook.assetPairId, true, now, orderBook.getOrderBook(true)))
-            books.add(OrderBook(orderBook.assetPairId, false, now, orderBook.getOrderBook(false)))
+            books.add(OrderBook(orderBook.brokerId, orderBook.assetPairId, true, now, orderBook.getOrderBook(true)))
+            books.add(OrderBook(orderBook.brokerId, orderBook.assetPairId, false, now, orderBook.getOrderBook(false)))
         }
 
         LOGGER.info("Order book snapshot sent to ${request.remoteAddr}")
@@ -58,10 +58,42 @@ class OrderBooksController {
 
         genericStopLimitOrderService.getAllOrderBooks().values.forEach {
             val orderBook = it.copy()
-            books.add(StopOrderBook(orderBook.assetPairId, true, true, now, toStopOrderDto(orderBook.getOrderBook(true, true))))
-            books.add(StopOrderBook(orderBook.assetPairId, true, false, now, toStopOrderDto(orderBook.getOrderBook(true, false))))
-            books.add(StopOrderBook(orderBook.assetPairId, false, true, now, toStopOrderDto(orderBook.getOrderBook(false, true))))
-            books.add(StopOrderBook(orderBook.assetPairId, false, false, now, toStopOrderDto(orderBook.getOrderBook(false, false))))
+            books.add(
+                StopOrderBook(
+                    orderBook.assetPairId,
+                    true,
+                    true,
+                    now,
+                    toStopOrderDto(orderBook.getOrderBook(true, true))
+                )
+            )
+            books.add(
+                StopOrderBook(
+                    orderBook.assetPairId,
+                    true,
+                    false,
+                    now,
+                    toStopOrderDto(orderBook.getOrderBook(true, false))
+                )
+            )
+            books.add(
+                StopOrderBook(
+                    orderBook.assetPairId,
+                    false,
+                    true,
+                    now,
+                    toStopOrderDto(orderBook.getOrderBook(false, true))
+                )
+            )
+            books.add(
+                StopOrderBook(
+                    orderBook.assetPairId,
+                    false,
+                    false,
+                    now,
+                    toStopOrderDto(orderBook.getOrderBook(false, false))
+                )
+            )
         }
 
         LOGGER.info("Stop order book snapshot sent to ${request.remoteAddr}")
@@ -71,18 +103,20 @@ class OrderBooksController {
 
     private fun toStopOrderDto(limitOrders: Collection<LimitOrder>): List<StopOrder> {
         return limitOrders.map { limitOrder ->
-            StopOrder(limitOrder.externalId,
-                    limitOrder.clientId,
-                    limitOrder.volume,
-                    limitOrder.lowerLimitPrice,
-                    limitOrder.lowerPrice,
-                    limitOrder.upperLimitPrice,
-                    limitOrder.upperPrice)
+            StopOrder(
+                limitOrder.externalId,
+                limitOrder.clientId,
+                limitOrder.volume,
+                limitOrder.lowerLimitPrice,
+                limitOrder.lowerPrice,
+                limitOrder.upperLimitPrice,
+                limitOrder.upperPrice
+            )
         }
     }
 
     @ExceptionHandler(Exception::class)
-    private fun handleException (request: HttpServletRequest, ex: Exception): ResponseEntity<*> {
+    private fun handleException(request: HttpServletRequest, ex: Exception): ResponseEntity<*> {
         LOGGER.error("Unable to write order book snapshot request to ${request.remoteAddr}", ex)
         @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
         return ResponseEntity<Any>(null, HttpStatus.INTERNAL_SERVER_ERROR)

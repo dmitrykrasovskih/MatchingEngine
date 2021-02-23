@@ -171,7 +171,7 @@ abstract class AbstractTest {
 
     protected fun assertOrderBookSize(assetPairId: String, isBuySide: Boolean, size: Int) {
         assertEquals(size, testOrderDatabaseAccessor.getOrders(assetPairId, isBuySide).size)
-        assertEquals(size, genericLimitOrderService.getOrderBook(assetPairId).getOrderBook(isBuySide).size)
+        assertEquals(size, genericLimitOrderService.getOrderBook("", assetPairId).getOrderBook(isBuySide).size)
 
         // check cache orders map size
         val allClientIds = testWalletDatabaseAccessor.loadWallets().keys
@@ -182,7 +182,7 @@ abstract class AbstractTest {
 
     protected fun assertStopOrderBookSize(assetPairId: String, isBuySide: Boolean, size: Int) {
         assertEquals(size, stopOrderDatabaseAccessor.getStopOrders(assetPairId, isBuySide).size)
-        assertEquals(size, genericStopLimitOrderService.getOrderBook(assetPairId).getOrderBook(isBuySide).size)
+        assertEquals(size, genericStopLimitOrderService.getOrderBook("", assetPairId).getOrderBook(isBuySide).size)
 
         // check cache orders map size
         val allClientIds = testWalletDatabaseAccessor.loadWallets().keys

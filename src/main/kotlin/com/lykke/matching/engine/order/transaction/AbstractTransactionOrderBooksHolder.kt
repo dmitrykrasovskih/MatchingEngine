@@ -5,7 +5,11 @@ import com.lykke.matching.engine.database.common.entity.OrderBooksPersistenceDat
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.services.AbstractGenericLimitOrderService
 import com.lykke.matching.engine.services.utils.AbstractAssetOrderBook
-import java.util.Date
+import java.util.*
+import kotlin.collections.HashMap
+import kotlin.collections.HashSet
+import kotlin.collections.LinkedHashMap
+import kotlin.collections.set
 
 abstract class AbstractTransactionOrderBooksHolder<AssetOrderBook : AbstractAssetOrderBook,
         GenericService : AbstractGenericLimitOrderService<AssetOrderBook>>(private val genericLimitOrderService: GenericService) {
@@ -18,19 +22,22 @@ abstract class AbstractTransactionOrderBooksHolder<AssetOrderBook : AbstractAsse
     protected val changedBuySides = HashSet<String>()
     protected val changedSellSides = HashSet<String>()
 
-    fun getChangedCopyOrOriginalOrderBook(assetPairId: String): AssetOrderBook {
-        return assetOrderBookCopiesByAssetPairId[assetPairId] ?: genericLimitOrderService.getOrderBook(assetPairId)
+    fun getChangedCopyOrOriginalOrderBook(brokerId: String, assetPairId: String): AssetOrderBook {
+        return assetOrderBookCopiesByAssetPairId[assetPairId] ?: genericLimitOrderService.getOrderBook(
+            brokerId,
+            assetPairId
+        )
     }
 
     @Suppress("unchecked_cast")
-    fun getChangedOrderBookCopy(assetPairId: String): AssetOrderBook {
+    fun getChangedOrderBookCopy(brokerId: String, assetPairId: String): AssetOrderBook {
         return assetOrderBookCopiesByAssetPairId.getOrPut(assetPairId) {
-            genericLimitOrderService.getOrderBook(assetPairId).copy() as AssetOrderBook
+            genericLimitOrderService.getOrderBook(brokerId, assetPairId).copy() as AssetOrderBook
         }
     }
 
     fun addOrder(order: LimitOrder) {
-        getChangedOrderBookCopy(order.assetPairId).addOrder(order)
+        getChangedOrderBookCopy(order.brokerId, order.assetPairId).addOrder(order)
         newOrdersByExternalId[order.externalId] = order
         addChangedSide(order)
     }

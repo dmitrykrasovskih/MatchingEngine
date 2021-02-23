@@ -11,19 +11,16 @@ import com.lykke.matching.engine.order.transaction.CurrentTransactionOrderBooksH
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
-import java.util.ArrayList
-import java.util.Date
-import java.util.HashMap
-import java.util.LinkedList
-import java.util.Optional
+import java.util.*
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.PriorityBlockingQueue
 
 @Component
-class GenericLimitOrderService @Autowired constructor(private val orderBookDatabaseAccessorHolder: OrdersDatabaseAccessorsHolder,
-                                                      private val tradeInfoQueue: Optional<BlockingQueue<TradeInfo>>,
-                                                      private val expiryOrdersQueue: ExpiryOrdersQueue) : AbstractGenericLimitOrderService<AssetOrderBook> {
+class GenericLimitOrderService @Autowired constructor(
+    private val orderBookDatabaseAccessorHolder: OrdersDatabaseAccessorsHolder,
+    private val tradeInfoQueue: Optional<BlockingQueue<TradeInfo>>,
+    private val expiryOrdersQueue: ExpiryOrdersQueue
+) : AbstractGenericLimitOrderService<AssetOrderBook> {
 
     //asset -> orderBook
     private val limitOrdersQueues = ConcurrentHashMap<String, AssetOrderBook>()
@@ -35,7 +32,7 @@ class GenericLimitOrderService @Autowired constructor(private val orderBookDatab
         update()
     }
 
-    fun update() {
+    final fun update() {
         limitOrdersMap.values.forEach {
             expiryOrdersQueue.removeIfOrderHasExpiryTime(it)
         }
@@ -50,7 +47,8 @@ class GenericLimitOrderService @Autowired constructor(private val orderBookDatab
     }
 
     private fun addToOrderBook(order: LimitOrder) {
-        val orderBook = limitOrdersQueues.getOrPut(order.assetPairId) { AssetOrderBook(order.assetPairId) }
+        val orderBook =
+            limitOrdersQueues.getOrPut(order.assetPairId) { AssetOrderBook(order.brokerId, order.assetPairId) }
         orderBook.addOrder(order)
         addOrder(order)
     }
@@ -69,14 +67,11 @@ class GenericLimitOrderService @Autowired constructor(private val orderBookDatab
 
     fun getAllOrderBooks() = limitOrdersQueues
 
-    override fun getOrderBook(assetPairId: String) = limitOrdersQueues[assetPairId] ?: AssetOrderBook(assetPairId)
+    override fun getOrderBook(brokerId: String, assetPairId: String) =
+        limitOrdersQueues[assetPairId] ?: AssetOrderBook(brokerId, assetPairId)
 
     override fun setOrderBook(assetPairId: String, assetOrderBook: AssetOrderBook) {
         limitOrdersQueues[assetPairId] = assetOrderBook
-    }
-
-    fun setOrderBook(assetPair: String, isBuy: Boolean, book: PriorityBlockingQueue<LimitOrder>) {
-        limitOrdersQueues.getOrPut(assetPair) { AssetOrderBook(assetPair) }.setOrderBook(isBuy, book)
     }
 
     fun getOrder(uid: String) = limitOrdersMap[uid]
@@ -99,13 +94,14 @@ class GenericLimitOrderService @Autowired constructor(private val orderBookDatab
             removeFromClientMap(uid)
         }
 
-        getOrderBook(order.assetPairId).removeOrder(order)
+        getOrderBook(order.brokerId, order.assetPairId).removeOrder(order)
         order.updateStatus(Cancelled, date)
         return order
     }
 
     private fun removeFromClientMap(uid: String): Boolean {
-        val order: LimitOrder = clientLimitOrdersMap.values.firstOrNull { it.any { it.externalId == uid } }?.firstOrNull { it.externalId == uid } ?: return false
+        val order: LimitOrder = clientLimitOrdersMap.values.firstOrNull { it.any { it.externalId == uid } }
+            ?.firstOrNull { it.externalId == uid } ?: return false
         return clientLimitOrdersMap[order.clientId]?.remove(order) ?: false
     }
 

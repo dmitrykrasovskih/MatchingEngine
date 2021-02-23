@@ -266,6 +266,6 @@ abstract class MatchingEngineTest {
     }
 
     protected fun getOrderBook(assetPairId: String, isBuySide: Boolean): PriorityBlockingQueue<LimitOrder> =
-        genericService.getOrderBook(assetPairId).getOrderBook(isBuySide)
+        genericService.getOrderBook("", assetPairId).getOrderBook(isBuySide)
 
 }

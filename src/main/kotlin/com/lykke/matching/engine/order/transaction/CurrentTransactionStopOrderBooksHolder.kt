@@ -7,27 +7,34 @@ import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.services.AssetStopOrderBook
 import com.lykke.matching.engine.services.GenericStopLimitOrderService
 import java.math.BigDecimal
-import java.util.Date
+import java.util.*
+import kotlin.collections.ArrayList
 
-class CurrentTransactionStopOrderBooksHolder(private val genericStopLimitOrderService: GenericStopLimitOrderService)
-    : AbstractTransactionOrderBooksHolder<AssetStopOrderBook, GenericStopLimitOrderService>(genericStopLimitOrderService) {
+class CurrentTransactionStopOrderBooksHolder(private val genericStopLimitOrderService: GenericStopLimitOrderService) :
+    AbstractTransactionOrderBooksHolder<AssetStopOrderBook, GenericStopLimitOrderService>(genericStopLimitOrderService) {
 
-    fun pollStopOrderToExecute(assetPairId: String,
-                               bestBidPrice: BigDecimal,
-                               bestAskPrice: BigDecimal,
-                               date: Date): LimitOrder? {
-        return pollStopOrderToExecute(assetPairId, bestBidPrice, false, date)
-                ?: pollStopOrderToExecute(assetPairId, bestAskPrice, true, date)
+    fun pollStopOrderToExecute(
+        brokerId: String,
+        assetPairId: String,
+        bestBidPrice: BigDecimal,
+        bestAskPrice: BigDecimal,
+        date: Date
+    ): LimitOrder? {
+        return pollStopOrderToExecute(brokerId, assetPairId, bestBidPrice, false, date)
+            ?: pollStopOrderToExecute(brokerId, assetPairId, bestAskPrice, true, date)
     }
 
-    private fun pollStopOrderToExecute(assetPairId: String,
-                                       bestOppositePrice: BigDecimal,
-                                       isBuySide: Boolean,
-                                       date: Date): LimitOrder? {
+    private fun pollStopOrderToExecute(
+        brokerId: String,
+        assetPairId: String,
+        bestOppositePrice: BigDecimal,
+        isBuySide: Boolean,
+        date: Date
+    ): LimitOrder? {
         if (bestOppositePrice <= BigDecimal.ZERO) {
             return null
         }
-        val stopOrderBook = getChangedCopyOrOriginalOrderBook(assetPairId)
+        val stopOrderBook = getChangedCopyOrOriginalOrderBook(brokerId, assetPairId)
         var order: LimitOrder?
         var orderPrice: BigDecimal? = null
         order = stopOrderBook.getOrder(bestOppositePrice, isBuySide, true)
@@ -43,7 +50,7 @@ class CurrentTransactionStopOrderBooksHolder(private val genericStopLimitOrderSe
             return null
         }
         addRemovedOrders(listOf(order), completedOrders)
-        getChangedOrderBookCopy(assetPairId).removeOrder(order)
+        getChangedOrderBookCopy(brokerId, assetPairId).removeOrder(order)
         val orderCopy = order.copy()
         orderCopy.price = orderPrice!!
         orderCopy.updateStatus(OrderStatus.Executed, date)
@@ -67,10 +74,22 @@ class CurrentTransactionStopOrderBooksHolder(private val genericStopLimitOrderSe
 
         assetOrderBookCopiesByAssetPairId.forEach { assetPairId, orderBook ->
             if (changedBuySides.contains(assetPairId)) {
-                orderBookPersistenceDataList.add(OrderBookPersistenceData(assetPairId, true, orderBook.getOrderBook(true)))
+                orderBookPersistenceDataList.add(
+                    OrderBookPersistenceData(
+                        assetPairId,
+                        true,
+                        orderBook.getOrderBook(true)
+                    )
+                )
             }
             if (changedSellSides.contains(assetPairId)) {
-                orderBookPersistenceDataList.add(OrderBookPersistenceData(assetPairId, false, orderBook.getOrderBook(false)))
+                orderBookPersistenceDataList.add(
+                    OrderBookPersistenceData(
+                        assetPairId,
+                        false,
+                        orderBook.getOrderBook(false)
+                    )
+                )
             }
         }
 

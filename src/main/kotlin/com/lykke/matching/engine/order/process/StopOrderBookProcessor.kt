@@ -43,19 +43,28 @@ class StopOrderBookProcessor(
     }
 
     private fun getStopOrderToExecute(executionContext: ExecutionContext): LimitOrder? {
-        executionContext.assetPairsById.keys.forEach { assetPairId ->
-            getStopOrderToExecuteByAssetPair(assetPairId, executionContext)?.let { stopOrderToExecute ->
+        executionContext.assetPairsById.entries.forEach { assetPairId ->
+            getStopOrderToExecuteByAssetPair(
+                assetPairId.value.brokerId,
+                assetPairId.key,
+                executionContext
+            )?.let { stopOrderToExecute ->
                 return stopOrderToExecute
             }
         }
         return null
     }
 
-    private fun getStopOrderToExecuteByAssetPair(assetPairId: String, executionContext: ExecutionContext): LimitOrder? {
-        val orderBook = executionContext.orderBooksHolder.getChangedCopyOrOriginalOrderBook(assetPairId)
+    private fun getStopOrderToExecuteByAssetPair(
+        brokerId: String,
+        assetPairId: String,
+        executionContext: ExecutionContext
+    ): LimitOrder? {
+        val orderBook = executionContext.orderBooksHolder.getChangedCopyOrOriginalOrderBook(brokerId, assetPairId)
         val bestBidPrice = orderBook.getBidPrice()
         val bestAskPrice = orderBook.getAskPrice()
         val order = executionContext.stopOrderBooksHolder.pollStopOrderToExecute(
+            brokerId,
             assetPairId,
             bestBidPrice,
             bestAskPrice,

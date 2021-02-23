@@ -715,8 +715,8 @@ class ClientMultiLimitOrderTest : AbstractTest() {
         assertOrderBookSize("BTCUSD", false, 1)
         assertOrderBookSize("BTCUSD", true, 1)
 
-        assertEquals(BigDecimal.valueOf(9000.0), genericLimitOrderService.getOrderBook("BTCUSD").getBidPrice())
-        assertEquals(BigDecimal.valueOf(9500.0), genericLimitOrderService.getOrderBook("BTCUSD").getAskPrice())
+        assertEquals(BigDecimal.valueOf(9000.0), genericLimitOrderService.getOrderBook("", "BTCUSD").getBidPrice())
+        assertEquals(BigDecimal.valueOf(9500.0), genericLimitOrderService.getOrderBook("", "BTCUSD").getAskPrice())
 
         assertBalance("Client1", "USD", 1355.0, 900.0)
         assertBalance("Client1", "BTC", 0.11, 0.0)
@@ -790,7 +790,7 @@ class ClientMultiLimitOrderTest : AbstractTest() {
         val report = testClientLimitOrderListener.getQueue().first() as LimitOrdersReport
         assertEquals(7, report.orders.size)
 
-        assertTrue(genericLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).map { it.externalId }
+        assertTrue(genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false).map { it.externalId }
             .containsAll(listOf("1", "2")))
 
         assertEquals(1, clientsEventsQueue.size)
@@ -819,7 +819,7 @@ class ClientMultiLimitOrderTest : AbstractTest() {
         assertEquals(5, report.orders.size)
 
         assertEquals(
-            genericLimitOrderService.getOrderBook("BTCUSD").getOrderBook(true).map { it.externalId },
+            genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(true).map { it.externalId },
             listOf("3")
         )
 

@@ -25,7 +25,7 @@ class LimitOrderBusinessValidatorTest {
 
         try {
             //when
-            val orderBook = AssetOrderBook(ASSET_PAIR_ID)
+            val orderBook = AssetOrderBook("", ASSET_PAIR_ID)
 
             orderBook.addOrder(getLimitOrder(fees = listOf(getValidFee()), volume = BigDecimal.valueOf(-1.0)))
             limitOrderBusinessValidatorImpl.performValidation(
@@ -143,6 +143,6 @@ class LimitOrderBusinessValidatorTest {
     }
 
     private fun getValidOrderBook(): AssetOrderBook {
-        return AssetOrderBook(ASSET_PAIR_ID)
+        return AssetOrderBook("", ASSET_PAIR_ID)
     }
 }

@@ -6,14 +6,14 @@ import com.lykke.matching.engine.order.ExpiryOrdersQueue
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.order.transaction.CurrentTransactionStopOrderBooksHolder
 import org.springframework.stereotype.Component
-import java.util.ArrayList
-import java.util.Date
-import java.util.HashMap
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 @Component
-class GenericStopLimitOrderService(private val stopOrdersDatabaseAccessorsHolder: StopOrdersDatabaseAccessorsHolder,
-                                   private val expiryOrdersQueue: ExpiryOrdersQueue) : AbstractGenericLimitOrderService<AssetStopOrderBook> {
+class GenericStopLimitOrderService(
+    private val stopOrdersDatabaseAccessorsHolder: StopOrdersDatabaseAccessorsHolder,
+    private val expiryOrdersQueue: ExpiryOrdersQueue
+) : AbstractGenericLimitOrderService<AssetStopOrderBook> {
 
     var initialStopOrdersCount = 0
     private val stopLimitOrdersQueues = ConcurrentHashMap<String, AssetStopOrderBook>()
@@ -24,7 +24,7 @@ class GenericStopLimitOrderService(private val stopOrdersDatabaseAccessorsHolder
         update()
     }
 
-    fun update() {
+    final fun update() {
         stopLimitOrdersMap.values.forEach {
             expiryOrdersQueue.removeIfOrderHasExpiryTime(it)
         }
@@ -34,7 +34,7 @@ class GenericStopLimitOrderService(private val stopOrdersDatabaseAccessorsHolder
 
         val stopOrders = stopOrdersDatabaseAccessorsHolder.primaryAccessor.loadStopLimitOrders()
         stopOrders.forEach { order ->
-            getOrderBook(order.assetPairId).addOrder(order)
+            getOrderBook(order.brokerId, order.assetPairId).addOrder(order)
             addOrder(order)
         }
         initialStopOrdersCount = stopOrders.size
@@ -86,7 +86,8 @@ class GenericStopLimitOrderService(private val stopOrdersDatabaseAccessorsHolder
         }
     }
 
-    override fun getOrderBook(assetPairId: String) = stopLimitOrdersQueues.getOrPut(assetPairId) { AssetStopOrderBook(assetPairId) }!!
+    override fun getOrderBook(brokerId: String, assetPairId: String) =
+        stopLimitOrdersQueues.getOrPut(assetPairId) { AssetStopOrderBook(brokerId, assetPairId) }!!
 
     fun getOrder(uid: String) = stopLimitOrdersMap[uid]
 

@@ -375,7 +375,7 @@ class FeeProcessor(
         val price = if (convertPrices.containsKey(assetPair.symbol)) {
             convertPrices[assetPair.symbol]!!
         } else {
-            val orderBook = genericLimitOrderService.getOrderBook(assetPair.symbol)
+            val orderBook = genericLimitOrderService.getOrderBook(assetPair.brokerId, assetPair.symbol)
             val askPrice = orderBook.getAskPrice()
             val bidPrice = orderBook.getBidPrice()
             if (askPrice > BigDecimal.ZERO && bidPrice > BigDecimal.ZERO) NumberUtils.divideWithMaxScale(

@@ -170,7 +170,10 @@ class MarketOrderService @Autowired constructor(
                     matchingResultHandlingHelper.preProcessCancelledOrdersWalletOperations(marketOrderExecutionContext)
                     matchingResultHandlingHelper.processCancelledOppositeOrders(marketOrderExecutionContext)
                     val orderBook = marketOrderExecutionContext.executionContext.orderBooksHolder
-                        .getChangedOrderBookCopy(marketOrderExecutionContext.order.assetPairId)
+                        .getChangedOrderBookCopy(
+                            marketOrderExecutionContext.order.brokerId,
+                            marketOrderExecutionContext.order.assetPairId
+                        )
                     matchingResult.cancelledLimitOrders.forEach {
                         orderBook.removeOrder(it.origin!!)
                     }
@@ -211,7 +214,7 @@ class MarketOrderService @Autowired constructor(
                     matchingResult.skipLimitOrders.forEach { matchingResult.orderBook.put(it) }
 
                     marketOrderExecutionContext.executionContext.orderBooksHolder
-                        .getChangedOrderBookCopy(order.assetPairId)
+                        .getChangedOrderBookCopy(order.brokerId, order.assetPairId)
                         .setOrderBook(!order.isBuySide(), matchingResult.orderBook)
                     marketOrderExecutionContext.executionContext.lkkTrades.addAll(matchingResult.lkkTrades)
 
@@ -260,7 +263,7 @@ class MarketOrderService @Autowired constructor(
     }
 
     private fun getOrderBook(order: MarketOrder) =
-        genericLimitOrderService.getOrderBook(order.assetPairId).getOrderBook(!order.isBuySide())
+        genericLimitOrderService.getOrderBook(order.brokerId, order.assetPairId).getOrderBook(!order.isBuySide())
 
     private fun sendErrorNotification(
         messageWrapper: MessageWrapper,

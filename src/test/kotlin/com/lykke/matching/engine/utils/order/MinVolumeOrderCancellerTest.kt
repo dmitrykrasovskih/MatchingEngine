@@ -331,14 +331,14 @@ class MinVolumeOrderCancellerTest : AbstractTest() {
         assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "TrustedClient", "BTC"))
         assertEquals(BigDecimal.valueOf(1.0), balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
         assertEquals(2, testOrderDatabaseAccessor.getOrders("BTCEUR", false).size)
-        assertEquals(2, genericLimitOrderService.getOrderBook("BTCEUR").getOrderBook(false).size)
+        assertEquals(2, genericLimitOrderService.getOrderBook("", "BTCEUR").getOrderBook(false).size)
 
         testDictionariesDatabaseAccessor.clear() // remove asset pair BTCEUR
         initServices()
         minVolumeOrderCanceller.cancel()
 
         assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCEUR", false).size)
-        assertEquals(0, genericLimitOrderService.getOrderBook("BTCEUR").getOrderBook(false).size)
+        assertEquals(0, genericLimitOrderService.getOrderBook("", "BTCEUR").getOrderBook(false).size)
 
         // check order is removed from ordersMap
         assertNull(genericLimitOrderService.cancelLimitOrder(Date(), "order1", false))

@@ -15,7 +15,7 @@ class AssetStopOrderBookTest {
 
     @Before
     fun setUp() {
-        orderBook = AssetStopOrderBook("AssetPair")
+        orderBook = AssetStopOrderBook("", "AssetPair")
 
         // Ask stop orders
         orderBook.addOrder(buildLimitOrder(

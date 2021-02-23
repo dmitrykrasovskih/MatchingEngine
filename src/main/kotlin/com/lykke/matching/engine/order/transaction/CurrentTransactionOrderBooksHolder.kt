@@ -9,9 +9,15 @@ import com.lykke.matching.engine.matching.UpdatedOrderBookAndOrder
 import com.lykke.matching.engine.outgoing.messages.OrderBook
 import com.lykke.matching.engine.services.AssetOrderBook
 import com.lykke.matching.engine.services.GenericLimitOrderService
-import java.util.Date
-import java.util.HashMap
+import java.util.*
 import java.util.concurrent.PriorityBlockingQueue
+import kotlin.collections.ArrayList
+import kotlin.collections.MutableList
+import kotlin.collections.MutableMap
+import kotlin.collections.forEach
+import kotlin.collections.getOrPut
+import kotlin.collections.mutableListOf
+import kotlin.collections.set
 
 class CurrentTransactionOrderBooksHolder(private val genericLimitOrderService: GenericLimitOrderService)
     : AbstractTransactionOrderBooksHolder<AssetOrderBook, GenericLimitOrderService>(genericLimitOrderService) {
@@ -101,7 +107,15 @@ class CurrentTransactionOrderBooksHolder(private val genericLimitOrderService: G
         val assetPairId = orderBookCopy.assetPairId
         val price = if (isBuySide) orderBookCopy.getBidPrice() else orderBookCopy.getAskPrice()
         tradeInfoList.add(TradeInfo(assetPairId, isBuySide, price, date))
-        outgoingOrderBooks.add(OrderBook(assetPairId, isBuySide, date, orderBookCopy.getOrderBook(isBuySide)))
+        outgoingOrderBooks.add(
+            OrderBook(
+                orderBookCopy.brokerId,
+                assetPairId,
+                isBuySide,
+                date,
+                orderBookCopy.getOrderBook(isBuySide)
+            )
+        )
     }
 
 

@@ -483,7 +483,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
         assertEquals("0", event.orders[2].remainingVolume)
         assertEquals("1.24", event.orders[2].price)
 
-        assertEquals(BigDecimal.valueOf(1.25), genericLimitOrderService.getOrderBook("EURUSD").getBidPrice())
+        assertEquals(BigDecimal.valueOf(1.25), genericLimitOrderService.getOrderBook("", "EURUSD").getBidPrice())
 
         assertEquals(BigDecimal.valueOf(1145.0), testWalletDatabaseAccessor.getBalance("Client1", "USD"))
         assertEquals(BigDecimal.valueOf(880.0), testWalletDatabaseAccessor.getBalance("Client1", "EUR"))
@@ -549,7 +549,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
         assertEquals(OutgoingOrderStatus.MATCHED, event.orders[1].status)
         assertEquals("26.915076", event.orders[1].price)
 
-        var orderBook = genericLimitOrderService.getOrderBook("TIMEUSD")
+        var orderBook = genericLimitOrderService.getOrderBook("", "TIMEUSD")
         assertEquals(2, orderBook.getOrderBook(false).size)
         var bestAskOrder = orderBook.getOrderBook(false).peek()
         assertEquals(BigDecimal.valueOf(26.88023), bestAskOrder.price)
@@ -576,7 +576,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
         assertEquals(0, testClientLimitOrderListener.getCount())
         assertEquals(0, clientsEventsQueue.size)
 
-        orderBook = genericLimitOrderService.getOrderBook("TIMEUSD")
+        orderBook = genericLimitOrderService.getOrderBook("", "TIMEUSD")
         assertEquals(2, orderBook.getOrderBook(false).size)
         bestAskOrder = orderBook.getOrderBook(false).peek()
         assertEquals(BigDecimal.valueOf(26.88023), bestAskOrder.price)
@@ -741,7 +741,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
         assertEquals(OutgoingOrderStatus.MATCHED, event.orders[1].status)
         assertEquals("0", event.orders[1].remainingVolume)
 
-        val orderBook = genericLimitOrderService.getOrderBook("BTCEUR")
+        val orderBook = genericLimitOrderService.getOrderBook("", "BTCEUR")
         assertEquals(1, orderBook.getOrderBook(false).size)
         val bestAskOrder = orderBook.getOrderBook(false).peek()
         assertEquals(BigDecimal.valueOf(3625.302), bestAskOrder.price)
@@ -890,7 +890,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
         assertEquals("-0.24068577", event.orders[1].remainingVolume)
         assertEquals(OutgoingOrderStatus.MATCHED, event.orders[2].status)
 
-        assertEquals(BigDecimal.ZERO, genericLimitOrderService.getOrderBook("BTCCHF").getBidPrice())
+        assertEquals(BigDecimal.ZERO, genericLimitOrderService.getOrderBook("", "BTCCHF").getBidPrice())
         assertEquals(BigDecimal.valueOf(12.2), testWalletDatabaseAccessor.getBalance("Client3", "CHF"))
     }
 
@@ -930,7 +930,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
 
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getBalance(client, "EUR"))
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance(client, "EUR"))
-        assertEquals(0, genericLimitOrderService.getOrderBook("BTCEUR").getOrderBook(true).size)
+        assertEquals(0, genericLimitOrderService.getOrderBook("", "BTCEUR").getOrderBook(true).size)
     }
 
     @Test
@@ -1075,7 +1075,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
         )
 
         assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
-        assertEquals(BigDecimal.valueOf(1.1), genericLimitOrderService.getOrderBook("EURUSD").getBidPrice())
+        assertEquals(BigDecimal.valueOf(1.1), genericLimitOrderService.getOrderBook("", "EURUSD").getBidPrice())
 
         assertEquals(1, testClientLimitOrderListener.getCount())
         val trustedResult = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
@@ -1272,7 +1272,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
         val event = trustedClientsEventsQueue.poll() as ExecutionEvent
         assertEquals(7, event.orders.size)
 
-        assertTrue(genericLimitOrderService.getOrderBook("BTCEUR").getOrderBook(false).map { it.externalId }
+        assertTrue(genericLimitOrderService.getOrderBook("", "BTCEUR").getOrderBook(false).map { it.externalId }
             .containsAll(listOf("1", "2")))
     }
 
@@ -1301,7 +1301,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
         assertEquals(5, event.orders.size)
 
         assertEquals(
-            genericLimitOrderService.getOrderBook("BTCEUR").getOrderBook(true).map { it.externalId },
+            genericLimitOrderService.getOrderBook("", "BTCEUR").getOrderBook(true).map { it.externalId },
             listOf("3")
         )
     }
@@ -1476,7 +1476,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
         )
 
         assertOrderBookSize("EURUSD", false, 2)
-        val orderBook = genericLimitOrderService.getOrderBook("EURUSD")
+        val orderBook = genericLimitOrderService.getOrderBook("", "EURUSD")
         assertTrue(orderBook.getOrderBook(false).any { it.externalId == "0" })
         assertTrue(orderBook.getOrderBook(false).any { it.externalId == "3" })
 
@@ -1615,8 +1615,8 @@ class MultiLimitOrderServiceTest : AbstractTest() {
     private fun assertRejectOrdersWithNotEnoughFunds() {
         assertOrderBookSize("EURUSD", true, 4)
         assertOrderBookSize("EURUSD", false, 4)
-        assertEquals(BigDecimal.valueOf(1.31), genericLimitOrderService.getOrderBook("EURUSD").getAskPrice())
-        assertEquals(BigDecimal.valueOf(1.2), genericLimitOrderService.getOrderBook("EURUSD").getBidPrice())
+        assertEquals(BigDecimal.valueOf(1.31), genericLimitOrderService.getOrderBook("", "EURUSD").getAskPrice())
+        assertEquals(BigDecimal.valueOf(1.2), genericLimitOrderService.getOrderBook("", "EURUSD").getBidPrice())
 
         assertEquals(0, clientsEventsQueue.size)
         assertEquals(1, trustedClientsEventsQueue.size)
@@ -1648,7 +1648,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
         ) //25.005
 
         assertOrderBookSize("BTCEUR", true, 1)
-        assertEquals(BigDecimal.valueOf(5003), genericLimitOrderService.getOrderBook("BTCEUR").getBidPrice())
+        assertEquals(BigDecimal.valueOf(5003), genericLimitOrderService.getOrderBook("", "BTCEUR").getBidPrice())
 
         assertEquals(0, clientsEventsQueue.size)
         assertEquals(1, trustedClientsEventsQueue.size)
@@ -1844,7 +1844,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
 
         assertOrderBookSize("EURUSD", false, 0)
         assertOrderBookSize("EURUSD", true, 1)
-        assertEquals(BigDecimal.valueOf(8.0), genericLimitOrderService.getOrderBook("EURUSD").getBidPrice())
+        assertEquals(BigDecimal.valueOf(8.0), genericLimitOrderService.getOrderBook("", "EURUSD").getBidPrice())
 
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
@@ -1891,7 +1891,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
 
         assertOrderBookSize("EURUSD", false, 1)
         assertOrderBookSize("EURUSD", true, 1)
-        assertEquals(BigDecimal.valueOf(8.0), genericLimitOrderService.getOrderBook("EURUSD").getBidPrice())
+        assertEquals(BigDecimal.valueOf(8.0), genericLimitOrderService.getOrderBook("", "EURUSD").getBidPrice())
 
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent

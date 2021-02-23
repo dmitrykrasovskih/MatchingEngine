@@ -1029,7 +1029,7 @@ class MarketOrderServiceTest : AbstractTest() {
         assertEquals("4111.117", eventMarketOrder.price)
         assertEquals(10, eventMarketOrder.trades?.size)
 
-        assertEquals(BigDecimal.valueOf(4136.9), genericLimitOrderService.getOrderBook("BTCCHF").getAskPrice())
+        assertEquals(BigDecimal.valueOf(4136.9), genericLimitOrderService.getOrderBook("", "BTCCHF").getAskPrice())
     }
 
     @Test
@@ -1656,7 +1656,7 @@ class MarketOrderServiceTest : AbstractTest() {
         assertEquals(0, cancelledLimitOrder.trades?.size)
 
         assertOrderBookSize("BTCUSD", false, 1)
-        assertEquals(BigDecimal.valueOf(6000.0), genericLimitOrderService.getOrderBook("BTCUSD").getAskPrice())
+        assertEquals(BigDecimal.valueOf(6000.0), genericLimitOrderService.getOrderBook("", "BTCUSD").getAskPrice())
 
         assertBalance("Client3", "BTC", 0.1, 0.0)
     }

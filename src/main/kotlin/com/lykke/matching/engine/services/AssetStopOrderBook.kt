@@ -7,7 +7,7 @@ import java.math.BigDecimal
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.PriorityBlockingQueue
 
-class AssetStopOrderBook(assetPairId: String) : AbstractAssetOrderBook(assetPairId) {
+class AssetStopOrderBook(brokerId: String, assetPairId: String) : AbstractAssetOrderBook(brokerId, assetPairId) {
     companion object {
 
         private val LOGGER = LogManager.getLogger(AssetStopOrderBook::class.java.name)
@@ -31,10 +31,10 @@ class AssetStopOrderBook(assetPairId: String) : AbstractAssetOrderBook(assetPair
         }
     }
 
-    private var lowerAskOrderBook = PriorityBlockingQueue<LimitOrder>(50, LOWER_COMPARATOR)
-    private var upperAskOrderBook = PriorityBlockingQueue<LimitOrder>(50, UPPER_COMPARATOR)
-    private var lowerBidOrderBook = PriorityBlockingQueue<LimitOrder>(50, LOWER_COMPARATOR)
-    private var upperBidOrderBook = PriorityBlockingQueue<LimitOrder>(50, UPPER_COMPARATOR)
+    private var lowerAskOrderBook = PriorityBlockingQueue(50, LOWER_COMPARATOR)
+    private var upperAskOrderBook = PriorityBlockingQueue(50, UPPER_COMPARATOR)
+    private var lowerBidOrderBook = PriorityBlockingQueue(50, LOWER_COMPARATOR)
+    private var upperBidOrderBook = PriorityBlockingQueue(50, UPPER_COMPARATOR)
 
     private val askOrderBook = ConcurrentHashMap<String, LimitOrder>(50)
     private val bidOrderBook = ConcurrentHashMap<String, LimitOrder>(50)
@@ -99,7 +99,7 @@ class AssetStopOrderBook(assetPairId: String) : AbstractAssetOrderBook(assetPair
     }
 
     override fun copy(): AssetStopOrderBook {
-        val book = AssetStopOrderBook(assetPairId)
+        val book = AssetStopOrderBook(brokerId, assetPairId)
         lowerAskOrderBook.forEach {
             book.lowerAskOrderBook.put(it)
         }

@@ -59,9 +59,17 @@ class Connection(
             val now = Date()
             orderBooks.values.forEach {
                 val orderBook = it.copy()
-                writeOrderBook(OrderBook(orderBook.assetPairId, true, now, orderBook.getOrderBook(true)), outputStream)
                 writeOrderBook(
-                    OrderBook(orderBook.assetPairId, false, now, orderBook.getOrderBook(false)),
+                    OrderBook(
+                        orderBook.brokerId,
+                        orderBook.assetPairId,
+                        true,
+                        now,
+                        orderBook.getOrderBook(true)
+                    ), outputStream
+                )
+                writeOrderBook(
+                    OrderBook(orderBook.brokerId, orderBook.assetPairId, false, now, orderBook.getOrderBook(false)),
                     outputStream
                 )
             }

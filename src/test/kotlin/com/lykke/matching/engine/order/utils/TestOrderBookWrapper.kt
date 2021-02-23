@@ -16,7 +16,7 @@ class TestOrderBookWrapper(private val genericLimitOrderService:  GenericLimitOr
         testOrderBookDatabaseAccessor.addLimitOrder(limitOrder)
 
         genericLimitOrderService.addOrder(limitOrder)
-        val orderBook = genericLimitOrderService.getOrderBook(limitOrder.assetPairId)
+        val orderBook = genericLimitOrderService.getOrderBook("", limitOrder.assetPairId)
         orderBook.addOrder(limitOrder)
         genericLimitOrderService.setOrderBook(limitOrder.assetPairId, orderBook)
     }
@@ -25,7 +25,7 @@ class TestOrderBookWrapper(private val genericLimitOrderService:  GenericLimitOr
         stopOrderBookDatabaseAccessor.addStopLimitOrder(limitOrder)
 
         genericStopLimitOrderService.addOrder(limitOrder)
-        val orderBook = genericStopLimitOrderService.getOrderBook(limitOrder.assetPairId)
+        val orderBook = genericStopLimitOrderService.getOrderBook("", limitOrder.assetPairId)
         orderBook.addOrder(limitOrder)
         genericStopLimitOrderService.setOrderBook(limitOrder.assetPairId, orderBook)
     }

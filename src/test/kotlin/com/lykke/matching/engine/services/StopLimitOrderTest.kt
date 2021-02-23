@@ -109,7 +109,7 @@ class StopLimitOrderTest : AbstractTest() {
         assertEquals(1, report.orders.size)
         assertEquals(OrderStatus.NotEnoughFunds.name, report.orders.first().order.status)
 
-        assertEquals(0, genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).size)
+        assertEquals(0, genericStopLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false).size)
         assertEquals(0, stopOrderDatabaseAccessor.getStopOrders("BTCUSD", false).size)
 
         assertEquals(1, clientsEventsQueue.size)
@@ -141,7 +141,7 @@ class StopLimitOrderTest : AbstractTest() {
         assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
 
         assertEquals(1, stopOrderDatabaseAccessor.getStopOrders("BTCUSD", false).size)
-        assertEquals(1, genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).size)
+        assertEquals(1, genericStopLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false).size)
         assertEquals(BigDecimal.valueOf(0.01), balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
         assertEquals(BigDecimal.valueOf(0.01), testWalletDatabaseAccessor.getReservedBalance("Client1", "BTC"))
 
@@ -185,10 +185,10 @@ class StopLimitOrderTest : AbstractTest() {
 
         assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
         assertEquals(1, stopOrderDatabaseAccessor.getStopOrders("BTCUSD", false).size)
-        assertEquals(1, genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).size)
+        assertEquals(1, genericStopLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false).size)
         assertEquals(
             BigDecimal.valueOf(-0.02),
-            genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).first().volume
+            genericStopLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false).first().volume
         )
         assertEquals(BigDecimal.valueOf(0.02), balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
         assertEquals(BigDecimal.valueOf(0.02), testWalletDatabaseAccessor.getReservedBalance("Client1", "BTC"))
@@ -219,7 +219,7 @@ class StopLimitOrderTest : AbstractTest() {
         limitOrderCancelService.processMessage(messageBuilder.buildLimitOrderCancelWrapper("order1"))
 
         assertTrue(stopOrderDatabaseAccessor.getStopOrders("BTCUSD", false).isEmpty())
-        assertTrue(genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).isEmpty())
+        assertTrue(genericStopLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false).isEmpty())
         assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client1", "BTC"))
         assertEquals(1, testClientLimitOrderListener.getCount())
@@ -1051,9 +1051,9 @@ class StopLimitOrderTest : AbstractTest() {
             )
         )
 
-        assertEquals(3, genericLimitOrderService.getOrderBook("BTCUSD").getOrderBook(true).size)
-        assertEquals(1, genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(true).size)
-        assertEquals(3, genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).size)
+        assertEquals(3, genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(true).size)
+        assertEquals(1, genericStopLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(true).size)
+        assertEquals(3, genericStopLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false).size)
         assertEquals(BigDecimal.valueOf(0.5), balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
         assertEquals(BigDecimal.valueOf(900.0), balancesHolder.getReservedBalance("", "", "Client3", "USD"))
 
@@ -1069,10 +1069,10 @@ class StopLimitOrderTest : AbstractTest() {
         )
 
 
-        assertTrue(genericLimitOrderService.getOrderBook("BTCUSD").getOrderBook(true).isEmpty())
-        assertTrue(genericLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).isEmpty())
-        assertTrue(genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(true).isEmpty())
-        assertTrue(genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).isEmpty())
+        assertTrue(genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(true).isEmpty())
+        assertTrue(genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false).isEmpty())
+        assertTrue(genericStopLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(true).isEmpty())
+        assertTrue(genericStopLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false).isEmpty())
         assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
         assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client3", "USD"))
     }
@@ -1104,8 +1104,8 @@ class StopLimitOrderTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(true).size)
-        assertEquals(1, genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).size)
+        assertEquals(1, genericStopLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(true).size)
+        assertEquals(1, genericStopLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false).size)
         assertEquals(BigDecimal.valueOf(0.1), balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
         assertEquals(BigDecimal.valueOf(1050.0), balancesHolder.getReservedBalance("", "", "Client3", "USD"))
 
@@ -1120,8 +1120,8 @@ class StopLimitOrderTest : AbstractTest() {
             )
         )
 
-        assertTrue(genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(true).isEmpty())
-        assertTrue(genericStopLimitOrderService.getOrderBook("BTCUSD").getOrderBook(false).isEmpty())
+        assertTrue(genericStopLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(true).isEmpty())
+        assertTrue(genericStopLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false).isEmpty())
         assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
         assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client3", "USD"))
     }

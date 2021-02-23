@@ -229,10 +229,14 @@ class MatchingEngine(
                 val oppositeCashMovements = mutableListOf(limitBaseAssetOperation, limitQuotingAssetOperation)
 
                 val bestAsk =
-                    if (isBuy) limitOrder.price else genericLimitOrderService.getOrderBook(limitOrder.assetPairId)
+                    if (isBuy) limitOrder.price else genericLimitOrderService.getOrderBook(
+                        limitOrder.brokerId,
+                        limitOrder.assetPairId
+                    )
                         .getAskPrice()
-                val bestBid = if (isBuy) genericLimitOrderService.getOrderBook(limitOrder.assetPairId)
-                    .getBidPrice() else limitOrder.price
+                val bestBid =
+                    if (isBuy) genericLimitOrderService.getOrderBook(limitOrder.brokerId, limitOrder.assetPairId)
+                        .getBidPrice() else limitOrder.price
                 val validSpread = bestAsk > BigDecimal.ZERO && bestBid > BigDecimal.ZERO
                 val absoluteSpread = if (validSpread) bestAsk - bestBid else null
                 val relativeSpread =

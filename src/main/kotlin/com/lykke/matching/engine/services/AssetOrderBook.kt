@@ -3,10 +3,13 @@ package com.lykke.matching.engine.services
 import com.lykke.matching.engine.daos.LimitOrder
 import com.lykke.matching.engine.services.utils.AbstractAssetOrderBook
 import java.math.BigDecimal
-import java.util.Comparator
+import java.util.*
 import java.util.concurrent.PriorityBlockingQueue
 
-class AssetOrderBook(assetId: String): AbstractAssetOrderBook(assetId) {
+class AssetOrderBook(
+    brokerId: String,
+    assetId: String
+) : AbstractAssetOrderBook(brokerId, assetId) {
 
     val SELL_COMPARATOR = Comparator<LimitOrder>({ o1, o2 ->
         var result = o1.price.compareTo(o2.price)
@@ -31,7 +34,8 @@ class AssetOrderBook(assetId: String): AbstractAssetOrderBook(assetId) {
 
     override fun getOrderBook(isBuySide: Boolean) = if (isBuySide) bidOrderBook else askOrderBook
 
-    fun setOrderBook(isBuySide: Boolean, queue: PriorityBlockingQueue<LimitOrder>) = if (isBuySide) bidOrderBook = queue else askOrderBook = queue
+    fun setOrderBook(isBuySide: Boolean, queue: PriorityBlockingQueue<LimitOrder>) =
+        if (isBuySide) bidOrderBook = queue else askOrderBook = queue
 
     override fun addOrder(order: LimitOrder) = getOrderBook(order.isBuySide()).add(order)
 
@@ -88,8 +92,8 @@ class AssetOrderBook(assetId: String): AbstractAssetOrderBook(assetId) {
         return false
     }
 
-    override fun copy() : AssetOrderBook {
-        val book = AssetOrderBook(assetPairId)
+    override fun copy(): AssetOrderBook {
+        val book = AssetOrderBook(brokerId, assetPairId)
 
         askOrderBook.forEach {
             book.askOrderBook.put(it)

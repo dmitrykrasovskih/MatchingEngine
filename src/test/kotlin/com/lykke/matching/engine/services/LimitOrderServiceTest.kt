@@ -1001,14 +1001,14 @@ class LimitOrderServiceTest : AbstractTest() {
         assertEquals(BigDecimal.valueOf(1.0), dbAskOrders.first().price)
         assertEquals(0, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
 
-        val cacheOrderBook = genericLimitOrderService.getOrderBook("EURUSD")
+        val cacheOrderBook = genericLimitOrderService.getOrderBook("", "EURUSD")
         assertEquals(1, cacheOrderBook.getOrderBook(false).size)
         assertEquals(BigDecimal.valueOf(1.0), cacheOrderBook.getAskPrice())
 
 
         singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(price = 1.0, volume = 10.0, clientId = "Client2")))
 
-        assertEquals(0, genericLimitOrderService.getOrderBook("EURUSD").getOrderBook(false).size)
+        assertEquals(0, genericLimitOrderService.getOrderBook("", "EURUSD").getOrderBook(false).size)
         assertEquals(0, testOrderDatabaseAccessor.getOrders("EURUSD", false).size)
         assertEquals(0, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
     }
@@ -1036,11 +1036,11 @@ class LimitOrderServiceTest : AbstractTest() {
         assertEquals(0, event.orders.single().trades?.size)
         assertEquals(OrderType.MARKET, event.orders.single().orderType)
 
-        assertEquals(1, genericLimitOrderService.getOrderBook("EURUSD").getOrderBook(false).size)
+        assertEquals(1, genericLimitOrderService.getOrderBook("", "EURUSD").getOrderBook(false).size)
 
         singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", price = 1.1, volume = -10.0)))
 
-        assertEquals(2, genericLimitOrderService.getOrderBook("EURUSD").getOrderBook(false).size)
+        assertEquals(2, genericLimitOrderService.getOrderBook("", "EURUSD").getOrderBook(false).size)
 
         clearMessageQueues()
 
@@ -1063,7 +1063,7 @@ class LimitOrderServiceTest : AbstractTest() {
         assertEquals(1, dbAskOrders.size)
         assertEquals(BigDecimal.valueOf(1.0), dbAskOrders.first().price)
 
-        val cacheOrderBook = genericLimitOrderService.getOrderBook("EURUSD")
+        val cacheOrderBook = genericLimitOrderService.getOrderBook("", "EURUSD")
         assertEquals(1, cacheOrderBook.getOrderBook(false).size)
         assertEquals(BigDecimal.valueOf(1.0), cacheOrderBook.getAskPrice())
     }
@@ -1091,7 +1091,7 @@ class LimitOrderServiceTest : AbstractTest() {
 
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
         assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client1", "USD"))
-        assertEquals(0, genericLimitOrderService.getOrderBook("BTCUSD").getOrderBook(true).size)
+        assertEquals(0, genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(true).size)
         assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
     }
 
@@ -1767,7 +1767,7 @@ class LimitOrderServiceTest : AbstractTest() {
 
         assertOrderBookSize("EURUSD", false, 1)
         assertOrderBookSize("EURUSD", true, 0)
-        assertEquals(BigDecimal.valueOf(1.2), genericLimitOrderService.getOrderBook("EURUSD").getAskPrice())
+        assertEquals(BigDecimal.valueOf(1.2), genericLimitOrderService.getOrderBook("", "EURUSD").getAskPrice())
 
         assertBalance("Client1", "EUR", 100.0, 50.0)
     }
