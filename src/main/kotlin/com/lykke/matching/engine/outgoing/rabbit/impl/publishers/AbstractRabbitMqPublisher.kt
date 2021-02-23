@@ -90,7 +90,7 @@ abstract class AbstractRabbitMqPublisher<T>(
                 val startPersistTime = System.nanoTime()
                 channel!!.basicPublish(
                     exchangeName,
-                    null,
+                    "",
                     rabbitPublishRequest.props,
                     rabbitPublishRequest.body
                 )
