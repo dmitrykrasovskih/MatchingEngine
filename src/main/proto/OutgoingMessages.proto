@@ -206,18 +206,3 @@ message FeeTransfer {
     string FeeCoef = 5;
     int32 index = 6;
 }
-
-message OrderBookSnapshot {
-    string brokerId = 1;
-    string asset = 2;
-    bool isBuy = 3;
-    google.protobuf.Timestamp timestamp = 4;
-    repeated OrderBookLevel levels = 5;
-
-    message OrderBookLevel {
-        string price = 1;
-        string volume = 2;
-        string walletId = 3;
-        string orderId = 4;
-    }
-}

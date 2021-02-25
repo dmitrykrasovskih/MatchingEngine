@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package com.myjetwallet.messages.orderbooks.grpc;
+
+import "google/protobuf/timestamp.proto";
+
+option java_package = "com.myjetwallet.messages.orderbooks.grpc";
+option java_outer_classname = "OrderBooksMessages";
+option csharp_namespace = "ME.Contracts.OrderBooksMessages";
+
+message OrderBookSnapshot {
+    string brokerId = 1;
+    string asset = 2;
+    bool isBuy = 3;
+    google.protobuf.Timestamp timestamp = 4;
+    repeated OrderBookLevel levels = 5;
+
+    message OrderBookLevel {
+        string price = 1;
+        string volume = 2;
+        string walletId = 3;
+        string orderId = 4;
+    }
+}

@@ -10,7 +10,7 @@ package com.myjetwallet.messages.incoming.grpc;
 
 import "google/protobuf/empty.proto";
 import "GrpcIncomingMessages.proto";
-import "OutgoingMessages.proto";
+import "OrderBooksMessages.proto";
 import "BalancesMessages.proto";
 
 service CashService {
@@ -32,5 +32,5 @@ service BalancesService {
 }
 
 service OrderBooksService {
-    rpc OrderBookSnapshots(google.protobuf.Empty) returns (stream com.myjetwallet.messages.outgoing.grpc.OrderBookSnapshot) {}
+    rpc OrderBookSnapshots(google.protobuf.Empty) returns (stream com.myjetwallet.messages.orderbooks.grpc.OrderBookSnapshot) {}
 }

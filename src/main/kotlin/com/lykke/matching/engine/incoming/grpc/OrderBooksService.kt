@@ -8,7 +8,7 @@ import com.lykke.matching.engine.services.GenericLimitOrderService
 import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.proto.createProtobufTimestampBuilder
 import com.myjetwallet.messages.incoming.grpc.OrderBooksServiceGrpc
-import com.myjetwallet.messages.outgoing.grpc.OutgoingMessages
+import com.myjetwallet.messages.orderbooks.grpc.OrderBooksMessages
 import io.grpc.stub.StreamObserver
 import java.util.*
 
@@ -20,7 +20,7 @@ class OrderBooksService(
 
     override fun orderBookSnapshots(
         request: Empty,
-        responseObserver: StreamObserver<OutgoingMessages.OrderBookSnapshot>
+        responseObserver: StreamObserver<OrderBooksMessages.OrderBookSnapshot>
     ) {
         val now = Date()
         val orderBooks = genericLimitOrderService.getAllOrderBooks()
@@ -52,8 +52,8 @@ class OrderBooksService(
         responseObserver.onCompleted()
     }
 
-    private fun buildOrderBook(orderBook: OrderBook): OutgoingMessages.OrderBookSnapshot {
-        val builder = OutgoingMessages.OrderBookSnapshot.newBuilder()
+    private fun buildOrderBook(orderBook: OrderBook): OrderBooksMessages.OrderBookSnapshot {
+        val builder = OrderBooksMessages.OrderBookSnapshot.newBuilder()
             .setBrokerId(orderBook.brokerId)
             .setAsset(orderBook.assetPair).setIsBuy(orderBook.isBuy)
             .setTimestamp(orderBook.timestamp.createProtobufTimestampBuilder())
@@ -61,7 +61,7 @@ class OrderBooksService(
         val baseAsset = assetsCache.getAsset(pair.baseAssetId)
         orderBook.prices.forEach { orderBookPrice ->
             builder.addLevels(
-                OutgoingMessages.OrderBookSnapshot.OrderBookLevel.newBuilder()
+                OrderBooksMessages.OrderBookSnapshot.OrderBookLevel.newBuilder()
                     .setPrice(NumberUtils.setScaleRoundHalfUp(orderBookPrice.price, pair.accuracy).toPlainString())
                     .setVolume(
                         NumberUtils.setScaleRoundHalfUp(orderBookPrice.volume, baseAsset.accuracy).toPlainString()
