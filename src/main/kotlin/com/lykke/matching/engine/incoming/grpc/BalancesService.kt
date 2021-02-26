@@ -6,17 +6,24 @@ import com.lykke.matching.engine.utils.proto.createProtobufTimestampBuilder
 import com.matching.engine.database.grpc.BalancesMessages
 import com.myjetwallet.messages.incoming.grpc.BalancesServiceGrpc
 import io.grpc.stub.StreamObserver
+import io.micrometer.core.instrument.MeterRegistry
 import java.util.*
 
-class BalancesService(private val balancesHolder: BalancesHolder) : BalancesServiceGrpc.BalancesServiceImplBase() {
+class BalancesService(
+    private val balancesHolder: BalancesHolder,
+    registry: MeterRegistry
+) : BalancesServiceGrpc.BalancesServiceImplBase() {
+
+    private val balancesGetAllCounter = registry.counter("balances-getall-counter")
+    private val balancesGetByAssetCounter = registry.counter("balances-getbyasset-counter")
 
     override fun getAll(
         request: BalancesMessages.BalancesGetAllRequest,
         responseObserver: StreamObserver<BalancesMessages.BalancesGetAllResponse>
     ) {
-        val now = Date()
+        balancesGetAllCounter.increment()
         val balances = balancesHolder.getBalances(request.walletId)
-        responseObserver.onNext(buildBalanceAllResponse(now, request.walletId, balances.values))
+        responseObserver.onNext(buildBalanceAllResponse(Date(), request.walletId, balances.values))
         responseObserver.onCompleted()
     }
 
@@ -24,9 +31,9 @@ class BalancesService(private val balancesHolder: BalancesHolder) : BalancesServ
         request: BalancesMessages.BalancesGetByAssetIdRequest,
         responseObserver: StreamObserver<BalancesMessages.BalancesGetByAssetIdResponse>
     ) {
-        val now = Date()
+        balancesGetByAssetCounter.increment()
         val balances = balancesHolder.getBalances(request.walletId)
-        responseObserver.onNext(buildBalanceByIdResponse(now, request.walletId, balances[request.assetId]))
+        responseObserver.onNext(buildBalanceByIdResponse(Date(), request.walletId, balances[request.assetId]))
         responseObserver.onCompleted()
     }
 

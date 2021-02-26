@@ -7,11 +7,14 @@ import com.lykke.matching.engine.order.process.ProcessedOrder
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
 import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
 import io.grpc.stub.StreamObserver
+import io.micrometer.core.instrument.Timer
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 class MultiLimitOrderMessageWrapper(
     var parsedMessage: GrpcIncomingMessages.MultiLimitOrder,
     private val callback: StreamObserver<GrpcIncomingMessages.MultiLimitOrderResponse>,
+    private val multiOrderTimer: Timer? = null,
     private val closeStream: Boolean = false
 ) : MessageWrapper(
     MessageType.MULTI_LIMIT_ORDER,
@@ -25,6 +28,7 @@ class MultiLimitOrderMessageWrapper(
         processedOrders: List<ProcessedOrder>? = null,
         version: Long? = null
     ) {
+        multiOrderTimer?.record(System.nanoTime() - startTimestamp, TimeUnit.NANOSECONDS)
         val responseBuilder = GrpcIncomingMessages.MultiLimitOrderResponse.newBuilder()
         responseBuilder.id = id
         responseBuilder.status = GrpcIncomingMessages.Status.forNumber(status.type)

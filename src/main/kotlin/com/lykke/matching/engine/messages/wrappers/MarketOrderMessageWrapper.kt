@@ -7,11 +7,14 @@ import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.order.OrderStatus
 import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
 import io.grpc.stub.StreamObserver
+import io.micrometer.core.instrument.Timer
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 class MarketOrderMessageWrapper(
     val parsedMessage: GrpcIncomingMessages.MarketOrder,
     private val callback: StreamObserver<GrpcIncomingMessages.MarketOrderResponse>,
+    private val marketOrderTimer: Timer? = null,
     private val closeStream: Boolean = false
 ) : MessageWrapper(
     MessageType.MARKET_ORDER,
@@ -25,6 +28,7 @@ class MarketOrderMessageWrapper(
         errorMessage: String? = null,
         version: Long? = null
     ) {
+        marketOrderTimer?.record(System.nanoTime() - startTimestamp, TimeUnit.NANOSECONDS)
         val responseBuilder = GrpcIncomingMessages.MarketOrderResponse.newBuilder()
         responseBuilder.id = id
         responseBuilder.status = GrpcIncomingMessages.Status.forNumber(status.type)

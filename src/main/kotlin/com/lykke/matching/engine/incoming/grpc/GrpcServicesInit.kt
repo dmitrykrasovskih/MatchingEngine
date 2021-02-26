@@ -12,6 +12,7 @@ import com.lykke.utils.AppVersion
 import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import io.grpc.ServerBuilder
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.util.concurrent.BlockingQueue
@@ -52,6 +53,9 @@ class GrpcServicesInit(
     @Autowired
     private lateinit var assetsPairsHolder: AssetsPairsHolder
 
+    @Autowired
+    private lateinit var registry: MeterRegistry
+
     companion object {
         private val LOGGER = ThrottlingLogger.getLogger(GrpcServicesInit::class.java.name)
     }
@@ -70,24 +74,26 @@ class GrpcServicesInit(
 
         with(config.matchingEngine.grpcEndpoints) {
             ServerBuilder.forPort(cashApiServicePort)
-                .addService(CashApiService(cashInOutInputQueue, cashTransferInputQueue)).build().start()
+                .addService(CashApiService(cashInOutInputQueue, cashTransferInputQueue, registry)).build().start()
             LOGGER.info("Started CashApiService at $cashApiServicePort port")
 
             ServerBuilder.forPort(tradingApiServicePort).addService(
                 TradingApiService(
                     limitOrderInputQueue,
                     limitOrderCancelInputQueue,
-                    preProcessedMessageQueue
+                    preProcessedMessageQueue,
+                    registry
                 )
             ).build().start()
             LOGGER.info("Started TradingApiService at $tradingApiServicePort port")
 
             ServerBuilder.forPort(balancesServicePort)
-                .addService(BalancesService(balancesHolder)).build().start()
+                .addService(BalancesService(balancesHolder, registry)).build().start()
             LOGGER.info("Started BalancesService at $balancesServicePort port")
 
             ServerBuilder.forPort(orderBooksServicePort)
-                .addService(OrderBooksService(genericLimitOrderService, assetsHolder, assetsPairsHolder)).build()
+                .addService(OrderBooksService(genericLimitOrderService, assetsHolder, assetsPairsHolder, registry))
+                .build()
                 .start()
             LOGGER.info("Started OrderBooksService at $orderBooksServicePort port")
         }

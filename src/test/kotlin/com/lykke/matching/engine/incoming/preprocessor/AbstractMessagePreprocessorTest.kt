@@ -61,6 +61,7 @@ class AbstractMessagePreprocessorTest {
         messageWrapper = SingleLimitOrderMessageWrapper(
             GrpcIncomingMessages.LimitOrder.getDefaultInstance(),
             clientHandler,
+            null,
             true,
             context = SingleLimitOrderContext.Builder().messageId("MessageID")
                 .limitOrder(MessageBuilder.buildLimitOrder()).build()

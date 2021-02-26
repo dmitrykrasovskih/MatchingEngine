@@ -6,11 +6,14 @@ import com.lykke.matching.engine.messages.MessageStatus
 import com.lykke.matching.engine.messages.MessageType
 import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
 import io.grpc.stub.StreamObserver
+import io.micrometer.core.instrument.Timer
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 class LimitOrderCancelMessageWrapper(
     var parsedMessage: GrpcIncomingMessages.LimitOrderCancel,
     private val callback: StreamObserver<GrpcIncomingMessages.LimitOrderCancelResponse>?,
+    private val cancelOrderTimer: Timer? = null,
     private val closeStream: Boolean = false,
     var context: LimitOrderCancelOperationContext? = null
 ) : MessageWrapper(
@@ -25,6 +28,7 @@ class LimitOrderCancelMessageWrapper(
         orderId: String? = null,
         version: Long? = null
     ) {
+        cancelOrderTimer?.record(System.nanoTime() - startTimestamp, TimeUnit.NANOSECONDS)
         val responseBuilder = GrpcIncomingMessages.LimitOrderCancelResponse.newBuilder()
         responseBuilder.id = id
         responseBuilder.status = GrpcIncomingMessages.Status.forNumber(status.type)

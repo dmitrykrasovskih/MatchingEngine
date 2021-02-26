@@ -10,18 +10,23 @@ import com.lykke.matching.engine.utils.proto.createProtobufTimestampBuilder
 import com.myjetwallet.messages.incoming.grpc.OrderBooksServiceGrpc
 import com.myjetwallet.messages.orderbooks.grpc.OrderBooksMessages
 import io.grpc.stub.StreamObserver
+import io.micrometer.core.instrument.MeterRegistry
 import java.util.*
 
 class OrderBooksService(
     private val genericLimitOrderService: GenericLimitOrderService,
     private val assetsCache: AssetsHolder,
-    private val assetPairsCache: AssetsPairsHolder
+    private val assetPairsCache: AssetsPairsHolder,
+    registry: MeterRegistry
 ) : OrderBooksServiceGrpc.OrderBooksServiceImplBase() {
+
+    private val orderBooksCounter = registry.counter("orderbooks-get-counter")
 
     override fun orderBookSnapshots(
         request: Empty,
         responseObserver: StreamObserver<OrderBooksMessages.OrderBookSnapshot>
     ) {
+        orderBooksCounter.increment()
         val now = Date()
         val orderBooks = genericLimitOrderService.getAllOrderBooks()
         orderBooks.values.forEach {
