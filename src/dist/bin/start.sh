@@ -29,11 +29,6 @@ EXECSTR="$JAVACMD \
     -Dapp.pid="$$" \
     -Dapp.home="$BASEDIR" \
     -Dbasedir="$BASEDIR" \
-    -Dmanagement.endpoints.web.exposure.include=prometheus \
-    -Dmanagement.endpoint.metrics.enabled=true \
-    -Dmanagement.endpoint.prometheus.enabled=true \
-    -Dmanagement.metrics.export.prometheus.enabled=true \
-    -Dmanagement.server.port=8081 \
     -jar $BASEDIR/lib/MyJetWallet.MatchingEngine-1.0.jar \
     $HTTP_CONFIG"
 
