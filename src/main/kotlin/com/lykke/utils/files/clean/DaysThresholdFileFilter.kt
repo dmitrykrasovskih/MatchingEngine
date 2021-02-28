@@ -1,6 +1,6 @@
 package com.lykke.utils.files.clean
 
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import java.io.File
 import java.io.FileFilter
 import java.text.ParseException
@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 internal class DaysThresholdFileFilter(thresholdDays: Int, applyToArchive: Boolean) : FileFilter {
 
     private companion object {
-        private val LOGGER = LogManager.getLogger(DaysThresholdFileFilter::class.java.name)
+        private val LOGGER = Logger.getLogger(DaysThresholdFileFilter::class.java.name)
     }
 
     private val thresholdMs = TimeUnit.DAYS.toMillis(thresholdDays.toLong())

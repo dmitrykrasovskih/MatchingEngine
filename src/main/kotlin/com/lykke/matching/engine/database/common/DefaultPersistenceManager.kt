@@ -4,7 +4,7 @@ import com.lykke.matching.engine.database.*
 import com.lykke.matching.engine.database.common.entity.PersistenceData
 import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.utils.logging.MetricsLogger
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 
 class DefaultPersistenceManager(
     private val walletDatabaseAccessor: WalletDatabaseAccessor,
@@ -14,7 +14,7 @@ class DefaultPersistenceManager(
 ) : PersistenceManager {
 
     companion object {
-        private val LOGGER = LogManager.getLogger(DefaultPersistenceManager::class.java.name)
+        private val LOGGER = Logger.getLogger(DefaultPersistenceManager::class.java.name)
         private val METRICS_LOGGER = MetricsLogger.getLogger()
     }
 

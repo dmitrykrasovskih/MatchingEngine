@@ -3,7 +3,7 @@ package com.lykke.matching.engine.services.utils
 import com.lykke.matching.engine.daos.LimitOrder
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import org.junit.Test
 import java.math.BigDecimal
 import java.util.*
@@ -34,7 +34,7 @@ class MultiOrderFilterTest {
         0,
         Date(),
         0,
-        LogManager.getLogger(MultiOrderFilterTest::class.java.name)
+        Logger.getLogger(MultiOrderFilterTest::class.java.name)
     )
 
     @Test

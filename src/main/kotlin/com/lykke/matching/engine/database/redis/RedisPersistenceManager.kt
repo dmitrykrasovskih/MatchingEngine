@@ -19,7 +19,7 @@ import com.lykke.matching.engine.performance.PerformanceStatsHolder
 import com.lykke.matching.engine.utils.PrintUtils
 import com.lykke.matching.engine.utils.config.Config
 import com.lykke.utils.logging.MetricsLogger
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import org.springframework.util.CollectionUtils
 import redis.clients.jedis.Transaction
 import redis.clients.jedis.exceptions.JedisException
@@ -39,8 +39,8 @@ class RedisPersistenceManager(
 ) : PersistenceManager {
 
     companion object {
-        private val LOGGER = LogManager.getLogger(RedisPersistenceManager::class.java.name)
-        private val REDIS_PERFORMANCE_LOGGER = LogManager.getLogger("${RedisPersistenceManager::class.java.name}.redis")
+        private val LOGGER = Logger.getLogger(RedisPersistenceManager::class.java.name)
+        private val REDIS_PERFORMANCE_LOGGER = Logger.getLogger("${RedisPersistenceManager::class.java.name}.redis")
         private val METRICS_LOGGER = MetricsLogger.getLogger()
     }
 

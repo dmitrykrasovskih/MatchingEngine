@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.lykke.matching.engine.utils.config.Config
 import com.lykke.matching.engine.utils.config.MatchingEngine
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import org.springframework.core.env.Environment
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -15,7 +15,7 @@ import javax.naming.ConfigurationException
 class HttpConfigFactory {
 
     companion object {
-        private val LOGGER = LogManager.getLogger("AppStarter")
+        private val LOGGER = Logger.getLogger("AppStarter")
 
         fun getConfig(environment: Environment): Config {
             val commangLineArgs = environment.getProperty("nonOptionArgs", Array<String>::class.java)

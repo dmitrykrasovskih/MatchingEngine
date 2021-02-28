@@ -1,7 +1,7 @@
 package com.lykke.utils.logging
 
 import com.lykke.utils.logging.config.ThrottlingLoggerConfig
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -10,7 +10,7 @@ import kotlin.concurrent.fixedRateTimer
 class ThrottlingLogger private constructor(private val name: String) {
 
     companion object {
-        private val LOGGER = LogManager.getLogger(ThrottlingLogger::class.java.name)
+        private val LOGGER = Logger.getLogger(ThrottlingLogger::class.java.name)
 
         private const val DEFAULT_TTL_MINUTES = 60
         private val DEFAULT_CLEANER_INTERVAL = TimeUnit.HOURS.toMillis(3)
@@ -57,7 +57,7 @@ class ThrottlingLogger private constructor(private val name: String) {
         }
     }
 
-    private val logger = LogManager.getLogger(name)
+    private val logger = Logger.getLogger(name)
 
     fun debug(message: String) {
         logger.debug(message)

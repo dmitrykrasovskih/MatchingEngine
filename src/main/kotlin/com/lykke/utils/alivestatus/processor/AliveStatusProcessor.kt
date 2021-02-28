@@ -3,7 +3,7 @@ package com.lykke.utils.alivestatus.processor
 import com.lykke.utils.AppInitializer
 import com.lykke.utils.alivestatus.config.AliveStatusConfig
 import com.lykke.utils.alivestatus.database.AliveStatusDatabaseAccessor
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import kotlin.concurrent.fixedRateTimer
 
 class AliveStatusProcessor internal constructor(
@@ -12,7 +12,7 @@ class AliveStatusProcessor internal constructor(
 ) : Runnable {
 
     companion object {
-        private val LOGGER = LogManager.getLogger(AliveStatusProcessor::class.java.name)
+        private val LOGGER = Logger.getLogger(AliveStatusProcessor::class.java.name)
     }
 
     private var isAlive = false

@@ -19,7 +19,7 @@ import com.lykke.matching.engine.services.validators.business.CashInOutOperation
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import org.springframework.stereotype.Service
 import java.util.*
 import java.util.concurrent.BlockingQueue
@@ -34,7 +34,7 @@ class CashInOutOperationService(
     private val messageSender: MessageSender
 ) : AbstractService {
     companion object {
-        private val LOGGER = LogManager.getLogger(CashInOutOperationService::class.java.name)
+        private val LOGGER = Logger.getLogger(CashInOutOperationService::class.java.name)
     }
 
     override fun processMessage(genericMessageWrapper: MessageWrapper) {

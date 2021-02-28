@@ -3,7 +3,7 @@ package com.lykke.matching.engine.database.utils
 import com.lykke.matching.engine.daos.LimitOrder
 import com.lykke.matching.engine.database.common.OrderBookSide
 import com.lykke.matching.engine.database.common.entity.OrderBookPersistenceData
-import org.apache.logging.log4j.Logger
+import org.apache.log4j.Logger
 
 fun mapOrdersToOrderBookPersistenceDataList(
     orders: Collection<LimitOrder>,

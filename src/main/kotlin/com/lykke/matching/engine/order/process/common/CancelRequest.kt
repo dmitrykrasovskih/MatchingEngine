@@ -4,7 +4,7 @@ import com.lykke.matching.engine.daos.LimitOrder
 import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
-import org.apache.logging.log4j.Logger
+import org.apache.log4j.Logger
 import java.util.*
 
 class CancelRequest(

@@ -10,8 +10,7 @@ import com.lykke.matching.engine.database.common.entity.PersistenceData
 import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.order.transaction.CurrentTransactionBalancesHolder
 import com.lykke.matching.engine.outgoing.messages.BalanceUpdate
-import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.Logger
+import org.apache.log4j.Logger
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.concurrent.BlockingQueue
@@ -26,7 +25,7 @@ class BalancesHolder(
 ) : BalancesGetter {
 
     companion object {
-        private val LOGGER = LogManager.getLogger(BalancesHolder::class.java.name)
+        private val LOGGER = Logger.getLogger(BalancesHolder::class.java.name)
     }
 
     lateinit var wallets: MutableMap<String, Wallet>

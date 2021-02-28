@@ -2,7 +2,7 @@ package com.lykke.matching.engine.database.cache
 
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.database.DictionariesDatabaseAccessor
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -15,7 +15,7 @@ class AssetsCache @Autowired constructor(
 ) : DataCache() {
 
     companion object {
-        val LOGGER = LogManager.getLogger(AssetsCache::class.java)
+        val LOGGER = Logger.getLogger(AssetsCache::class.java)
     }
 
     private var assetsMap: Map<String, Asset> = HashMap()

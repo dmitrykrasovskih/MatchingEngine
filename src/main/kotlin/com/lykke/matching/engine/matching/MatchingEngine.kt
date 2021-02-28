@@ -695,7 +695,7 @@ class MatchingEngine(
         executionPrice: BigDecimal
     ): Boolean {
         return when {
-            order.takePrice() != null || assetPair.maxVolume == null -> true
+            order.takePrice() != null -> true
             order.isStraight() -> order.getAbsVolume() <= assetPair.maxVolume
             else -> order.getAbsVolume() / executionPrice <= assetPair.maxVolume
         }
@@ -707,7 +707,7 @@ class MatchingEngine(
         executionPrice: BigDecimal
     ): Boolean {
         return when {
-            order.takePrice() != null || assetPair.maxValue == null -> true
+            order.takePrice() != null -> true
             order.isStraight() -> order.getAbsVolume() * executionPrice <= assetPair.maxValue
             else -> order.getAbsVolume() <= assetPair.maxValue
         }

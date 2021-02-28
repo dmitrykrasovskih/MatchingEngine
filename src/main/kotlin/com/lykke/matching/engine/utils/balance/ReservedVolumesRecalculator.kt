@@ -14,7 +14,7 @@ import com.lykke.matching.engine.outgoing.messages.v2.builders.EventFactory
 import com.lykke.matching.engine.outgoing.messages.v2.events.Event
 import com.lykke.matching.engine.services.MessageSender
 import com.lykke.matching.engine.utils.NumberUtils
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.ApplicationArguments
@@ -43,7 +43,7 @@ class ReservedVolumesRecalculator @Autowired constructor(
     }
 
     companion object {
-        private val LOGGER = LogManager.getLogger(ReservedVolumesRecalculator::class.java.name)
+        private val LOGGER = Logger.getLogger(ReservedVolumesRecalculator::class.java.name)
 
         fun teeLog(message: String) {
             println(message)

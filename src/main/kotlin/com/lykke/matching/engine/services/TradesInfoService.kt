@@ -7,7 +7,7 @@ import com.lykke.matching.engine.daos.TradeInfo
 import com.lykke.matching.engine.database.CandlesDatabaseAccessor
 import com.lykke.matching.engine.database.HoursCandlesDatabaseAccessor
 import com.lykke.utils.logging.PerformanceLogger
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
@@ -35,9 +35,9 @@ class TradesInfoService(
     private val ask = "Ask"
 
     private val candlesPerformanceLogger =
-        PerformanceLogger(LogManager.getLogger("historyPersistStats"), 1, "saveCandles: ")
+        PerformanceLogger(Logger.getLogger("historyPersistStats"), 1, "saveCandles: ")
     private val hourCandlesPerformanceLogger =
-        PerformanceLogger(LogManager.getLogger("historyPersistStats"), 1, "saveHourCandles: ")
+        PerformanceLogger(Logger.getLogger("historyPersistStats"), 1, "saveHourCandles: ")
 
     fun start() {
         thread(start = true, name = TradesInfoService::class.java.name) {

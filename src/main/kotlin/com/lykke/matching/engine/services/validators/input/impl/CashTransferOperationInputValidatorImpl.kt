@@ -9,7 +9,7 @@ import com.lykke.matching.engine.messages.wrappers.CashTransferOperationMessageW
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.services.validators.input.CashTransferOperationInputValidator
 import com.lykke.matching.engine.utils.NumberUtils
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
@@ -18,7 +18,7 @@ class CashTransferOperationInputValidatorImpl @Autowired constructor(private val
     CashTransferOperationInputValidator {
 
     companion object {
-        private val LOGGER = LogManager.getLogger(CashTransferOperationInputValidatorImpl::class.java.name)
+        private val LOGGER = Logger.getLogger(CashTransferOperationInputValidatorImpl::class.java.name)
     }
 
     override fun performValidation(cashTransferParsedData: CashTransferParsedData) {

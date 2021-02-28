@@ -4,7 +4,7 @@ import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.socket.ClientHandler
 import com.lykke.matching.engine.socket.ClientsRequestsSocketServer
 import com.lykke.matching.engine.utils.IntUtils
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.DataInputStream
@@ -19,7 +19,7 @@ class ClientHandlerImpl(
 ) : Thread(ClientHandlerImpl::class.java.name), ClientHandler {
 
     companion object {
-        val LOGGER = LogManager.getLogger(ClientHandlerImpl::class.java.name)
+        val LOGGER = Logger.getLogger(ClientHandlerImpl::class.java.name)
     }
 
     @Volatile

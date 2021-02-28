@@ -13,7 +13,7 @@ import com.lykke.matching.engine.order.utils.TestOrderBookWrapper
 import com.lykke.matching.engine.services.GenericLimitOrderService
 import com.lykke.matching.engine.utils.assertEquals
 import com.lykke.matching.engine.utils.createAssetPair
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -93,7 +93,7 @@ abstract class MatchingEngineTest {
             null,
             testDictionariesDatabaseAccessor.loadAssetPairs(),
             now,
-            LogManager.getLogger(MatchingEngineTest::class.java),
+            Logger.getLogger(MatchingEngineTest::class.java),
             testDictionariesDatabaseAccessor.assets
         )
     }

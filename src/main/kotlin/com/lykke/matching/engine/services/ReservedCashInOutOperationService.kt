@@ -16,7 +16,7 @@ import com.lykke.matching.engine.services.validators.ReservedCashInOutOperationV
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -33,7 +33,7 @@ class ReservedCashInOutOperationService @Autowired constructor(
 ) : AbstractService {
 
     companion object {
-        private val LOGGER = LogManager.getLogger(ReservedCashInOutOperationService::class.java.name)
+        private val LOGGER = Logger.getLogger(ReservedCashInOutOperationService::class.java.name)
     }
 
     override fun processMessage(genericMessageWrapper: MessageWrapper) {

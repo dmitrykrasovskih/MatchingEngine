@@ -3,7 +3,7 @@ package com.lykke.utils.files.clean
 import com.lykke.utils.files.clean.config.LogFilesCleanerConfig
 import com.lykke.utils.files.clean.config.LogFilesCleanerParams
 import com.lykke.utils.files.clean.db.azure.AzureLogFilesDatabaseAccessor
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import java.io.*
 import java.util.concurrent.TimeUnit
 import java.util.zip.GZIPOutputStream
@@ -12,7 +12,7 @@ import kotlin.concurrent.fixedRateTimer
 class LogFilesCleaner private constructor(private val params: LogFilesCleanerParams) {
 
     companion object {
-        private val LOGGER = LogManager.getLogger(LogFilesCleaner::class.java.name)
+        private val LOGGER = Logger.getLogger(LogFilesCleaner::class.java.name)
         internal const val ARCHIVE_FILE_NAME_SUFFIX = ".gz"
 
         private fun startWithParams(params: LogFilesCleanerParams) {

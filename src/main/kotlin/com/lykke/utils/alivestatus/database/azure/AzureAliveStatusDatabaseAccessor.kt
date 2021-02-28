@@ -7,7 +7,7 @@ import com.lykke.utils.alivestatus.exception.CheckAppInstanceRunningException
 import com.lykke.utils.azure.getOrCreateTable
 import com.microsoft.azure.storage.table.CloudTable
 import com.microsoft.azure.storage.table.TableOperation
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import java.net.InetAddress
 import java.util.*
 
@@ -19,7 +19,7 @@ internal class AzureAliveStatusDatabaseAccessor(
     private val lifeTime: Long
 ) : AliveStatusDatabaseAccessor {
     companion object {
-        private val LOGGER = LogManager.getLogger(AzureAliveStatusDatabaseAccessor::class.java.name)
+        private val LOGGER = Logger.getLogger(AzureAliveStatusDatabaseAccessor::class.java.name)
         internal const val PARTITION_KEY = "AliveStatus"
     }
 

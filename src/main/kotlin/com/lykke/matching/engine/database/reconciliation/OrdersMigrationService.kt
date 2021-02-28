@@ -13,7 +13,7 @@ import com.lykke.matching.engine.database.utils.mapOrdersToOrderBookPersistenceD
 import com.lykke.matching.engine.services.GenericLimitOrderService
 import com.lykke.matching.engine.services.GenericStopLimitOrderService
 import com.lykke.matching.engine.utils.config.Config
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.core.annotation.Order
@@ -30,7 +30,7 @@ class OrdersMigrationService(
     private val genericStopLimitOrderService: GenericStopLimitOrderService
 ) : ApplicationRunner {
     companion object {
-        private val LOGGER = LogManager.getLogger(OrdersMigrationService::class.java.name)
+        private val LOGGER = Logger.getLogger(OrdersMigrationService::class.java.name)
     }
 
     private val fileOrderBookDatabaseAccessor = FileOrderBookDatabaseAccessor(config.matchingEngine.orderBookPath)

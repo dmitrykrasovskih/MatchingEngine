@@ -1,7 +1,7 @@
 package com.lykke.matching.engine.utils.monitoring
 
 import com.lykke.matching.engine.socket.ClientsRequestsSocketServer
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.stereotype.Component
@@ -13,7 +13,7 @@ class ClientConnectionsCountLogger(
 ) {
 
     companion object {
-        private val LOGGER = LogManager.getLogger(ClientConnectionsCountLogger::class.java.name)
+        private val LOGGER = Logger.getLogger(ClientConnectionsCountLogger::class.java.name)
     }
 
     @Scheduled(fixedRateString = "\${client.connections.count.logger.interval}")

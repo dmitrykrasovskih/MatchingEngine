@@ -3,7 +3,7 @@ package com.lykke.matching.engine.database.listeners
 import com.lykke.matching.engine.common.QueueConsumer
 import com.lykke.matching.engine.database.StopOrderBookDatabaseAccessor
 import com.lykke.matching.engine.database.reconciliation.events.StopOrderBookPersistEvent
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import java.util.concurrent.BlockingQueue
 import javax.annotation.PostConstruct
 import kotlin.concurrent.thread
@@ -14,7 +14,7 @@ class StopOrderBookPersistListener(
 ) : QueueConsumer<StopOrderBookPersistEvent> {
 
     companion object {
-        private val LOGGER = LogManager.getLogger(StopOrderBookPersistListener::class.java.name)
+        private val LOGGER = Logger.getLogger(StopOrderBookPersistListener::class.java.name)
     }
 
     @PostConstruct

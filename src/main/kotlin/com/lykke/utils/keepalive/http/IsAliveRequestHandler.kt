@@ -3,12 +3,12 @@ package com.lykke.utils.keepalive.http
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpHandler
 import org.apache.http.HttpHeaders
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 
 internal class IsAliveRequestHandler(private val isAliveResponseGetter: IsAliveResponseGetter) : HttpHandler {
 
     companion object {
-        private val LOGGER = LogManager.getLogger(IsAliveRequestHandler::class.java.name)
+        private val LOGGER = Logger.getLogger(IsAliveRequestHandler::class.java.name)
     }
 
     override fun handle(exchange: HttpExchange) {

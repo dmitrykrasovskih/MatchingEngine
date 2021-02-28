@@ -1,7 +1,7 @@
 package com.lykke.matching.engine.web.common
 
 import com.lykke.utils.logging.MetricsLogger
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
@@ -12,7 +12,7 @@ class GlobalControllerAdvice {
 
     private companion object {
         val METRICS_LOGGER = MetricsLogger.getLogger()
-        val LOGGER = LogManager.getLogger(GlobalControllerAdvice::class.java)
+        val LOGGER = Logger.getLogger(GlobalControllerAdvice::class.java)
     }
 
     @ExceptionHandler

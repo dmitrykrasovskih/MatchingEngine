@@ -2,7 +2,7 @@ package com.lykke.utils.logging
 
 import com.lykke.utils.number.PrintUtils
 import com.lykke.utils.number.RoundingUtils
-import org.apache.logging.log4j.Logger
+import org.apache.log4j.Logger
 
 class PerformanceLogger {
 

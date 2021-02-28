@@ -3,7 +3,7 @@ package com.lykke.matching.engine
 import com.lykke.matching.engine.utils.config.Config
 import com.lykke.utils.AppVersion
 import com.lykke.utils.logging.MetricsLogger
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.builder.SpringApplicationBuilder
 import org.springframework.context.ConfigurableApplicationContext
@@ -12,13 +12,13 @@ import org.springframework.core.env.SimpleCommandLinePropertySource
 @SpringBootApplication
 open class AppStarter
 
-val LOGGER = LogManager.getLogger("AppStarter")
+val LOGGER = Logger.getLogger("AppStarter")
 
 fun main(args: Array<String>) {
     try {
         val context = SpringApplicationBuilder(AppStarter::class.java)
-                .initializers(ApplicationStatusContextInitializer())
-                .run(*args)
+            .initializers(ApplicationStatusContextInitializer())
+            .run(*args)
         val spotName = context.getBean(Config::class.java).matchingEngine.name
         Runtime.getRuntime().addShutdownHook(ShutdownHook(spotName))
         addCommandLinePropertySource(args, context)
@@ -32,9 +32,9 @@ fun main(args: Array<String>) {
 private fun addCommandLinePropertySource(args: Array<String>, context: ConfigurableApplicationContext) {
     val commandLineArguments = SimpleCommandLinePropertySource(*args)
     context
-            .environment
-            .propertySources
-            .addFirst(commandLineArguments)
+        .environment
+        .propertySources
+        .addFirst(commandLineArguments)
 }
 
 internal class ShutdownHook(private val spotName: String) : Thread() {

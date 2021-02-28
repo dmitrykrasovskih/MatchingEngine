@@ -2,7 +2,7 @@ package com.lykke.utils.logging
 
 import com.lykke.utils.logging.config.SlackNotificationConfig
 import com.lykke.utils.queue.azure.AzureQueueWriter
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -13,7 +13,7 @@ import kotlin.concurrent.fixedRateTimer
 class MetricsLogger private constructor() {
 
     companion object {
-        private val LOGGER = LogManager.getLogger(MetricsLogger::class.java.name)
+        private val LOGGER = Logger.getLogger(MetricsLogger::class.java.name)
         private val DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
         private const val TYPE_ERROR = "Errors"
         private const val TYPE_WARNING = "Warnings"

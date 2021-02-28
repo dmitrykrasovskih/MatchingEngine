@@ -6,7 +6,7 @@ import com.lykke.matching.engine.services.events.ApplicationGroupDeletedEvent
 import com.lykke.matching.engine.services.events.ApplicationSettingCreatedOrUpdatedEvent
 import com.lykke.matching.engine.services.events.ApplicationSettingDeletedEvent
 import com.lykke.utils.logging.MetricsLogger
-import org.apache.logging.log4j.LogManager
+import org.apache.log4j.Logger
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import javax.annotation.PostConstruct
@@ -15,7 +15,7 @@ import javax.annotation.PostConstruct
 class MessageProcessingSwitchListener(val applicationSettingsHolder: ApplicationSettingsHolder) {
 
     private companion object {
-        val LOGGER = LogManager.getLogger(MessageProcessingSwitchListener::class.java.name)
+        val LOGGER = Logger.getLogger(MessageProcessingSwitchListener::class.java.name)
         val METRICS_LOGGER = MetricsLogger.getLogger()
         val LOG_MESSAGE_FORMAT = "Message processing has been %s, " +
                 "by user: %s, comment: %s"
