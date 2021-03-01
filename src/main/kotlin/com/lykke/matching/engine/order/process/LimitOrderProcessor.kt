@@ -18,6 +18,7 @@ import com.lykke.matching.engine.services.validators.impl.OrderValidationExcepti
 import com.lykke.matching.engine.services.validators.impl.OrderValidationResult
 import com.lykke.matching.engine.services.validators.input.LimitOrderInputValidator
 import com.lykke.matching.engine.utils.NumberUtils
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 
@@ -27,8 +28,11 @@ class LimitOrderProcessor(
     private val limitOrderBusinessValidator: LimitOrderBusinessValidator,
     private val applicationSettingsHolder: ApplicationSettingsHolder,
     private val matchingEngine: MatchingEngine,
-    private val matchingResultHandlingHelper: MatchingResultHandlingHelper
+    private val matchingResultHandlingHelper: MatchingResultHandlingHelper,
+    registry: MeterRegistry? = null
 ) : OrderProcessor<LimitOrder> {
+
+    private var tradesCounter = registry?.counter("trades-counter")
 
     override fun processOrder(order: LimitOrder, executionContext: ExecutionContext): ProcessedOrder {
         val orderContext = LimitOrderExecutionContext(order, executionContext)
@@ -228,6 +232,8 @@ class LimitOrderProcessor(
         }
 
         matchingResult.apply()
+
+        tradesCounter?.increment(matchingResult.marketOrderTrades.size.toDouble())
 
         processOppositeOrders(orderContext)
         addMatchedResultToEventData(orderContext)

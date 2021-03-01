@@ -24,6 +24,7 @@ import com.lykke.matching.engine.services.validators.impl.OrderValidationExcepti
 import com.lykke.matching.engine.utils.PrintUtils
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
 import com.lykke.matching.engine.utils.proto.toDate
+import io.micrometer.core.instrument.MeterRegistry
 import org.apache.log4j.Logger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -46,7 +47,8 @@ class MarketOrderService @Autowired constructor(
     private val messageSequenceNumberHolder: MessageSequenceNumberHolder,
     private val messageSender: MessageSender,
     private val messageProcessingStatusHolder: MessageProcessingStatusHolder,
-    private val balancesHolder: BalancesHolder
+    private val balancesHolder: BalancesHolder,
+    registry: MeterRegistry? = null
 ) : AbstractService {
     companion object {
         private val LOGGER = Logger.getLogger(MarketOrderService::class.java.name)
@@ -56,6 +58,7 @@ class MarketOrderService @Autowired constructor(
     private var messagesCount: Long = 0
     private var logCount = 100
     private var totalTime: Double = 0.0
+    private var tradesCounter = registry?.counter("trades-counter")
 
     override fun processMessage(genericMessageWrapper: MessageWrapper) {
         val startTime = System.nanoTime()
@@ -225,6 +228,8 @@ class MarketOrderService @Autowired constructor(
                             it
                         )
                     }
+
+                    tradesCounter?.increment(matchingResult.marketOrderTrades.size.toDouble())
                 }
             }
             else -> {
