@@ -62,7 +62,7 @@ class OrderBooksService(
             .setBrokerId(orderBook.brokerId)
             .setAsset(orderBook.assetPair).setIsBuy(orderBook.isBuy)
             .setTimestamp(orderBook.timestamp.createProtobufTimestampBuilder())
-        val pair = assetPairsCache.getAssetPair(orderBook.brokerId, orderBook.assetPair)
+        val pair = assetPairsCache.getAssetPair(orderBook.assetPair)
         val baseAsset = assetsCache.getAsset(pair.baseAssetId)
         orderBook.prices.forEach { orderBookPrice ->
             builder.addLevels(
