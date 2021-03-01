@@ -4,6 +4,7 @@ package com.myjetwallet.balances;
 
 option java_package = "com.matching.engine.database.grpc";
 option java_outer_classname = "BalancesMessages";
+option csharp_namespace = "ME.Contracts.Api.BalancesMessages";
 
 import "google/protobuf/timestamp.proto";
 
