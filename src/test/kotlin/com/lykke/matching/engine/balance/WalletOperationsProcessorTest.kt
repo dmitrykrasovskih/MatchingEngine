@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Primary
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
+import java.math.BigDecimal.ZERO
 import kotlin.test.*
 
 @RunWith(SpringRunner::class)
@@ -225,8 +226,8 @@ class WalletOperationsProcessorTest : AbstractTest() {
     ): Boolean {
         return try {
             validateBalanceChange(
-                clientId, assetId, BigDecimal.valueOf(oldBalance), BigDecimal.valueOf(oldReserved),
-                BigDecimal.valueOf(newBalance), BigDecimal.valueOf(newReserved)
+                clientId, assetId, BigDecimal.valueOf(oldBalance), BigDecimal.valueOf(oldReserved), ZERO,
+                BigDecimal.valueOf(newBalance), BigDecimal.valueOf(newReserved), ZERO
             )
             true
         } catch (e: BalanceException) {
@@ -236,7 +237,10 @@ class WalletOperationsProcessorTest : AbstractTest() {
 
     private fun assertBalance(clientId: String, assetId: String, balance: Double, reserved: Double) {
         assertEquals(BigDecimal.valueOf(balance), balancesHolder.getBalance(clientId, assetId))
-        assertEquals(BigDecimal.valueOf(reserved), balancesHolder.getReservedBalance("", "", clientId, assetId))
+        assertEquals(
+            BigDecimal.valueOf(reserved),
+            balancesHolder.getReservedForOrdersBalance("", "", clientId, assetId)
+        )
         assertEquals(BigDecimal.valueOf(balance), testWalletDatabaseAccessor.getBalance(clientId, assetId))
         assertEquals(BigDecimal.valueOf(reserved), testWalletDatabaseAccessor.getReservedBalance(clientId, assetId))
     }

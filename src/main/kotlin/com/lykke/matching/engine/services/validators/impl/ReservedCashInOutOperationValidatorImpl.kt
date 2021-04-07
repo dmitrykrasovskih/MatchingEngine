@@ -1,5 +1,6 @@
 package com.lykke.matching.engine.services.validators.impl
 
+import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.holders.AssetsHolder
 import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.services.validators.ReservedCashInOutOperationValidator
@@ -20,61 +21,89 @@ class ReservedCashInOutOperationValidatorImpl @Autowired constructor(
     }
 
     override fun performValidation(message: GrpcIncomingMessages.ReservedCashInOutOperation) {
-        isVolumeAccuracyValid(message)
+        isVolumesAccuracyValid(message)
 
-        if (BigDecimal(message.reservedVolume) < BigDecimal.ZERO) {
-            isBalanceValid(message)
-        } else {
-            isReservedVolumeValid(message)
+        if (!message.reservedVolume.isNullOrEmpty()) {
+            if (BigDecimal(message.reservedVolume) < BigDecimal.ZERO) {
+                isBalanceValid(message, BigDecimal(message.reservedVolume))
+            } else {
+                isReservedVolumeValid(message, BigDecimal(message.reservedVolume))
+            }
+        }
+        if (!message.reservedForSwapVolume.isNullOrEmpty()) {
+            if (BigDecimal(message.reservedForSwapVolume) < BigDecimal.ZERO) {
+                isBalanceValid(message, BigDecimal(message.reservedForSwapVolume))
+            } else {
+                isReservedVolumeValid(message, BigDecimal(message.reservedForSwapVolume))
+            }
         }
     }
 
-    private fun isReservedVolumeValid(message: GrpcIncomingMessages.ReservedCashInOutOperation) {
+    private fun isReservedVolumeValid(
+        message: GrpcIncomingMessages.ReservedCashInOutOperation,
+        reservedAmount: BigDecimal
+    ) {
         val accuracy = assetsHolder.getAsset(message.assetId).accuracy
         val reservedBalance =
-            balancesHolder.getReservedBalance(message.brokerId, message.accountId, message.walletId, message.assetId)
+            balancesHolder.getReservedTotalBalance(
+                message.brokerId,
+                message.accountId,
+                message.walletId,
+                message.assetId
+            )
 
         val balance = balancesHolder.getBalance(message.walletId, message.assetId)
         if (NumberUtils.setScaleRoundHalfUp(
-                balance - reservedBalance - BigDecimal(message.reservedVolume),
+                balance - reservedBalance - reservedAmount,
                 accuracy
             ) < BigDecimal.ZERO
         ) {
             LOGGER.info(
                 "Reserved cash in operation (${message.id}) for client ${message.walletId} asset ${message.assetId}, " +
-                        "volume: ${message.reservedVolume}: low balance $balance, " +
+                        "volume: ${reservedAmount.toPlainString()}: low balance $balance, " +
                         "current reserved balance $reservedBalance"
             )
             throw ValidationException(ValidationException.Validation.RESERVED_VOLUME_HIGHER_THAN_BALANCE)
         }
     }
 
-    private fun isBalanceValid(message: GrpcIncomingMessages.ReservedCashInOutOperation) {
+    private fun isBalanceValid(message: GrpcIncomingMessages.ReservedCashInOutOperation, reservedAmount: BigDecimal) {
         val accuracy = assetsHolder.getAsset(message.assetId).accuracy
         val reservedBalance =
-            balancesHolder.getReservedBalance(message.brokerId, message.accountId, message.walletId, message.assetId)
+            balancesHolder.getReservedTotalBalance(
+                message.brokerId,
+                message.accountId,
+                message.walletId,
+                message.assetId
+            )
 
         if (NumberUtils.setScaleRoundHalfUp(
-                reservedBalance + BigDecimal(message.reservedVolume),
+                reservedBalance + reservedAmount,
                 accuracy
             ) < BigDecimal.ZERO
         ) {
             LOGGER.info(
                 "Reserved cash out operation (${message.id}) for client ${message.walletId} asset ${message.assetId}, " +
-                        "volume: ${message.reservedVolume}: low reserved balance $reservedBalance"
+                        "volume: ${reservedAmount.toPlainString()}: low reserved balance $reservedBalance"
             )
             throw ValidationException(ValidationException.Validation.LOW_BALANCE)
         }
     }
 
-    private fun isVolumeAccuracyValid(message: GrpcIncomingMessages.ReservedCashInOutOperation) {
-        val assetId = message.assetId
-        val volume = message.reservedVolume
-        val volumeValid = NumberUtils.isScaleSmallerOrEqual(BigDecimal(volume), assetsHolder.getAsset(assetId).accuracy)
+    private fun isVolumesAccuracyValid(message: GrpcIncomingMessages.ReservedCashInOutOperation) {
+        val asset = assetsHolder.getAsset(message.assetId)
+        isVolumeAccuracyValid(message.reservedVolume, asset)
+        isVolumeAccuracyValid(message.reservedForSwapVolume, asset)
+    }
 
-        if (!volumeValid) {
-            LOGGER.info("Volume accuracy invalid, assetId $assetId, volume $volume")
-            throw ValidationException(ValidationException.Validation.INVALID_VOLUME_ACCURACY)
+    private fun isVolumeAccuracyValid(volume: String?, asset: Asset) {
+        if (!volume.isNullOrEmpty()) {
+            val volumeValid = NumberUtils.isScaleSmallerOrEqual(BigDecimal(volume), asset.accuracy)
+
+            if (!volumeValid) {
+                LOGGER.info("Volume accuracy invalid, assetId ${asset.symbol}, volume $volume")
+                throw ValidationException(ValidationException.Validation.INVALID_VOLUME_ACCURACY)
+            }
         }
     }
 }

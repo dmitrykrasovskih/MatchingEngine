@@ -63,13 +63,22 @@ class BalancesHolder(
         return getBalances(clientId)[assetId]?.balance ?: BigDecimal.ZERO
     }
 
-    override fun getReservedBalance(
+    override fun getReservedForOrdersBalance(
         brokerId: String,
         accountId: String,
         clientId: String,
         assetId: String
     ): BigDecimal {
         return getBalances(clientId)[assetId]?.reserved ?: BigDecimal.ZERO
+    }
+
+    override fun getReservedTotalBalance(
+        brokerId: String,
+        accountId: String,
+        clientId: String,
+        assetId: String
+    ): BigDecimal {
+        return getBalances(clientId)[assetId]?.getTotalReserved() ?: BigDecimal.ZERO
     }
 
     override fun getAvailableBalance(
@@ -82,8 +91,8 @@ class BalancesHolder(
         if (wallet != null) {
             val balance = wallet.balances[assetId]
             if (balance != null) {
-                return (if (balance.reserved > BigDecimal.ZERO)
-                    balance.balance - balance.reserved
+                return (if (balance.getTotalReserved() > BigDecimal.ZERO)
+                    balance.balance - balance.getTotalReserved()
                 else balance.balance)
             }
         }
@@ -102,7 +111,8 @@ class BalancesHolder(
             val balance = wallet.balances[assetId]
             if (balance != null) {
                 // reserved can be greater than base balance due to transfer with overdraft
-                return if (balance.reserved.signum() == 1 && balance.reserved <= balance.balance) balance.reserved else balance.balance
+                val totalReserved = balance.getTotalReserved()
+                return if (totalReserved.signum() == 1 && totalReserved <= balance.balance) totalReserved else balance.balance
             }
         }
 

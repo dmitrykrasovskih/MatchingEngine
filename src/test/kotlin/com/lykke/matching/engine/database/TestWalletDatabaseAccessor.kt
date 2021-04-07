@@ -32,7 +32,8 @@ class TestWalletDatabaseAccessor : WalletDatabaseAccessor {
             val updatedWallet = this.wallets.getOrPut(wallet.clientId) { Wallet("", "", wallet.clientId) }
             wallet.balances.values.forEach {
                 updatedWallet.setBalance(it.asset, it.balance)
-                updatedWallet.setReservedBalance(it.asset, it.reserved)
+                updatedWallet.setReservedForOrdersBalance(it.asset, it.reserved)
+                updatedWallet.setReservedForSwapBalance(it.asset, it.reservedForSwap)
             }
         }
     }
@@ -55,6 +56,17 @@ class TestWalletDatabaseAccessor : WalletDatabaseAccessor {
             val wallet = client[assetId]
             if (wallet != null) {
                 return wallet.reserved
+            }
+        }
+        return BigDecimal.ZERO
+    }
+
+    fun getReservedForSwapBalance(clientId: String, assetId: String): BigDecimal {
+        val client = wallets[clientId]?.balances
+        if (client != null) {
+            val wallet = client[assetId]
+            if (wallet != null) {
+                return wallet.reservedForSwap
             }
         }
         return BigDecimal.ZERO

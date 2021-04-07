@@ -1090,7 +1090,7 @@ class LimitOrderServiceTest : AbstractTest() {
         assertEquals(OutgoingOrderStatus.MATCHED, event.orders[1].status)
 
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
-        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client1", "USD"))
+        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedForOrdersBalance("", "", "Client1", "USD"))
         assertEquals(0, genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(true).size)
         assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
     }
@@ -1109,7 +1109,7 @@ class LimitOrderServiceTest : AbstractTest() {
 
         initServices()
 
-        assertEquals(BigDecimal.valueOf(29.99), balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
+        assertEquals(BigDecimal.valueOf(29.99), balancesHolder.getReservedForOrdersBalance("", "", "Client1", "BTC"))
 
         singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = 30.0, price = 6110.0)))
 
@@ -1134,7 +1134,7 @@ class LimitOrderServiceTest : AbstractTest() {
         assertEquals("-0.09", event.orders[3].remainingVolume)
 
         assertEquals(BigDecimal.valueOf(70.01), balancesHolder.getBalance("Client1", "BTC"))
-        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
+        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedForOrdersBalance("", "", "Client1", "BTC"))
     }
 
     @Test

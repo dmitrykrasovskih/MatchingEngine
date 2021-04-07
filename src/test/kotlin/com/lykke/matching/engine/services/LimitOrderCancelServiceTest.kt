@@ -89,7 +89,7 @@ class LimitOrderCancelServiceTest : AbstractTest() {
         assertEquals(BigDecimal.valueOf(1.0), balanceUpdate.balances.first().oldReserved)
         assertEquals(BigDecimal.ZERO, balanceUpdate.balances.first().newReserved)
 
-        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "Client1", "EUR"))
+        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedForOrdersBalance("", "", "Client1", "EUR"))
 
         val order = testOrderDatabaseAccessor.loadLimitOrders().find { it.id == "3" }
         assertNull(order)

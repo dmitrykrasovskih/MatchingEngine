@@ -40,17 +40,11 @@ class ReservedCashInOutOperationService @Autowired constructor(
         val messageWrapper = genericMessageWrapper as ReservedCashInOutOperationMessageWrapper
         val message = messageWrapper.parsedMessage
         val asset = assetsHolder.getAsset(message.assetId)
-        if ((isCashIn(message.reservedVolume.toDouble()) && messageProcessingStatusHolder.isCashInDisabled(asset)) ||
-            (!isCashIn(message.reservedVolume.toDouble()) && messageProcessingStatusHolder.isCashOutDisabled(asset))
-        ) {
-            messageWrapper.writeResponse(message.id, MessageStatus.MESSAGE_PROCESSING_DISABLED)
-            return
-        }
 
         LOGGER.debug(
             "Processing reserved cash in/out messageId: ${messageWrapper.messageId} " +
                     "operation (${message.id}) for client ${message.walletId}, " +
-                    "asset ${message.assetId}, amount: ${message.reservedVolume}"
+                    "asset ${message.assetId}, amount: ${message.reservedVolume}, swap amount: ${message.reservedForSwapVolume}"
         )
 
         val now = Date()
@@ -61,7 +55,8 @@ class ReservedCashInOutOperationService @Autowired constructor(
             message.walletId,
             message.assetId,
             BigDecimal.ZERO,
-            BigDecimal(message.reservedVolume)
+            if (!message.reservedVolume.isNullOrEmpty()) BigDecimal(message.reservedVolume) else BigDecimal.ZERO,
+            if (!message.reservedForSwapVolume.isNullOrEmpty()) BigDecimal(message.reservedForSwapVolume) else BigDecimal.ZERO
         )
 
         try {
@@ -103,7 +98,14 @@ class ReservedCashInOutOperationService @Autowired constructor(
                 message.id,
                 operation.clientId,
                 now,
-                NumberUtils.setScaleRoundHalfUp(operation.reservedAmount, accuracy).toPlainString(),
+                if (operation.reservedAmount != BigDecimal.ZERO) NumberUtils.setScaleRoundHalfUp(
+                    operation.reservedAmount,
+                    accuracy
+                ).toPlainString() else "0.0",
+                if (operation.reservedForSwapAmount != BigDecimal.ZERO) NumberUtils.setScaleRoundHalfUp(
+                    operation.reservedForSwapAmount,
+                    accuracy
+                ).toPlainString() else "0.0",
                 operation.assetId,
                 messageWrapper.messageId
             )

@@ -47,8 +47,12 @@ class BalancesService(
         builder.timestamp = now.createProtobufTimestampBuilder().build()
         filteredBalances.forEach {
             builder.addBalances(
-                BalancesMessages.Balance.newBuilder().setAssetId(it.asset)
-                    .setAmount(it.balance.toPlainString()).setReserved(it.reserved.toPlainString())
+                BalancesMessages.Balance.newBuilder()
+                    .setAssetId(it.asset)
+                    .setAmount(it.balance.toPlainString())
+                    .setReserved(it.getTotalReserved().toPlainString())
+                    .setReservedForSwapVolume(it.reservedForSwap.toPlainString())
+                    .setReservedForOrders(it.reserved.toPlainString())
             )
         }
         return builder.build()
@@ -63,8 +67,13 @@ class BalancesService(
         builder.walletId = walletId
         builder.timestamp = now.createProtobufTimestampBuilder().build()
         if (balance != null) {
-            builder.balance = BalancesMessages.Balance.newBuilder().setAssetId(balance.asset)
-                .setAmount(balance.balance.toPlainString()).setReserved(balance.reserved.toPlainString()).build()
+            builder.balance = BalancesMessages.Balance.newBuilder()
+                .setAssetId(balance.asset)
+                .setAmount(balance.balance.toPlainString())
+                .setReserved(balance.getTotalReserved().toPlainString())
+                .setReservedForSwapVolume(balance.reservedForSwap.toPlainString())
+                .setReservedForOrders(balance.reserved.toPlainString())
+                .build()
         }
         return builder.build()
     }

@@ -54,10 +54,17 @@ class WalletOperationsProcessor(
             val asset = assetsHolder.getAsset(operation.assetId)
             changedAssetBalance.balance =
                 NumberUtils.setScaleRoundHalfUp(changedAssetBalance.balance + operation.amount, asset.accuracy)
-            changedAssetBalance.reserved = if (!applicationSettingsHolder.isTrustedClient(operation.clientId))
-                NumberUtils.setScaleRoundHalfUp(changedAssetBalance.reserved + operation.reservedAmount, asset.accuracy)
+            changedAssetBalance.reservedForOrders = if (!applicationSettingsHolder.isTrustedClient(operation.clientId))
+                NumberUtils.setScaleRoundHalfUp(
+                    changedAssetBalance.reservedForOrders + operation.reservedAmount,
+                    asset.accuracy
+                )
             else
-                changedAssetBalance.reserved
+                changedAssetBalance.reservedForOrders
+            changedAssetBalance.reservedForSwap = NumberUtils.setScaleRoundHalfUp(
+                changedAssetBalance.reservedForSwap + operation.reservedForSwapAmount,
+                asset.accuracy
+            )
         }
 
         try {
@@ -95,11 +102,11 @@ class WalletOperationsProcessor(
                 changedAssetBalance.originBalance,
                 changedAssetBalance.balance,
                 changedAssetBalance.originReserved,
-                changedAssetBalance.reserved
+                changedAssetBalance.reservedForOrders
             )
         }
         update.newBalance = changedAssetBalance.balance
-        update.newReserved = changedAssetBalance.reserved
+        update.newReserved = changedAssetBalance.reservedForOrders.add(changedAssetBalance.reservedForSwap)
         if (isBalanceUpdateNotificationNotNeeded(update)) {
             clientBalanceUpdatesByClientIdAndAssetId.remove(key)
         }
@@ -161,8 +168,9 @@ class WalletOperationsProcessor(
         assetId: String
     ): BigDecimal {
         val balance = getChangedCopyOrOriginalAssetBalance(brokerId, accountId, clientId, assetId)
-        return if (balance.reserved > BigDecimal.ZERO)
-            balance.balance - balance.reserved
+        val totalReserved = balance.getTotalReserved()
+        return if (totalReserved > BigDecimal.ZERO)
+            balance.balance - totalReserved
         else
             balance.balance
     }
@@ -180,13 +188,22 @@ class WalletOperationsProcessor(
             balance.balance
     }
 
-    override fun getReservedBalance(
+    override fun getReservedForOrdersBalance(
         brokerId: String,
         accountId: String,
         clientId: String,
         assetId: String
     ): BigDecimal {
         return getChangedCopyOrOriginalAssetBalance(brokerId, accountId, clientId, assetId).reserved
+    }
+
+    override fun getReservedTotalBalance(
+        brokerId: String,
+        accountId: String,
+        clientId: String,
+        assetId: String
+    ): BigDecimal {
+        return getChangedCopyOrOriginalAssetBalance(brokerId, accountId, clientId, assetId).getTotalReserved()
     }
 
     private fun isTrustedClientReservedBalanceOperation(operation: WalletOperation): Boolean {
@@ -241,18 +258,22 @@ private class ChangedAssetBalance(
     val assetId = assetBalance.asset
     val originBalance = assetBalance.balance
     val originReserved = assetBalance.reserved
+    val originReservedForSwap = assetBalance.reservedForSwap
     var balance = originBalance
-    var reserved = originReserved
+    var reservedForOrders = originReserved
+    var reservedForSwap = originReservedForSwap
     var version = assetBalance.version
 
     fun isChanged(): Boolean {
         return !NumberUtils.equalsIgnoreScale(originBalance, balance) ||
-                !NumberUtils.equalsIgnoreScale(originReserved, reserved)
+                !NumberUtils.equalsIgnoreScale(originReserved, reservedForOrders) ||
+                !NumberUtils.equalsIgnoreScale(originReservedForSwap, reservedForSwap)
     }
 
     fun apply(): Wallet {
         wallet.setBalance(assetId, balance)
-        wallet.setReservedBalance(assetId, reserved)
+        wallet.setReservedForOrdersBalance(assetId, reservedForOrders)
+        wallet.setReservedForSwapBalance(assetId, reservedForSwap)
         wallet.increaseWalletVersion(assetId)
         version++
         return wallet
@@ -272,8 +293,10 @@ private fun validateBalanceChange(assetBalance: ChangedAssetBalance) =
         assetBalance.assetId,
         assetBalance.originBalance,
         assetBalance.originReserved,
+        assetBalance.originReservedForSwap,
         assetBalance.balance,
-        assetBalance.reserved
+        assetBalance.reservedForOrders,
+        assetBalance.reservedForSwap
     )
 
 @Throws(BalanceException::class)
@@ -282,8 +305,10 @@ fun validateBalanceChange(
     assetId: String,
     oldBalance: BigDecimal,
     oldReserved: BigDecimal,
+    oldReservedForSwap: BigDecimal,
     newBalance: BigDecimal,
-    newReserved: BigDecimal
+    newReserved: BigDecimal,
+    newReservedForSwap: BigDecimal
 ) {
     val balanceInfo =
         "Invalid balance (client=$clientId, asset=$assetId, oldBalance=$oldBalance, oldReserved=$oldReserved, newBalance=$newBalance, newReserved=$newReserved)"
@@ -291,15 +316,18 @@ fun validateBalanceChange(
     // Balance can become negative earlier due to transfer operation with overdraftLimit > 0.
     // In this case need to check only difference of reserved & main balance.
     // It shouldn't be greater than previous one.
-    if (newBalance < BigDecimal.ZERO && !(oldBalance < BigDecimal.ZERO && (oldBalance >= newBalance || oldReserved + newBalance >= newReserved + oldBalance))) {
+    if (newBalance < BigDecimal.ZERO && !(oldBalance < BigDecimal.ZERO && (oldBalance >= newBalance || oldReserved + oldReservedForSwap + newBalance >= newReserved + newReservedForSwap + oldBalance))) {
         throw BalanceException(balanceInfo)
     }
     if (newReserved < BigDecimal.ZERO && oldReserved > newReserved) {
         throw BalanceException(balanceInfo)
     }
+    if (newReservedForSwap < BigDecimal.ZERO && oldReservedForSwap > newReservedForSwap) {
+        throw BalanceException(balanceInfo)
+    }
 
     // equals newBalance < newReserved && oldReserved - oldBalance < newReserved - newBalance
-    if (newBalance < newReserved && oldReserved + newBalance < newReserved + oldBalance) {
+    if (newBalance < newReserved + newReservedForSwap && oldReserved + oldReservedForSwap + newBalance < newReserved + newReservedForSwap + oldBalance) {
         throw BalanceException(balanceInfo)
     }
 }

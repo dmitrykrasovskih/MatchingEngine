@@ -63,6 +63,7 @@ message ReservedCashInOutOperation {
   string description = 7;
   google.protobuf.Timestamp timestamp = 8;
   google.protobuf.StringValue messageId = 9;
+  string reservedForSwapVolume = 10;
 }
 
 message ReservedCashInOutOperationResponse {

@@ -136,7 +136,7 @@ class ReservedVolumesRecalculator @Autowired constructor(
                         )
                         corrections.add(correction)
                         teeLog("1 $id, ${assetBalance.asset} : Old $oldBalance New $newBalance")
-                        wallet.setReservedBalance(assetBalance.asset, newBalance.volume)
+                        wallet.setReservedForOrdersBalance(assetBalance.asset, newBalance.volume)
                         updatedWallets.add(wallet)
                         val balanceUpdate = ClientBalanceUpdate(
                             assetBalance.brokerId, assetBalance.accountId, id,
@@ -160,7 +160,7 @@ class ReservedVolumesRecalculator @Autowired constructor(
                     )
                     corrections.add(correction)
                     teeLog("2 $id, ${assetBalance.asset} : Old $oldBalance New ${newBalance ?: 0.0}")
-                    wallet.setReservedBalance(assetBalance.asset, BigDecimal.ZERO)
+                    wallet.setReservedForOrdersBalance(assetBalance.asset, BigDecimal.ZERO)
                     updatedWallets.add(wallet)
                     val balanceUpdate = ClientBalanceUpdate(
                         assetBalance.brokerId, assetBalance.accountId, id,

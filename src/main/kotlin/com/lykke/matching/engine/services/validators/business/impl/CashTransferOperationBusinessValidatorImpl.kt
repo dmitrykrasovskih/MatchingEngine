@@ -39,7 +39,7 @@ class CashTransferOperationBusinessValidatorImpl(private val balancesHolder: Bal
         val transferOperation = cashTransferContext.transferOperation
         val asset = transferOperation.asset!!
         val balanceOfFromClient = balancesHolder.getBalance(transferOperation.fromClientId, asset.symbol)
-        val reservedBalanceOfFromClient = balancesHolder.getReservedBalance(
+        val reservedBalanceOfFromClient = balancesHolder.getReservedTotalBalance(
             transferOperation.brokerId,
             transferOperation.accountId,
             transferOperation.fromClientId,

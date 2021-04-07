@@ -70,12 +70,13 @@ class MatchingResultHandlingHelper(private val applicationSettingsHolder: Applic
         val assetId = orderExecutionContext.oppositeLimitAsset!!.symbol
         val reservedVolume = oppositeOrder.reservedLimitVolume
             ?: if (oppositeOrder.isBuySide()) oppositeOrder.getAbsRemainingVolume() * oppositeOrder.price else oppositeOrder.getAbsRemainingVolume()
-        val reservedBalance = orderExecutionContext.executionContext.walletOperationsProcessor.getReservedBalance(
-            oppositeOrder.brokerId,
-            oppositeOrder.accountId,
-            oppositeOrder.clientId,
-            assetId
-        )
+        val reservedBalance =
+            orderExecutionContext.executionContext.walletOperationsProcessor.getReservedForOrdersBalance(
+                oppositeOrder.brokerId,
+                oppositeOrder.accountId,
+                oppositeOrder.clientId,
+                assetId
+            )
         return WalletOperation(
             oppositeOrder.brokerId,
             oppositeOrder.accountId,

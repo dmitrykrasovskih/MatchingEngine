@@ -68,6 +68,7 @@ class CurrentTransactionBalancesHolder(private val balancesHolder: BalancesHolde
                         assetId,
                         ZERO,
                         ZERO,
+                        ZERO,
                         brokerId,
                         accountId,
                         1
@@ -88,7 +89,7 @@ class CurrentTransactionBalancesHolder(private val balancesHolder: BalancesHolde
             accountId,
             clientId
         )).balances[assetId]
-            ?: AssetBalance(clientId, assetId, ZERO, ZERO, brokerId, accountId, 1)
+            ?: AssetBalance(clientId, assetId, ZERO, ZERO, ZERO, brokerId, accountId, 1)
     }
 
     private fun copyWallet(wallet: Wallet?): Wallet? {
@@ -108,6 +109,7 @@ class CurrentTransactionBalancesHolder(private val balancesHolder: BalancesHolde
             assetBalance.asset,
             assetBalance.balance,
             assetBalance.reserved,
+            assetBalance.reservedForSwap,
             assetBalance.brokerId,
             assetBalance.accountId,
             assetBalance.version

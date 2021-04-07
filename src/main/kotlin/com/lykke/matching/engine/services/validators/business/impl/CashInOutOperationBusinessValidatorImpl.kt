@@ -25,7 +25,7 @@ class CashInOutOperationBusinessValidatorImpl(private val balancesHolder: Balanc
         if (amount < BigDecimal.ZERO) {
             val asset = cashInOutContext.cashInOutOperation.asset
             val balance = balancesHolder.getBalance(cashInOutContext.cashInOutOperation.clientId, asset!!.symbol)
-            val reservedBalance = balancesHolder.getReservedBalance(
+            val reservedBalance = balancesHolder.getReservedTotalBalance(
                 cashInOutContext.cashInOutOperation.brokerId,
                 cashInOutContext.cashInOutOperation.accountId,
                 cashInOutContext.cashInOutOperation.clientId,

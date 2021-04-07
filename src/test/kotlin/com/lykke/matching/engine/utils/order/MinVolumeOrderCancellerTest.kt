@@ -328,8 +328,8 @@ class MinVolumeOrderCancellerTest : AbstractTest() {
             )
         )
 
-        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "TrustedClient", "BTC"))
-        assertEquals(BigDecimal.valueOf(1.0), balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
+        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedForOrdersBalance("", "", "TrustedClient", "BTC"))
+        assertEquals(BigDecimal.valueOf(1.0), balancesHolder.getReservedForOrdersBalance("", "", "Client1", "BTC"))
         assertEquals(2, testOrderDatabaseAccessor.getOrders("BTCEUR", false).size)
         assertEquals(2, genericLimitOrderService.getOrderBook("", "BTCEUR").getOrderBook(false).size)
 
@@ -349,9 +349,9 @@ class MinVolumeOrderCancellerTest : AbstractTest() {
         assertEquals(0, genericLimitOrderService.searchOrders("TrustedClient", "BTCEUR", false).size)
 
         assertEquals(BigDecimal.valueOf(1.0), testWalletDatabaseAccessor.getReservedBalance("Client1", "BTC"))
-        assertEquals(BigDecimal.valueOf(1.0), balancesHolder.getReservedBalance("", "", "Client1", "BTC"))
+        assertEquals(BigDecimal.valueOf(1.0), balancesHolder.getReservedForOrdersBalance("", "", "Client1", "BTC"))
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("TrustedClient", "BTC"))
-        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedBalance("", "", "TrustedClient", "BTC"))
+        assertEquals(BigDecimal.ZERO, balancesHolder.getReservedForOrdersBalance("", "", "TrustedClient", "BTC"))
 
         // recalculate reserved volumes to reset locked reservedAmount
         recalculator.recalculate()

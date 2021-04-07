@@ -116,6 +116,23 @@ class CashInOutOperationServiceTest : AbstractTest() {
     }
 
     @Test
+    fun testReservedSwapCashIn() {
+        val messageWrapper = buildReservedCashInOutSwapWrapper("Client3", "Asset1", 50.0)
+        reservedCashInOutOperationService.processMessage(messageWrapper)
+        val balance = testWalletDatabaseAccessor.getBalance("Client3", "Asset1")
+        val reservedBalance = testWalletDatabaseAccessor.getReservedBalance("Client3", "Asset1")
+        val reservedSwapBalance = testWalletDatabaseAccessor.getReservedForSwapBalance("Client3", "Asset1")
+        assertEquals(BigDecimal.valueOf(100.0), balance)
+        assertEquals(BigDecimal.valueOf(50.0), reservedBalance)
+        assertEquals(BigDecimal.valueOf(50.0), reservedSwapBalance)
+
+        val operation = testReservedCashOperationListener.getQueue().take()
+        assertEquals("Client3", operation.clientId)
+        assertEquals("50.00", operation.reservedForSwapVolume)
+        assertEquals("Asset1", operation.asset)
+    }
+
+    @Test
     fun testSmallCashIn() {
         cashInOutOperationService.processMessage(messageBuilder.buildCashInOutWrapper("Client1", "Asset1", 0.01))
         val balance = testWalletDatabaseAccessor.getBalance("Client1", "Asset1")
@@ -376,6 +393,23 @@ class CashInOutOperationServiceTest : AbstractTest() {
                 .setWalletId(clientId)
                 .setAssetId(assetId)
                 .setReservedVolume(amount.toString())
+                .setTimestamp(Date().createProtobufTimestampBuilder()).build(),
+            TestStreamObserver()
+        )
+    }
+
+    private fun buildReservedCashInOutSwapWrapper(
+        clientId: String,
+        assetId: String,
+        amount: Double,
+        bussinesId: String = UUID.randomUUID().toString()
+    ): ReservedCashInOutOperationMessageWrapper {
+        return ReservedCashInOutOperationMessageWrapper(
+            GrpcIncomingMessages.ReservedCashInOutOperation.newBuilder()
+                .setId(bussinesId)
+                .setWalletId(clientId)
+                .setAssetId(assetId)
+                .setReservedForSwapVolume(amount.toString())
                 .setTimestamp(Date().createProtobufTimestampBuilder()).build(),
             TestStreamObserver()
         )

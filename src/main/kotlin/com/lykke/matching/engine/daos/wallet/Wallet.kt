@@ -28,25 +28,52 @@ class Wallet {
     fun setBalance(asset: String, balance: BigDecimal) {
         val oldBalance = balances[asset]
         if (oldBalance == null) {
-            balances[asset] = AssetBalance(clientId, asset, balance, ZERO, brokerId, accountId, 1)
+            balances[asset] = AssetBalance(clientId, asset, balance, ZERO, ZERO, brokerId, accountId, 1)
         } else {
             oldBalance.balance = balance
         }
     }
 
-    fun setReservedBalance(asset: String, reservedBalance: BigDecimal) {
+    fun setReservedForOrdersBalance(asset: String, reservedForOrdersBalance: BigDecimal) {
         val oldBalance = balances[asset]
         if (oldBalance == null) {
-            balances[asset] = AssetBalance(clientId, asset, reservedBalance, reservedBalance, brokerId, accountId, 1)
+            balances[asset] = AssetBalance(
+                clientId,
+                asset,
+                reservedForOrdersBalance,
+                reservedForOrdersBalance,
+                ZERO,
+                brokerId,
+                accountId,
+                1
+            )
         } else {
-            oldBalance.reserved = reservedBalance
+            oldBalance.reserved = reservedForOrdersBalance
+        }
+    }
+
+    fun setReservedForSwapBalance(asset: String, reservedForSwapBalance: BigDecimal) {
+        val oldBalance = balances[asset]
+        if (oldBalance == null) {
+            balances[asset] = AssetBalance(
+                clientId,
+                asset,
+                reservedForSwapBalance,
+                ZERO,
+                reservedForSwapBalance,
+                brokerId,
+                accountId,
+                1
+            )
+        } else {
+            oldBalance.reservedForSwap = reservedForSwapBalance
         }
     }
 
     fun increaseWalletVersion(asset: String) {
         val oldBalance = balances[asset]
         if (oldBalance == null) {
-            balances[asset] = AssetBalance(clientId, asset, ZERO, ZERO, brokerId, accountId, 1)
+            balances[asset] = AssetBalance(clientId, asset, ZERO, ZERO, ZERO, brokerId, accountId, 1)
         } else {
             oldBalance.version++
         }

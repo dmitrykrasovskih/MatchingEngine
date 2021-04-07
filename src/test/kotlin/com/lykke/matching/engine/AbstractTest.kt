@@ -197,7 +197,10 @@ abstract class AbstractTest {
             assertEquals(BigDecimal.valueOf(balance), testWalletDatabaseAccessor.getBalance(clientId, assetId))
         }
         if (reserved != null) {
-            assertEquals(BigDecimal.valueOf(reserved), balancesHolder.getReservedBalance("", "", clientId, assetId))
+            assertEquals(
+                BigDecimal.valueOf(reserved),
+                balancesHolder.getReservedForOrdersBalance("", "", clientId, assetId)
+            )
             assertEquals(BigDecimal.valueOf(reserved), testWalletDatabaseAccessor.getReservedBalance(clientId, assetId))
         }
     }
@@ -291,6 +294,7 @@ abstract class AbstractTest {
         assertEquals(balance1.clientId, balance2.clientId)
         assertEquals(balance1.balance.toDouble(), balance2.balance.toDouble())
         assertEquals(balance1.reserved.toDouble(), balance2.reserved.toDouble())
+        assertEquals(balance1.reservedForSwap.toDouble(), balance2.reservedForSwap.toDouble())
     }
 
     protected fun assertEventBalanceUpdate(
