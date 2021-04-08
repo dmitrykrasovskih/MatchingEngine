@@ -1,11 +1,7 @@
 package com.lykke.matching.engine.config.spring
 
 import com.lykke.matching.engine.incoming.listener.InputQueueListener
-import com.lykke.matching.engine.incoming.preprocessor.impl.CashInOutPreprocessor
-import com.lykke.matching.engine.incoming.preprocessor.impl.CashTransferPreprocessor
-import com.lykke.matching.engine.incoming.preprocessor.impl.LimitOrderCancelOperationPreprocessor
-import com.lykke.matching.engine.incoming.preprocessor.impl.LimitOrderMassCancelOperationPreprocessor
-import com.lykke.matching.engine.incoming.preprocessor.impl.SingleLimitOrderPreprocessor
+import com.lykke.matching.engine.incoming.preprocessor.impl.*
 import com.lykke.matching.engine.messages.wrappers.*
 import com.lykke.matching.engine.messages.wrappers.socket.LimitOrderMassCancelMessageWrapper
 import com.lykke.utils.logging.ThrottlingLogger
@@ -18,58 +14,93 @@ import java.util.concurrent.BlockingQueue
 open class InputQueueListenerConfig {
 
     @Bean
-    open fun cashTransferInputQueueListener(cashTransferInputQueue: BlockingQueue<CashTransferOperationMessageWrapper>,
-                                            cashTransferPreprocessor: CashTransferPreprocessor,
-                                            @Qualifier("cashTransferPreProcessingLogger")
-                                            logger: ThrottlingLogger): InputQueueListener<CashTransferOperationMessageWrapper> {
-        return InputQueueListener(cashTransferInputQueue,
-                cashTransferPreprocessor,
-                logger,
-                "CashTransferInputQueueListener")
+    open fun cashTransferInputQueueListener(
+        cashTransferInputQueue: BlockingQueue<CashTransferOperationMessageWrapper>,
+        cashTransferPreprocessor: CashTransferPreprocessor,
+        @Qualifier("cashTransferPreProcessingLogger")
+        logger: ThrottlingLogger
+    ): InputQueueListener<CashTransferOperationMessageWrapper> {
+        return InputQueueListener(
+            cashTransferInputQueue,
+            cashTransferPreprocessor,
+            logger,
+            "CashTransferInputQueueListener"
+        )
     }
 
     @Bean
-    open fun cashInOutInputQueueListener(cashInOutInputQueue: BlockingQueue<CashInOutOperationMessageWrapper>,
-                                         cashInOutPreprocessor: CashInOutPreprocessor,
-                                         @Qualifier("cashInOutPreProcessingLogger")
-                                         logger: ThrottlingLogger): InputQueueListener<CashInOutOperationMessageWrapper> {
-        return InputQueueListener(cashInOutInputQueue,
-                cashInOutPreprocessor,
-                logger,
-                "CashInOutInputQueueListener")
+    open fun cashInOutInputQueueListener(
+        cashInOutInputQueue: BlockingQueue<CashInOutOperationMessageWrapper>,
+        cashInOutPreprocessor: CashInOutPreprocessor,
+        @Qualifier("cashInOutPreProcessingLogger")
+        logger: ThrottlingLogger
+    ): InputQueueListener<CashInOutOperationMessageWrapper> {
+        return InputQueueListener(
+            cashInOutInputQueue,
+            cashInOutPreprocessor,
+            logger,
+            "CashInOutInputQueueListener"
+        )
     }
 
     @Bean
-    open fun limitOrderCancelInputQueueListener(limitOrderCancelInputQueue: BlockingQueue<LimitOrderCancelMessageWrapper>,
-                                                limitOrderCancelOperationPreprocessor: LimitOrderCancelOperationPreprocessor,
-                                                @Qualifier("limitOrderCancelPreProcessingLogger")
-                                                logger: ThrottlingLogger): InputQueueListener<LimitOrderCancelMessageWrapper> {
-        return InputQueueListener(limitOrderCancelInputQueue,
-                limitOrderCancelOperationPreprocessor,
-                logger,
-                "LimitOrderCancelInputQueueListener")
+    open fun reservedCashInOutInputQueueListener(
+        reservedCashInOutInputQueue: BlockingQueue<ReservedCashInOutOperationMessageWrapper>,
+        reservedCashInOutPreprocessor: ReservedCashInOutPreprocessor,
+        @Qualifier("cashInOutPreProcessingLogger")
+        logger: ThrottlingLogger
+    ): InputQueueListener<ReservedCashInOutOperationMessageWrapper> {
+        return InputQueueListener(
+            reservedCashInOutInputQueue,
+            reservedCashInOutPreprocessor,
+            logger,
+            "CashInOutInputQueueListener"
+        )
     }
 
     @Bean
-    open fun limitOrderInputQueueListener(limitOrderInputQueue: BlockingQueue<SingleLimitOrderMessageWrapper>,
-                                          singleLimitOrderPreprocessor: SingleLimitOrderPreprocessor,
-                                          @Qualifier("singleLimitOrderPreProcessingLogger")
-                                          logger: ThrottlingLogger): InputQueueListener<SingleLimitOrderMessageWrapper> {
-        return InputQueueListener(limitOrderInputQueue,
-                singleLimitOrderPreprocessor,
-                logger,
-                "LimitOrderInputQueueListener")
+    open fun limitOrderCancelInputQueueListener(
+        limitOrderCancelInputQueue: BlockingQueue<LimitOrderCancelMessageWrapper>,
+        limitOrderCancelOperationPreprocessor: LimitOrderCancelOperationPreprocessor,
+        @Qualifier("limitOrderCancelPreProcessingLogger")
+        logger: ThrottlingLogger
+    ): InputQueueListener<LimitOrderCancelMessageWrapper> {
+        return InputQueueListener(
+            limitOrderCancelInputQueue,
+            limitOrderCancelOperationPreprocessor,
+            logger,
+            "LimitOrderCancelInputQueueListener"
+        )
     }
 
     @Bean
-    open fun limitOrderMassCancelInputQueueListener(limitOrderMassCancelInputQueue: BlockingQueue<LimitOrderMassCancelMessageWrapper>,
-                                                    limitOrderMassCancelOperationPreprocessor: LimitOrderMassCancelOperationPreprocessor,
-                                                    @Qualifier("limitOrderMassCancelPreProcessingLogger")
-                                                    logger: ThrottlingLogger): InputQueueListener<LimitOrderMassCancelMessageWrapper> {
-        return InputQueueListener(limitOrderMassCancelInputQueue,
-                limitOrderMassCancelOperationPreprocessor,
-                logger,
-                "LimitOrderMassCancelInputQueueListener")
+    open fun limitOrderInputQueueListener(
+        limitOrderInputQueue: BlockingQueue<SingleLimitOrderMessageWrapper>,
+        singleLimitOrderPreprocessor: SingleLimitOrderPreprocessor,
+        @Qualifier("singleLimitOrderPreProcessingLogger")
+        logger: ThrottlingLogger
+    ): InputQueueListener<SingleLimitOrderMessageWrapper> {
+        return InputQueueListener(
+            limitOrderInputQueue,
+            singleLimitOrderPreprocessor,
+            logger,
+            "LimitOrderInputQueueListener"
+        )
+    }
+
+    @Bean
+    open fun limitOrderMassCancelInputQueueListener(
+        limitOrderMassCancelInputQueue: BlockingQueue<LimitOrderMassCancelMessageWrapper>,
+        limitOrderMassCancelOperationPreprocessor: LimitOrderMassCancelOperationPreprocessor,
+        @Qualifier("limitOrderMassCancelPreProcessingLogger")
+        logger: ThrottlingLogger
+    ): InputQueueListener<LimitOrderMassCancelMessageWrapper> {
+        return InputQueueListener(
+            limitOrderMassCancelInputQueue,
+            limitOrderMassCancelOperationPreprocessor,
+            logger,
+            "LimitOrderMassCancelInputQueueListener"
+        )
     }
 
 }

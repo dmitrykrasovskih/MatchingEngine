@@ -1,6 +1,7 @@
 package com.lykke.matching.engine.messages.wrappers
 
 import com.google.protobuf.StringValue
+import com.lykke.matching.engine.daos.context.ReservedCashInOutContext
 import com.lykke.matching.engine.messages.MessageStatus
 import com.lykke.matching.engine.messages.MessageType
 import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
@@ -10,7 +11,8 @@ import java.io.IOException
 class ReservedCashInOutOperationMessageWrapper(
     var parsedMessage: GrpcIncomingMessages.ReservedCashInOutOperation,
     private val callback: StreamObserver<GrpcIncomingMessages.ReservedCashInOutOperationResponse>,
-    private val closeStream: Boolean = false
+    private val closeStream: Boolean = false,
+    var context: ReservedCashInOutContext? = null
 ) : MessageWrapper(
     MessageType.RESERVED_CASH_IN_OUT_OPERATION,
     parsedMessage.id,

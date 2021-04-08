@@ -104,13 +104,19 @@ open class QueueConfig {
 
     @Bean
     @InputQueue
-    open fun limitOrderCancelInputQueue(): BlockingQueue<LimitOrderCancelMessageWrapper>{
+    open fun reservedCashInOutInputQueue(): BlockingQueue<ReservedCashInOutOperationMessageWrapper> {
+        return LinkedBlockingQueue<ReservedCashInOutOperationMessageWrapper>()
+    }
+
+    @Bean
+    @InputQueue
+    open fun limitOrderCancelInputQueue(): BlockingQueue<LimitOrderCancelMessageWrapper> {
         return LinkedBlockingQueue<LimitOrderCancelMessageWrapper>()
     }
 
     @Bean
     @InputQueue
-    open fun limitOrderMassCancelInputQueue(): BlockingQueue<LimitOrderMassCancelMessageWrapper>{
+    open fun limitOrderMassCancelInputQueue(): BlockingQueue<LimitOrderMassCancelMessageWrapper> {
         return LinkedBlockingQueue<LimitOrderMassCancelMessageWrapper>()
     }
 

@@ -40,7 +40,7 @@ class CashInOutOperationService(
     override fun processMessage(genericMessageWrapper: MessageWrapper) {
         val now = Date()
         val messageWrapper = genericMessageWrapper as CashInOutOperationMessageWrapper
-        val cashInOutContext: CashInOutContext = messageWrapper.context as CashInOutContext
+        val cashInOutContext = messageWrapper.context as CashInOutContext
         val cashInOutOperation = cashInOutContext.cashInOutOperation
         val feeInstructions = cashInOutOperation.feeInstructions
         val walletOperation = CashInOutOperationConverter.fromCashInOutOperationToWalletOperation(cashInOutOperation)

@@ -8,8 +8,6 @@ import com.lykke.matching.engine.daos.FeeType
 import com.lykke.matching.engine.daos.wallet.AssetBalance
 import com.lykke.matching.engine.daos.wallet.Wallet
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
-import com.lykke.matching.engine.grpc.TestStreamObserver
-import com.lykke.matching.engine.messages.wrappers.ReservedCashInOutOperationMessageWrapper
 import com.lykke.matching.engine.notification.TestReservedCashOperationListener
 import com.lykke.matching.engine.outgoing.messages.CashOperation
 import com.lykke.matching.engine.outgoing.messages.v2.events.CashInEvent
@@ -18,8 +16,6 @@ import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildFeeInstruction
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildFeeInstructions
 import com.lykke.matching.engine.utils.assertEquals
-import com.lykke.matching.engine.utils.proto.createProtobufTimestampBuilder
-import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Before
@@ -33,7 +29,6 @@ import org.springframework.context.annotation.Primary
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
-import java.util.*
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [(TestApplicationContext::class), (CashInOutOperationServiceTest.Config::class)])
@@ -102,7 +97,7 @@ class CashInOutOperationServiceTest : AbstractTest() {
 
     @Test
     fun testReservedCashIn() {
-        val messageWrapper = buildReservedCashInOutWrapper("Client3", "Asset1", 50.0)
+        val messageWrapper = messageBuilder.buildReservedCashInOutWrapper("Client3", "Asset1", 50.0)
         reservedCashInOutOperationService.processMessage(messageWrapper)
         val balance = testWalletDatabaseAccessor.getBalance("Client3", "Asset1")
         val reservedBalance = testWalletDatabaseAccessor.getReservedBalance("Client3", "Asset1")
@@ -117,7 +112,7 @@ class CashInOutOperationServiceTest : AbstractTest() {
 
     @Test
     fun testReservedSwapCashIn() {
-        val messageWrapper = buildReservedCashInOutSwapWrapper("Client3", "Asset1", 50.0)
+        val messageWrapper = messageBuilder.buildReservedCashInOutSwapWrapper("Client3", "Asset1", 50.0)
         reservedCashInOutOperationService.processMessage(messageWrapper)
         val balance = testWalletDatabaseAccessor.getBalance("Client3", "Asset1")
         val reservedBalance = testWalletDatabaseAccessor.getReservedBalance("Client3", "Asset1")
@@ -147,7 +142,7 @@ class CashInOutOperationServiceTest : AbstractTest() {
 
     @Test
     fun testSmallReservedCashIn() {
-        val messageWrapper = buildReservedCashInOutWrapper("Client3", "Asset1", 0.01)
+        val messageWrapper = messageBuilder.buildReservedCashInOutWrapper("Client3", "Asset1", 0.01)
         reservedCashInOutOperationService.processMessage(messageWrapper)
         val reservedBalance = testWalletDatabaseAccessor.getReservedBalance("Client3", "Asset1")
         assertEquals(BigDecimal.valueOf(50.01), reservedBalance)
@@ -183,7 +178,7 @@ class CashInOutOperationServiceTest : AbstractTest() {
 
     @Test
     fun testReservedCashOut() {
-        val messageWrapper = buildReservedCashInOutWrapper("Client3", "Asset1", -49.0)
+        val messageWrapper = messageBuilder.buildReservedCashInOutWrapper("Client3", "Asset1", -49.0)
         reservedCashInOutOperationService.processMessage(messageWrapper)
         val reservedBalance = testWalletDatabaseAccessor.getReservedBalance("Client3", "Asset1")
         assertEquals(BigDecimal.valueOf(1.0), reservedBalance)
@@ -216,7 +211,7 @@ class CashInOutOperationServiceTest : AbstractTest() {
 
     @Test
     fun testReservedCashOutNegative() {
-        val messageWrapper = buildReservedCashInOutWrapper("Client3", "Asset1", -24.0)
+        val messageWrapper = messageBuilder.buildReservedCashInOutWrapper("Client3", "Asset1", -24.0)
         reservedCashInOutOperationService.processMessage(messageWrapper)
         var reservedBalance = testWalletDatabaseAccessor.getReservedBalance("Client3", "Asset1")
         assertEquals(BigDecimal.valueOf(26.0), reservedBalance)
@@ -226,7 +221,7 @@ class CashInOutOperationServiceTest : AbstractTest() {
         assertEquals("-24.00", operation.reservedVolume)
         assertEquals("Asset1", operation.asset)
 
-        val messageWrapper1 = buildReservedCashInOutWrapper("Client3", "Asset1", -30.0)
+        val messageWrapper1 = messageBuilder.buildReservedCashInOutWrapper("Client3", "Asset1", -30.0)
         reservedCashInOutOperationService.processMessage(messageWrapper1)
         reservedBalance = testWalletDatabaseAccessor.getReservedBalance("Client3", "Asset1")
         assertEquals(BigDecimal.valueOf(26.0), reservedBalance)
@@ -234,7 +229,7 @@ class CashInOutOperationServiceTest : AbstractTest() {
 
     @Test
     fun testReservedCashInHigherThanBalance() {
-        val messageWrapper = buildReservedCashInOutWrapper("Client3", "Asset1", 50.01)
+        val messageWrapper = messageBuilder.buildReservedCashInOutWrapper("Client3", "Asset1", 50.01)
         reservedCashInOutOperationService.processMessage(messageWrapper)
         val reservedBalance = testWalletDatabaseAccessor.getReservedBalance("Client3", "Asset1")
         assertEquals(BigDecimal.valueOf(50.0), reservedBalance)
@@ -379,39 +374,5 @@ class CashInOutOperationServiceTest : AbstractTest() {
 
         assertEquals(BigDecimal.valueOf(3.0), balancesHolder.getBalance("Client1", "Asset5"))
         assertEquals(BigDecimal.ZERO, balancesHolder.getBalance("Client3", "Asset5"))
-    }
-
-    private fun buildReservedCashInOutWrapper(
-        clientId: String,
-        assetId: String,
-        amount: Double,
-        bussinesId: String = UUID.randomUUID().toString()
-    ): ReservedCashInOutOperationMessageWrapper {
-        return ReservedCashInOutOperationMessageWrapper(
-            GrpcIncomingMessages.ReservedCashInOutOperation.newBuilder()
-                .setId(bussinesId)
-                .setWalletId(clientId)
-                .setAssetId(assetId)
-                .setReservedVolume(amount.toString())
-                .setTimestamp(Date().createProtobufTimestampBuilder()).build(),
-            TestStreamObserver()
-        )
-    }
-
-    private fun buildReservedCashInOutSwapWrapper(
-        clientId: String,
-        assetId: String,
-        amount: Double,
-        bussinesId: String = UUID.randomUUID().toString()
-    ): ReservedCashInOutOperationMessageWrapper {
-        return ReservedCashInOutOperationMessageWrapper(
-            GrpcIncomingMessages.ReservedCashInOutOperation.newBuilder()
-                .setId(bussinesId)
-                .setWalletId(clientId)
-                .setAssetId(assetId)
-                .setReservedForSwapVolume(amount.toString())
-                .setTimestamp(Date().createProtobufTimestampBuilder()).build(),
-            TestStreamObserver()
-        )
     }
 }

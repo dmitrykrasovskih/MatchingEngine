@@ -74,6 +74,30 @@ message ReservedCashInOutOperationResponse {
   google.protobuf.StringValue messageId = 5;
 }
 
+message CashSwapOperation {
+  string id = 1;
+  string brokerId = 2;
+  string accountId1 = 3;
+  string walletId1 = 4;
+  string assetId1 = 5;
+  string volume1 = 6;
+  string accountId2 = 7;
+  string walletId2 = 8;
+  string assetId2 = 9;
+  string volume2 = 10;
+  google.protobuf.Timestamp timestamp = 11;
+  google.protobuf.StringValue messageId = 12;
+}
+
+message CashSwapOperationResponse {
+  string id = 1;
+  Status status = 2;
+  google.protobuf.StringValue statusReason = 3;
+  google.protobuf.StringValue matchingEngineId = 4;
+  google.protobuf.StringValue messageId = 5;
+}
+
+
 message LimitOrder {
   string id = 1;
   string brokerId = 2;

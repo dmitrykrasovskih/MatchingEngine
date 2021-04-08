@@ -30,6 +30,9 @@ class GrpcServicesInit(
     private lateinit var cashInOutInputQueue: BlockingQueue<CashInOutOperationMessageWrapper>
 
     @Autowired
+    private lateinit var reservedCashInOutInputQueue: BlockingQueue<ReservedCashInOutOperationMessageWrapper>
+
+    @Autowired
     private lateinit var cashTransferInputQueue: BlockingQueue<CashTransferOperationMessageWrapper>
 
     @Autowired
@@ -74,7 +77,14 @@ class GrpcServicesInit(
 
         with(config.matchingEngine.grpcEndpoints) {
             ServerBuilder.forPort(cashApiServicePort)
-                .addService(CashApiService(cashInOutInputQueue, cashTransferInputQueue, registry)).build().start()
+                .addService(
+                    CashApiService(
+                        cashInOutInputQueue,
+                        cashTransferInputQueue,
+                        reservedCashInOutInputQueue,
+                        registry
+                    )
+                ).build().start()
             LOGGER.info("Started CashApiService at $cashApiServicePort port")
 
             ServerBuilder.forPort(tradingApiServicePort).addService(

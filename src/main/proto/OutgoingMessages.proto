@@ -15,6 +15,7 @@ message OutgoingEvent {
     CashOut cashOut = 4;
     CashTransfer cashTransfer = 5;
     repeated Order orders = 6;
+    ReservedCashInOut reservedCashInOut = 7;
 }
 
 message Header {
@@ -65,6 +66,16 @@ message CashOut {
     string assetId = 5;
     string volume = 6;
     repeated Fee fees = 7;
+}
+
+message ReservedCashInOut {
+    string brokerId = 1;
+    string accountId = 2;
+    string walletId = 3;
+    uint64 walletVersion = 4;
+    string assetId = 5;
+    string reservedForOrders = 6;
+    string reservedForSwap = 7;
 }
 
 message CashTransfer {

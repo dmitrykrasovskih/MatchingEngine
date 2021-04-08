@@ -16,6 +16,7 @@ import "BalancesMessages.proto";
 service CashService {
     rpc CashInOut(com.myjetwallet.messages.incoming.grpc.CashInOutOperation) returns (com.myjetwallet.messages.incoming.grpc.CashInOutOperationResponse) {}
     rpc CashTransfer(com.myjetwallet.messages.incoming.grpc.CashTransferOperation) returns (com.myjetwallet.messages.incoming.grpc.CashTransferOperationResponse) {}
+    rpc CashSwap(com.myjetwallet.messages.incoming.grpc.CashSwapOperation) returns (com.myjetwallet.messages.incoming.grpc.CashSwapOperationResponse) {}
     rpc ReservedCashInOut(com.myjetwallet.messages.incoming.grpc.ReservedCashInOutOperation) returns (com.myjetwallet.messages.incoming.grpc.ReservedCashInOutOperationResponse) {}
 }
 

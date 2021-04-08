@@ -39,22 +39,11 @@ import com.lykke.matching.engine.outgoing.messages.v2.events.Event
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.services.*
 import com.lykke.matching.engine.services.validators.MarketOrderValidator
-import com.lykke.matching.engine.services.validators.ReservedCashInOutOperationValidator
-import com.lykke.matching.engine.services.validators.business.CashInOutOperationBusinessValidator
-import com.lykke.matching.engine.services.validators.business.CashTransferOperationBusinessValidator
-import com.lykke.matching.engine.services.validators.business.LimitOrderBusinessValidator
-import com.lykke.matching.engine.services.validators.business.LimitOrderCancelOperationBusinessValidator
+import com.lykke.matching.engine.services.validators.business.*
 import com.lykke.matching.engine.services.validators.business.impl.*
 import com.lykke.matching.engine.services.validators.impl.MarketOrderValidatorImpl
-import com.lykke.matching.engine.services.validators.impl.ReservedCashInOutOperationValidatorImpl
-import com.lykke.matching.engine.services.validators.input.CashInOutOperationInputValidator
-import com.lykke.matching.engine.services.validators.input.CashTransferOperationInputValidator
-import com.lykke.matching.engine.services.validators.input.LimitOrderCancelOperationInputValidator
-import com.lykke.matching.engine.services.validators.input.LimitOrderInputValidator
-import com.lykke.matching.engine.services.validators.input.impl.CashInOutOperationInputValidatorImpl
-import com.lykke.matching.engine.services.validators.input.impl.CashTransferOperationInputValidatorImpl
-import com.lykke.matching.engine.services.validators.input.impl.LimitOrderCancelOperationInputValidatorImpl
-import com.lykke.matching.engine.services.validators.input.impl.LimitOrderInputValidatorImpl
+import com.lykke.matching.engine.services.validators.input.*
+import com.lykke.matching.engine.services.validators.input.impl.*
 import com.lykke.matching.engine.services.validators.settings.SettingValidator
 import com.lykke.matching.engine.services.validators.settings.impl.DisabledFunctionalitySettingValidator
 import com.lykke.matching.engine.services.validators.settings.impl.MessageProcessingSwitchSettingValidator
@@ -255,6 +244,16 @@ class TestApplicationContext {
     }
 
     @Bean
+    fun reservedCashInOutOperationInputValidator(): ReservedCashInOutOperationValidator {
+        return ReservedCashInOutOperationValidatorImpl()
+    }
+
+    @Bean
+    fun reservedCashInOutOperationBusinessValidator(balancesHolder: BalancesHolder): ReservedCashInOutOperationBusinessValidator {
+        return ReservedCashInOutOperationBusinessValidatorImpl(balancesHolder)
+    }
+
+    @Bean
     fun cashTransferOperationInputValidator(applicationSettingsHolder: ApplicationSettingsHolder): CashTransferOperationInputValidator {
         return CashTransferOperationInputValidatorImpl(applicationSettingsHolder)
     }
@@ -302,24 +301,17 @@ class TestApplicationContext {
     }
 
     @Bean
-    fun reservedCashInOutOperationValidator(
-        balancesHolder: BalancesHolder,
-        assetsHolder: AssetsHolder
-    ): ReservedCashInOutOperationValidator {
-        return ReservedCashInOutOperationValidatorImpl(assetsHolder, balancesHolder)
-    }
-
-    @Bean
     fun reservedCashInOutOperation(
         balancesHolder: BalancesHolder,
         assetsHolder: AssetsHolder,
         reservedCashOperationQueue: BlockingQueue<ReservedCashOperation>,
-        reservedCashInOutOperationValidator: ReservedCashInOutOperationValidator,
-        messageProcessingStatusHolder: MessageProcessingStatusHolder
+        reservedCashInOutOperationBusinessValidator: ReservedCashInOutOperationBusinessValidator,
+        messageSequenceNumberHolder: MessageSequenceNumberHolder,
+        messageSender: MessageSender
     ): ReservedCashInOutOperationService {
         return ReservedCashInOutOperationService(
-            assetsHolder, balancesHolder, reservedCashOperationQueue,
-            reservedCashInOutOperationValidator, messageProcessingStatusHolder
+            balancesHolder, reservedCashOperationQueue,
+            reservedCashInOutOperationBusinessValidator, messageSequenceNumberHolder, messageSender
         )
     }
 
@@ -561,6 +553,11 @@ class TestApplicationContext {
     }
 
     @Bean
+    fun reservedCashInOutContextParser(assetsHolder: AssetsHolder): ReservedCashInOutContextParser {
+        return ReservedCashInOutContextParser(assetsHolder)
+    }
+
+    @Bean
     fun processedMessagesCache(): ProcessedMessagesCache {
         return Mockito.mock(ProcessedMessagesCache::class.java)
     }
@@ -630,13 +627,18 @@ class TestApplicationContext {
     fun messageBuilder(
         cashTransferContextParser: CashTransferContextParser,
         cashInOutContextParser: CashInOutContextParser,
+        reservedCashInOutContextParser: ReservedCashInOutContextParser,
         singleLimitOrderContextParser: SingleLimitOrderContextParser,
         limitOrderCancelOperationContextParser: ContextParser<LimitOrderCancelOperationParsedData, LimitOrderCancelMessageWrapper>,
         limitOrderMassCancelOperationContextParser: ContextParser<LimitOrderMassCancelOperationParsedData, LimitOrderMassCancelMessageWrapper>
     ): MessageBuilder {
         return MessageBuilder(
-            singleLimitOrderContextParser, cashInOutContextParser, cashTransferContextParser,
-            limitOrderCancelOperationContextParser, limitOrderMassCancelOperationContextParser
+            singleLimitOrderContextParser,
+            cashInOutContextParser,
+            reservedCashInOutContextParser,
+            cashTransferContextParser,
+            limitOrderCancelOperationContextParser,
+            limitOrderMassCancelOperationContextParser
         )
     }
 

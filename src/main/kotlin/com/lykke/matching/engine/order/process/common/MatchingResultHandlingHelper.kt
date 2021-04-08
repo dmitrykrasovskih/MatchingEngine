@@ -38,7 +38,7 @@ class MatchingResultHandlingHelper(private val applicationSettingsHolder: Applic
         val matchingResult = orderExecutionContext.matchingResult!!
         val uncompletedLimitOrderCopy = matchingResult.uncompletedLimitOrderCopy!!
         val assetPair = orderExecutionContext.executionContext.assetPairsById[uncompletedLimitOrderCopy.assetPairId]!!
-        if (assetPair.minVolume == null || uncompletedLimitOrderCopy.getAbsRemainingVolume() >= assetPair.minVolume) {
+        if (uncompletedLimitOrderCopy.getAbsRemainingVolume() >= assetPair.minVolume) {
             orderExecutionContext.isUncompletedOrderCancelled = false
             return
         }

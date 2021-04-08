@@ -254,7 +254,7 @@ private fun convertTrade(tradeInfo: TradeInfo): Trade {
     )
 }
 
-fun bigDecimalToString(value: BigDecimal?): String? = value?.stripTrailingZeros()?.toPlainString()
+fun bigDecimalToString(value: BigDecimal?): String = value?.stripTrailingZeros()?.toPlainString() ?: "0.0"
 
 private fun convertFeeInstruction(
     index: Int,

@@ -16,6 +16,7 @@ import com.lykke.matching.engine.incoming.parsers.data.LimitOrderCancelOperation
 import com.lykke.matching.engine.incoming.parsers.data.LimitOrderMassCancelOperationParsedData
 import com.lykke.matching.engine.incoming.parsers.impl.CashInOutContextParser
 import com.lykke.matching.engine.incoming.parsers.impl.CashTransferContextParser
+import com.lykke.matching.engine.incoming.parsers.impl.ReservedCashInOutContextParser
 import com.lykke.matching.engine.incoming.parsers.impl.SingleLimitOrderContextParser
 import com.lykke.matching.engine.messages.wrappers.*
 import com.lykke.matching.engine.messages.wrappers.socket.LimitOrderMassCancelMessageWrapper
@@ -32,6 +33,7 @@ import java.util.*
 class MessageBuilder(
     private var singleLimitOrderContextParser: SingleLimitOrderContextParser,
     private val cashInOutContextParser: CashInOutContextParser,
+    private val reservedCashInOutContextParser: ReservedCashInOutContextParser,
     private val cashTransferContextParser: CashTransferContextParser,
     private val limitOrderCancelOperationContextParser: ContextParser<LimitOrderCancelOperationParsedData, LimitOrderCancelMessageWrapper>,
     private val limitOrderMassCancelOperationContextParser: ContextParser<LimitOrderMassCancelOperationParsedData, LimitOrderMassCancelMessageWrapper>
@@ -342,6 +344,46 @@ class MessageBuilder(
 
         return cashInOutContextParser.parse(
             CashInOutOperationMessageWrapper(
+                builder.build(),
+                TestStreamObserver()
+            )
+        ).messageWrapper
+    }
+
+    fun buildReservedCashInOutWrapper(
+        clientId: String,
+        assetId: String,
+        amount: Double,
+        bussinesId: String = UUID.randomUUID().toString()
+    ): MessageWrapper {
+        val builder = GrpcIncomingMessages.ReservedCashInOutOperation.newBuilder()
+            .setId(bussinesId)
+            .setWalletId(clientId)
+            .setAssetId(assetId)
+            .setReservedVolume(amount.toString())
+            .setTimestamp(Date().createProtobufTimestampBuilder())
+        return reservedCashInOutContextParser.parse(
+            ReservedCashInOutOperationMessageWrapper(
+                builder.build(),
+                TestStreamObserver()
+            )
+        ).messageWrapper
+    }
+
+    fun buildReservedCashInOutSwapWrapper(
+        clientId: String,
+        assetId: String,
+        amount: Double,
+        bussinesId: String = UUID.randomUUID().toString()
+    ): MessageWrapper {
+        val builder = GrpcIncomingMessages.ReservedCashInOutOperation.newBuilder()
+            .setId(bussinesId)
+            .setWalletId(clientId)
+            .setAssetId(assetId)
+            .setReservedForSwapVolume(amount.toString())
+            .setTimestamp(Date().createProtobufTimestampBuilder())
+        return reservedCashInOutContextParser.parse(
+            ReservedCashInOutOperationMessageWrapper(
                 builder.build(),
                 TestStreamObserver()
             )

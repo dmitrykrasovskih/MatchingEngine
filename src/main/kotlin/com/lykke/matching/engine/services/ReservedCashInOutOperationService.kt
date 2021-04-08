@@ -2,17 +2,19 @@ package com.lykke.matching.engine.services
 
 import com.lykke.matching.engine.balance.BalanceException
 import com.lykke.matching.engine.daos.WalletOperation
-import com.lykke.matching.engine.holders.AssetsHolder
+import com.lykke.matching.engine.daos.context.ReservedCashInOutContext
 import com.lykke.matching.engine.holders.BalancesHolder
-import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
+import com.lykke.matching.engine.holders.MessageSequenceNumberHolder
 import com.lykke.matching.engine.messages.MessageStatus
 import com.lykke.matching.engine.messages.MessageStatus.LOW_BALANCE
 import com.lykke.matching.engine.messages.MessageStatus.RUNTIME
+import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.messages.MessageType.RESERVED_CASH_IN_OUT_OPERATION
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.messages.wrappers.ReservedCashInOutOperationMessageWrapper
 import com.lykke.matching.engine.outgoing.messages.ReservedCashOperation
-import com.lykke.matching.engine.services.validators.ReservedCashInOutOperationValidator
+import com.lykke.matching.engine.outgoing.messages.v2.builders.EventFactory
+import com.lykke.matching.engine.services.validators.business.ReservedCashInOutOperationBusinessValidator
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
@@ -25,11 +27,11 @@ import java.util.concurrent.BlockingQueue
 
 @Service
 class ReservedCashInOutOperationService @Autowired constructor(
-    private val assetsHolder: AssetsHolder,
     private val balancesHolder: BalancesHolder,
     private val reservedCashOperationQueue: BlockingQueue<ReservedCashOperation>,
-    private val reservedCashInOutOperationValidator: ReservedCashInOutOperationValidator,
-    private val messageProcessingStatusHolder: MessageProcessingStatusHolder
+    private val reservedCashInOutOperationBusinessValidator: ReservedCashInOutOperationBusinessValidator,
+    private val messageSequenceNumberHolder: MessageSequenceNumberHolder,
+    private val messageSender: MessageSender
 ) : AbstractService {
 
     companion object {
@@ -37,37 +39,41 @@ class ReservedCashInOutOperationService @Autowired constructor(
     }
 
     override fun processMessage(genericMessageWrapper: MessageWrapper) {
+        val now = Date()
         val messageWrapper = genericMessageWrapper as ReservedCashInOutOperationMessageWrapper
-        val message = messageWrapper.parsedMessage
-        val asset = assetsHolder.getAsset(message.assetId)
+        val reservedCashInOutContext = messageWrapper.context as ReservedCashInOutContext
+        val reservedCashInOutOperation = reservedCashInOutContext.reservedCashInOutOperation
+        val asset = reservedCashInOutOperation.asset!!
 
         LOGGER.debug(
             "Processing reserved cash in/out messageId: ${messageWrapper.messageId} " +
-                    "operation (${message.id}) for client ${message.walletId}, " +
-                    "asset ${message.assetId}, amount: ${message.reservedVolume}, swap amount: ${message.reservedForSwapVolume}"
+                    "operation (${reservedCashInOutOperation.externalId}) for client ${reservedCashInOutOperation.walletId}, " +
+                    "asset ${asset.symbol}, reserved amount: ${reservedCashInOutOperation.reservedAmount}, swap amount: ${reservedCashInOutOperation.reservedSwapAmount}"
         )
 
-        val now = Date()
         val matchingEngineOperationId = UUID.randomUUID().toString()
-        val operation = WalletOperation(
-            message.brokerId,
-            message.accountId,
-            message.walletId,
-            message.assetId,
+        val walletOperation = WalletOperation(
+            reservedCashInOutOperation.brokerId,
+            reservedCashInOutOperation.accountId,
+            reservedCashInOutOperation.walletId,
+            asset.symbol,
             BigDecimal.ZERO,
-            if (!message.reservedVolume.isNullOrEmpty()) BigDecimal(message.reservedVolume) else BigDecimal.ZERO,
-            if (!message.reservedForSwapVolume.isNullOrEmpty()) BigDecimal(message.reservedForSwapVolume) else BigDecimal.ZERO
+            reservedCashInOutOperation.reservedAmount,
+            reservedCashInOutOperation.reservedSwapAmount
         )
 
         try {
-            reservedCashInOutOperationValidator.performValidation(message)
+            reservedCashInOutOperationBusinessValidator.performValidation(reservedCashInOutContext)
         } catch (e: ValidationException) {
             messageWrapper.writeResponse(
                 matchingEngineOperationId,
                 MessageStatusUtils.toMessageStatus(e.validationType),
                 e.message
             )
-            LOGGER.info("Reserved cash in/out operation (${message.id}) for client ${message.walletId} asset ${message.assetId}, volume: ${message.reservedVolume}: ${e.message}")
+            LOGGER.info(
+                "Reserved cash in/out operation (${reservedCashInOutOperation.externalId}) for client ${reservedCashInOutOperation.walletId}" +
+                        " asset ${asset.symbol}, volume: ${reservedCashInOutOperation.reservedAmount}: ${e.message}"
+            )
             return
         }
 
@@ -75,47 +81,66 @@ class ReservedCashInOutOperationService @Autowired constructor(
 
         val walletProcessor = balancesHolder.createWalletProcessor(LOGGER)
         try {
-            walletProcessor.preProcess(listOf(operation))
+            walletProcessor.preProcess(listOf(walletOperation))
         } catch (e: BalanceException) {
             messageWrapper.writeResponse(matchingEngineOperationId, LOW_BALANCE, e.message)
-            LOGGER.info("Reserved cash in/out operation (${message.id}) failed due to invalid balance: ${e.message}")
+            LOGGER.info("Reserved cash in/out operation (${reservedCashInOutOperation.externalId}) failed due to invalid balance: ${e.message}")
             return
         }
 
-        val updated = walletProcessor.persistBalances(messageWrapper.processedMessage, null, null, null)
+        val sequenceNumber = messageSequenceNumberHolder.getNewValue()
+        val updated = walletProcessor.persistBalances(messageWrapper.processedMessage, null, null, sequenceNumber)
         messageWrapper.triedToPersist = true
         messageWrapper.persisted = updated
         if (!updated) {
-            LOGGER.info("Reserved cash in/out operation (${message.id}) for client ${message.walletId} asset ${message.assetId}, volume: ${message.reservedVolume}: unable to save balance")
+            LOGGER.info(
+                "Reserved cash in/out operation (${reservedCashInOutOperation.externalId}) for client ${reservedCashInOutOperation.walletId} " +
+                        "asset ${asset.symbol}, volume: ${reservedCashInOutOperation.reservedAmount}: unable to save balance"
+            )
             messageWrapper.writeResponse(matchingEngineOperationId, RUNTIME)
             return
         }
         walletProcessor.apply()
-            .sendNotification(message.id, RESERVED_CASH_IN_OUT_OPERATION.name, messageWrapper.messageId)
+            .sendNotification(
+                reservedCashInOutOperation.externalId!!,
+                RESERVED_CASH_IN_OUT_OPERATION.name,
+                messageWrapper.messageId
+            )
 
         reservedCashOperationQueue.put(
             ReservedCashOperation(
-                message.id,
-                operation.clientId,
+                reservedCashInOutOperation.externalId,
+                walletOperation.clientId,
                 now,
-                if (operation.reservedAmount != BigDecimal.ZERO) NumberUtils.setScaleRoundHalfUp(
-                    operation.reservedAmount,
+                if (walletOperation.reservedAmount != BigDecimal.ZERO) NumberUtils.setScaleRoundHalfUp(
+                    walletOperation.reservedAmount,
                     accuracy
                 ).toPlainString() else "0.0",
-                if (operation.reservedForSwapAmount != BigDecimal.ZERO) NumberUtils.setScaleRoundHalfUp(
-                    operation.reservedForSwapAmount,
+                if (walletOperation.reservedForSwapAmount != BigDecimal.ZERO) NumberUtils.setScaleRoundHalfUp(
+                    walletOperation.reservedForSwapAmount,
                     accuracy
                 ).toPlainString() else "0.0",
-                operation.assetId,
+                walletOperation.assetId,
                 messageWrapper.messageId
             )
         )
 
-        messageWrapper.writeResponse(matchingEngineOperationId, MessageStatus.OK, null)
+        val outgoingMessage = EventFactory.createReservedCashInOutEvent(
+            sequenceNumber,
+            reservedCashInOutContext.messageId,
+            reservedCashInOutOperation.externalId,
+            now,
+            MessageType.CASH_IN_OUT_OPERATION,
+            walletProcessor.getClientBalanceUpdates(),
+            walletOperation
+        )
+
+        messageSender.sendMessage(outgoingMessage)
+        messageWrapper.writeResponse(reservedCashInOutOperation.matchingEngineOperationId, MessageStatus.OK, null)
 
         LOGGER.info(
-            "Reserved cash in/out operation (${message.id}) for client ${message.walletId}, " +
-                    "asset ${message.assetId}, amount: ${message.reservedVolume} processed"
+            "Reserved cash in/out operation (${reservedCashInOutOperation.externalId}) for client ${reservedCashInOutOperation.walletId}, " +
+                    "asset ${asset.symbol}, amount: ${reservedCashInOutOperation.reservedAmount} processed"
         )
     }
 

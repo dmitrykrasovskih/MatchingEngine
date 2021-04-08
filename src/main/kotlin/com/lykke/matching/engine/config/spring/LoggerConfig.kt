@@ -32,6 +32,11 @@ open class LoggerConfig {
     }
 
     @Bean
+    open fun reservedCashInOutPreProcessingLogger(): ThrottlingLogger {
+        return ThrottlingLogger.getLogger("ReservedCashInOutPreProcessing")
+    }
+
+    @Bean
     open fun cashTransferPreProcessingLogger(): ThrottlingLogger {
         return ThrottlingLogger.getLogger("CashTransferPreProcessing")
     }

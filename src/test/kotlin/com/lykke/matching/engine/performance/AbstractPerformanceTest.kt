@@ -83,6 +83,7 @@ abstract class AbstractPerformanceTest {
 
     private lateinit var singleLimitOrderContextParser: SingleLimitOrderContextParser
     private lateinit var cashInOutContextParser: CashInOutContextParser
+    private lateinit var reservedCashInOutContextParser: ReservedCashInOutContextParser
     private lateinit var cashTransferContextParser: CashTransferContextParser
 
     protected lateinit var testBalanceHolderWrapper: TestBalanceHolderWrapper
@@ -164,11 +165,13 @@ abstract class AbstractPerformanceTest {
         singleLimitOrderContextParser =
             SingleLimitOrderContextParser(assetsPairsHolder, assetsHolder, applicationSettingsHolder, LOGGER)
         cashInOutContextParser = CashInOutContextParser(assetsHolder)
+        reservedCashInOutContextParser = ReservedCashInOutContextParser(assetsHolder)
         cashTransferContextParser = CashTransferContextParser(assetsHolder)
 
         messageBuilder = MessageBuilder(
             singleLimitOrderContextParser,
             cashInOutContextParser,
+            reservedCashInOutContextParser,
             cashTransferContextParser,
             LimitOrderCancelOperationContextParser(),
             LimitOrderMassCancelOperationContextParser()
