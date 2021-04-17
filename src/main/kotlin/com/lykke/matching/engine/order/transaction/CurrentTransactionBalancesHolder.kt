@@ -108,8 +108,8 @@ class CurrentTransactionBalancesHolder(private val balancesHolder: BalancesHolde
             assetBalance.clientId,
             assetBalance.asset,
             assetBalance.balance,
-            assetBalance.reserved,
-            assetBalance.reservedForSwap,
+            assetBalance.reserved ?: ZERO,
+            assetBalance.reservedForSwap ?: ZERO,
             assetBalance.brokerId,
             assetBalance.accountId,
             assetBalance.version
