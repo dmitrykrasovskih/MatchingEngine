@@ -188,7 +188,7 @@ class BalancesHolder(
 
     fun sendBalanceUpdate(balanceUpdate: BalanceUpdate) {
         if (balanceUpdate.balances.isNotEmpty()) {
-            LOGGER.info(balanceUpdate.toString())
+            LOGGER.debug(balanceUpdate.toString())
             balanceUpdateQueue.put(balanceUpdate)
         }
     }

@@ -119,7 +119,7 @@ abstract class AbstractRabbitMqPublisher<T>(
 
     private fun logMessage(item: T, stringRepresentation: String?) {
         if (messageDatabaseLogger != null && stringRepresentation != null) {
-            MESSAGES_LOGGER.info("$exchangeName : $stringRepresentation")
+            MESSAGES_LOGGER.debug("$exchangeName : $stringRepresentation")
             messageDatabaseLogger.log(item, stringRepresentation)
         }
     }
