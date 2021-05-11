@@ -93,6 +93,7 @@ class GrpcEventPublisher(
             val item = queue.take()
             val messages = ArrayList<Event<*>>(100)
             messages.add(item)
+            Thread.sleep(10)
             while (messages.size < BATCH_SIZE && queue.size > 0) {
                 messages.add(queue.take())
             }
