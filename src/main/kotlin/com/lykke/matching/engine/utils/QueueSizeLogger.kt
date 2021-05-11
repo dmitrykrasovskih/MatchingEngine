@@ -12,7 +12,7 @@ import java.util.concurrent.BlockingQueue
 import java.util.stream.Collectors
 
 @Component
-@DependsOn("dynamicRabbitMqQueueConfig")
+@DependsOn("dynamicOutgoingQueueConfig")
 @Profile("default", "!local_config")
 class QueueSizeLogger @Autowired constructor(
     private val queues: Map<String, BlockingQueue<*>?>,
