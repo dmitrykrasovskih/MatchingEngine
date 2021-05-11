@@ -9,26 +9,21 @@ import com.lykke.matching.engine.messages.MessageStatus
 import com.lykke.matching.engine.messages.MessageStatus.LOW_BALANCE
 import com.lykke.matching.engine.messages.MessageStatus.RUNTIME
 import com.lykke.matching.engine.messages.MessageType
-import com.lykke.matching.engine.messages.MessageType.RESERVED_CASH_IN_OUT_OPERATION
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.messages.wrappers.ReservedCashInOutOperationMessageWrapper
-import com.lykke.matching.engine.outgoing.messages.ReservedCashOperation
 import com.lykke.matching.engine.outgoing.messages.v2.builders.EventFactory
 import com.lykke.matching.engine.services.validators.business.ReservedCashInOutOperationBusinessValidator
 import com.lykke.matching.engine.services.validators.impl.ValidationException
-import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
 import org.apache.log4j.Logger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.util.*
-import java.util.concurrent.BlockingQueue
 
 @Service
 class ReservedCashInOutOperationService @Autowired constructor(
     private val balancesHolder: BalancesHolder,
-    private val reservedCashOperationQueue: BlockingQueue<ReservedCashOperation>,
     private val reservedCashInOutOperationBusinessValidator: ReservedCashInOutOperationBusinessValidator,
     private val messageSequenceNumberHolder: MessageSequenceNumberHolder,
     private val messageSender: MessageSender
@@ -101,34 +96,10 @@ class ReservedCashInOutOperationService @Autowired constructor(
             return
         }
         walletProcessor.apply()
-            .sendNotification(
-                reservedCashInOutOperation.externalId!!,
-                RESERVED_CASH_IN_OUT_OPERATION.name,
-                messageWrapper.messageId
-            )
-
-        reservedCashOperationQueue.put(
-            ReservedCashOperation(
-                reservedCashInOutOperation.externalId,
-                walletOperation.clientId,
-                now,
-                if (walletOperation.reservedAmount != BigDecimal.ZERO) NumberUtils.setScaleRoundHalfUp(
-                    walletOperation.reservedAmount,
-                    accuracy
-                ).toPlainString() else "0.0",
-                if (walletOperation.reservedForSwapAmount != BigDecimal.ZERO) NumberUtils.setScaleRoundHalfUp(
-                    walletOperation.reservedForSwapAmount,
-                    accuracy
-                ).toPlainString() else "0.0",
-                walletOperation.assetId,
-                messageWrapper.messageId
-            )
-        )
-
         val outgoingMessage = EventFactory.createReservedCashInOutEvent(
             sequenceNumber,
             reservedCashInOutContext.messageId,
-            reservedCashInOutOperation.externalId,
+            reservedCashInOutOperation.externalId!!,
             now,
             MessageType.CASH_IN_OUT_OPERATION,
             walletProcessor.getClientBalanceUpdates(),

@@ -68,7 +68,7 @@ class WalletOperationsProcessorTest : AbstractTest() {
             )
         }
         assertTrue(walletOperationsProcessor.persistBalances(null, null, null, null))
-        walletOperationsProcessor.apply().sendNotification("id", "type", "test")
+        walletOperationsProcessor.apply()
 
         assertBalance("Client1", "BTC", 0.5, 0.0)
         assertBalance("Client2", "ETH", 3.0, 0.3)
@@ -110,7 +110,7 @@ class WalletOperationsProcessorTest : AbstractTest() {
         )
 
         assertTrue(walletOperationsProcessor.persistBalances(null, null, null, null))
-        walletOperationsProcessor.apply().sendNotification("id", "type", "test")
+        walletOperationsProcessor.apply()
 
         assertBalance("Client1", "BTC", 0.0, -0.1)
     }

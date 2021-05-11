@@ -9,18 +9,15 @@ import com.lykke.matching.engine.database.common.entity.BalancesData
 import com.lykke.matching.engine.database.common.entity.PersistenceData
 import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.order.transaction.CurrentTransactionBalancesHolder
-import com.lykke.matching.engine.outgoing.messages.BalanceUpdate
 import org.apache.log4j.Logger
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
-import java.util.concurrent.BlockingQueue
 
 @Component
 class BalancesHolder(
     private val balancesDbAccessorsHolder: BalancesDatabaseAccessorsHolder,
     private val persistenceManager: PersistenceManager,
     private val assetsHolder: AssetsHolder,
-    private val balanceUpdateQueue: BlockingQueue<BalanceUpdate>,
     private val applicationSettingsHolder: ApplicationSettingsHolder
 ) : BalancesGetter {
 
@@ -184,13 +181,6 @@ class BalancesHolder(
             )
         )
         update()
-    }
-
-    fun sendBalanceUpdate(balanceUpdate: BalanceUpdate) {
-        if (balanceUpdate.balances.isNotEmpty()) {
-            LOGGER.debug(balanceUpdate.toString())
-            balanceUpdateQueue.put(balanceUpdate)
-        }
     }
 
     fun isTrustedClient(clientId: String) = applicationSettingsHolder.isTrustedClient(clientId)

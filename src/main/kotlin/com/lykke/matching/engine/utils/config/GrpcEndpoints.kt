@@ -6,5 +6,7 @@ data class GrpcEndpoints(
     val balancesServicePort: Int,
     val orderBooksServicePort: Int,
 
-    val dictionariesConnection: String
+    val dictionariesConnection: String,
+    val outgoingEventsConnections: Set<String>,
+    val outgoingTrustedClientsEventsConnections: Set<String>
 )

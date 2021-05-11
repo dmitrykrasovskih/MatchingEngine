@@ -8,7 +8,6 @@ import com.lykke.matching.engine.daos.wallet.Wallet
 import com.lykke.matching.engine.database.ReservedVolumesDatabaseAccessor
 import com.lykke.matching.engine.holders.*
 import com.lykke.matching.engine.messages.MessageType
-import com.lykke.matching.engine.outgoing.messages.BalanceUpdate
 import com.lykke.matching.engine.outgoing.messages.ClientBalanceUpdate
 import com.lykke.matching.engine.outgoing.messages.v2.builders.EventFactory
 import com.lykke.matching.engine.outgoing.messages.v2.events.Event
@@ -207,15 +206,6 @@ class ReservedVolumesRecalculator @Autowired constructor(
 
             balancesHolder.insertOrUpdateWallets(updatedWallets, sequenceNumber)
             reservedVolumesDatabaseAccessor.addCorrectionsInfo(corrections)
-            balancesHolder.sendBalanceUpdate(
-                BalanceUpdate(
-                    operationId,
-                    MessageType.LIMIT_ORDER.name,
-                    now,
-                    balanceUpdates,
-                    operationId
-                )
-            )
             cashInOutEvents.forEach { messageSender.sendMessage(it) }
 
         }

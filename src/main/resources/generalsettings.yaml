@@ -86,8 +86,10 @@ MatchingEngine:
       queueSizeLimit: 5000
       maxQueueSizeLimit: 10000
       recoverQueueSizeLimit: 2000
-      rabbitMaxQueueSizeLimit: 5000
-      rabbitRecoverQueueSizeLimit: 2000
+      outgoingMaxQueueSizeLimit: 5000
+      outgoingRecoverQueueSizeLimit: 2000
+      dataMaxQueueSizeLimit: 5000
+      dataRecoverQueueSizeLimit: 2000
     name: Spot.MatchingEngine
     aliveStatus:
       updatePeriod: 10000

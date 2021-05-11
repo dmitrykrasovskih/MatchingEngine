@@ -14,7 +14,6 @@ data class MatchingEngineConfig(
     val serverOrderBookMaxConnections: Int?,
     val httpOrderBookPort: Int,
     val httpApiPort: Int,
-    val rabbitMqConfigs: RabbitMqConfigs,
     val bestPricesInterval: Long,
     val candleSaverInterval: Long,
     val hoursCandleSaverInterval: Long,

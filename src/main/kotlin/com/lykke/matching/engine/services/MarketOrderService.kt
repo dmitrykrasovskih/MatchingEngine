@@ -30,7 +30,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.util.*
-import java.util.concurrent.BlockingQueue
 
 @Service
 class MarketOrderService @Autowired constructor(
@@ -41,7 +40,6 @@ class MarketOrderService @Autowired constructor(
     private val matchingResultHandlingHelper: MatchingResultHandlingHelper,
     private val genericLimitOrderService: GenericLimitOrderService,
     private val assetsPairsHolder: AssetsPairsHolder,
-    private val rabbitSwapQueue: BlockingQueue<MarketOrderWithTrades>,
     private val marketOrderValidator: MarketOrderValidator,
     private val applicationSettingsHolder: ApplicationSettingsHolder,
     private val messageSequenceNumberHolder: MessageSequenceNumberHolder,
@@ -276,7 +274,6 @@ class MarketOrderService @Autowired constructor(
         now: Date
     ) {
         val marketOrderWithTrades = MarketOrderWithTrades(messageWrapper.messageId, order)
-        rabbitSwapQueue.put(marketOrderWithTrades)
         val outgoingMessage = EventFactory.createExecutionEvent(
             messageSequenceNumberHolder.getNewValue(),
             messageWrapper.messageId,

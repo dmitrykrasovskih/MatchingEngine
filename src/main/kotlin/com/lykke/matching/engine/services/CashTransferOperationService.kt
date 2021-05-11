@@ -8,7 +8,6 @@ import com.lykke.matching.engine.daos.fee.v2.Fee
 import com.lykke.matching.engine.exception.PersistenceException
 import com.lykke.matching.engine.fee.FeeException
 import com.lykke.matching.engine.fee.FeeProcessor
-import com.lykke.matching.engine.fee.singleFeeTransfer
 import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.holders.MessageSequenceNumberHolder
 import com.lykke.matching.engine.messages.MessageStatus
@@ -16,7 +15,6 @@ import com.lykke.matching.engine.messages.MessageStatus.*
 import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.messages.wrappers.CashTransferOperationMessageWrapper
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
-import com.lykke.matching.engine.outgoing.messages.CashTransferOperation
 import com.lykke.matching.engine.outgoing.messages.v2.builders.EventFactory
 import com.lykke.matching.engine.outgoing.messages.v2.events.CashTransferEvent
 import com.lykke.matching.engine.services.validators.business.CashTransferOperationBusinessValidator
@@ -26,13 +24,10 @@ import com.lykke.matching.engine.utils.order.MessageStatusUtils
 import org.apache.log4j.Logger
 import org.springframework.stereotype.Service
 import java.util.*
-import java.util.concurrent.BlockingQueue
 
 @Service
 class CashTransferOperationService(
     private val balancesHolder: BalancesHolder,
-    private val notificationQueue: BlockingQueue<CashTransferOperation>,
-    private val dbTransferOperationQueue: BlockingQueue<TransferOperation>,
     private val feeProcessor: FeeProcessor,
     private val cashTransferOperationBusinessValidator: CashTransferOperationBusinessValidator,
     private val messageSequenceNumberHolder: MessageSequenceNumberHolder,
@@ -92,28 +87,6 @@ class CashTransferOperationService(
             messageWrapper.writeResponse(transferOperation.matchingEngineOperationId, RUNTIME, e.message)
             return
         }
-        dbTransferOperationQueue.put(transferOperation)
-        val fee =
-            if (transferOperation.fees == null || transferOperation.fees.isEmpty()) null else transferOperation.fees.first()
-
-        notificationQueue.put(
-            CashTransferOperation(
-                transferOperation.externalId,
-                transferOperation.fromClientId,
-                transferOperation.toClientId,
-                transferOperation.dateTime,
-                NumberUtils.setScaleRoundHalfUp(
-                    transferOperation.volume,
-                    cashTransferContext.transferOperation.asset!!.accuracy
-                ).toPlainString(),
-                transferOperation.overdraftLimit,
-                asset!!.symbol,
-                fee,
-                singleFeeTransfer(result.fees),
-                result.fees,
-                cashTransferContext.messageId
-            )
-        )
 
         messageSender.sendMessage(result.outgoingMessage)
 
@@ -173,7 +146,6 @@ class CashTransferOperationService(
         }
         val messageId = cashTransferContext.messageId
         walletProcessor.apply()
-            .sendNotification(operation.externalId, MessageType.CASH_TRANSFER_OPERATION.name, messageId)
 
         val outgoingMessage = EventFactory.createCashTransferEvent(
             sequenceNumber,

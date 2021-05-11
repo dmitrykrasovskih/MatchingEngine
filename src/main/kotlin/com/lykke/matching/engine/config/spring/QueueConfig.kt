@@ -7,7 +7,7 @@ import com.lykke.matching.engine.database.reconciliation.events.OrderBookPersist
 import com.lykke.matching.engine.database.reconciliation.events.StopOrderBookPersistEvent
 import com.lykke.matching.engine.messages.wrappers.*
 import com.lykke.matching.engine.messages.wrappers.socket.LimitOrderMassCancelMessageWrapper
-import com.lykke.matching.engine.outgoing.messages.*
+import com.lykke.matching.engine.outgoing.messages.OrderBook
 import com.lykke.matching.engine.outgoing.messages.v2.events.Event
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import org.springframework.context.annotation.Bean
@@ -18,67 +18,19 @@ import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.LinkedBlockingQueue
 
 @Configuration
-open class QueueConfig {
+class QueueConfig {
 
-    //<editor-fold desc="Rabbit MQ queues">
+    //<editor-fold desc="Outgoing queues">
     @Bean
-    @RabbitQueue
-    open fun clientsEventsQueue(): BlockingDeque<Event<*>> {
+    @OutgoingQueue
+    fun clientsEventsQueue(): BlockingDeque<Event<*>> {
         return LinkedBlockingDeque()
     }
 
     @Bean
-    @RabbitQueue
-    open fun trustedClientsEventsQueue(): BlockingDeque<ExecutionEvent> {
+    @OutgoingQueue
+    fun trustedClientsEventsQueue(): BlockingDeque<ExecutionEvent> {
         return LinkedBlockingDeque()
-    }
-
-    @Bean
-    @RabbitQueue
-    open fun balanceUpdateQueue(): BlockingDeque<BalanceUpdate> {
-        return LinkedBlockingDeque<BalanceUpdate>()
-    }
-
-    @Bean
-    @RabbitQueue
-    open fun clientLimitOrdersQueue(): BlockingDeque<LimitOrdersReport> {
-        return LinkedBlockingDeque<LimitOrdersReport>()
-    }
-
-    @Bean
-    @RabbitQueue
-    open fun rabbitOrderBookQueue(): BlockingDeque<OrderBook> {
-        return LinkedBlockingDeque<OrderBook>()
-    }
-
-    @Bean
-    @RabbitQueue
-    open fun rabbitCashInOutQueue(): BlockingDeque<CashOperation> {
-        return LinkedBlockingDeque<CashOperation>()
-    }
-
-    @Bean
-    @RabbitQueue
-    open fun rabbitMarketOrderWithTradesQueue(): BlockingDeque<MarketOrderWithTrades> {
-        return LinkedBlockingDeque<MarketOrderWithTrades>()
-    }
-
-    @Bean
-    @RabbitQueue
-    open fun rabbitTransferQueue(): BlockingDeque<CashTransferOperation> {
-        return LinkedBlockingDeque<CashTransferOperation>()
-    }
-
-    @Bean
-    @RabbitQueue
-    open fun reservedCashOperationQueue(): BlockingDeque<ReservedCashOperation> {
-        return LinkedBlockingDeque<ReservedCashOperation>()
-    }
-
-    @Bean
-    @RabbitQueue
-    open fun trustedClientsLimitOrdersQueue(): BlockingDeque<LimitOrdersReport> {
-        return LinkedBlockingDeque<LimitOrdersReport>()
     }
     //</editor-fold>
 
@@ -86,43 +38,43 @@ open class QueueConfig {
     //<editor-fold desc="Input queues">
     @Bean
     @InputQueue
-    open fun limitOrderInputQueue(): BlockingQueue<SingleLimitOrderMessageWrapper> {
+    fun limitOrderInputQueue(): BlockingQueue<SingleLimitOrderMessageWrapper> {
         return LinkedBlockingQueue<SingleLimitOrderMessageWrapper>()
     }
 
     @Bean
     @InputQueue
-    open fun cashInOutInputQueue(): BlockingQueue<CashInOutOperationMessageWrapper> {
+    fun cashInOutInputQueue(): BlockingQueue<CashInOutOperationMessageWrapper> {
         return LinkedBlockingQueue<CashInOutOperationMessageWrapper>()
     }
 
     @Bean
     @InputQueue
-    open fun cashTransferInputQueue(): BlockingQueue<CashTransferOperationMessageWrapper> {
+    fun cashTransferInputQueue(): BlockingQueue<CashTransferOperationMessageWrapper> {
         return LinkedBlockingQueue<CashTransferOperationMessageWrapper>()
     }
 
     @Bean
     @InputQueue
-    open fun reservedCashInOutInputQueue(): BlockingQueue<ReservedCashInOutOperationMessageWrapper> {
+    fun reservedCashInOutInputQueue(): BlockingQueue<ReservedCashInOutOperationMessageWrapper> {
         return LinkedBlockingQueue<ReservedCashInOutOperationMessageWrapper>()
     }
 
     @Bean
     @InputQueue
-    open fun limitOrderCancelInputQueue(): BlockingQueue<LimitOrderCancelMessageWrapper> {
+    fun limitOrderCancelInputQueue(): BlockingQueue<LimitOrderCancelMessageWrapper> {
         return LinkedBlockingQueue<LimitOrderCancelMessageWrapper>()
     }
 
     @Bean
     @InputQueue
-    open fun limitOrderMassCancelInputQueue(): BlockingQueue<LimitOrderMassCancelMessageWrapper> {
+    fun limitOrderMassCancelInputQueue(): BlockingQueue<LimitOrderMassCancelMessageWrapper> {
         return LinkedBlockingQueue<LimitOrderMassCancelMessageWrapper>()
     }
 
     @Bean
     @InputQueue
-    open fun preProcessedMessageQueue(): BlockingQueue<MessageWrapper> {
+    fun preProcessedMessageQueue(): BlockingQueue<MessageWrapper> {
         return LinkedBlockingQueue<MessageWrapper>()
     }
     //</editor-fold>
@@ -130,32 +82,32 @@ open class QueueConfig {
 
     //<editor-fold desc="Etc queues">
     @Bean
-    open fun orderBookQueue(): BlockingQueue<OrderBook> {
+    fun orderBookQueue(): BlockingQueue<OrderBook> {
         return LinkedBlockingQueue<OrderBook>()
     }
 
     @Bean
-    open fun dbTransferOperationQueue(): BlockingQueue<TransferOperation> {
+    fun dbTransferOperationQueue(): BlockingQueue<TransferOperation> {
         return LinkedBlockingQueue<TransferOperation>()
     }
 
     @Bean
-    open fun lkkTradesQueue(): BlockingQueue<List<LkkTrade>> {
+    fun lkkTradesQueue(): BlockingQueue<List<LkkTrade>> {
         return LinkedBlockingQueue<List<LkkTrade>>()
     }
 
     @Bean
-    open fun updatedOrderBooksQueue(): BlockingQueue<OrderBookPersistEvent>? {
+    fun updatedOrderBooksQueue(): BlockingQueue<OrderBookPersistEvent>? {
         return LinkedBlockingQueue<OrderBookPersistEvent>()
     }
 
     @Bean
-    open fun updatedStopOrderBooksQueue(): BlockingQueue<StopOrderBookPersistEvent>? {
+    fun updatedStopOrderBooksQueue(): BlockingQueue<StopOrderBookPersistEvent>? {
         return LinkedBlockingQueue<StopOrderBookPersistEvent>()
     }
 
     @Bean
-    open fun updatedWalletsQueue(): BlockingQueue<AccountPersistEvent>? {
+    fun updatedWalletsQueue(): BlockingQueue<AccountPersistEvent>? {
         return LinkedBlockingQueue<AccountPersistEvent>()
     }
     //</editor-fold>

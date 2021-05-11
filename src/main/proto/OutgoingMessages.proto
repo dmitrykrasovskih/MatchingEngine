@@ -3,10 +3,26 @@ syntax = "proto3";
 package com.myjetwallet.messages.outgoing.grpc;
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
 
 option java_package = "com.myjetwallet.messages.outgoing.grpc";
 option java_outer_classname = "OutgoingMessages";
 option csharp_namespace = "ME.Contracts.OutgoingMessages";
+
+service GrpcOutgoingEventsService {
+    rpc PublishEvents (MessageWrapper) returns (PublishRequestResult) {
+    };
+}
+
+message MessageWrapper {
+    int32 messageType = 1;
+    repeated OutgoingEvent events = 2;
+}
+
+message PublishRequestResult {
+    bool published = 1;
+    google.protobuf.StringValue reason = 2;
+}
 
 message OutgoingEvent {
     Header header = 1;
@@ -16,6 +32,7 @@ message OutgoingEvent {
     CashTransfer cashTransfer = 5;
     repeated Order orders = 6;
     ReservedCashInOut reservedCashInOut = 7;
+    CashSwap cashSwap = 8;
 }
 
 message Header {
@@ -33,6 +50,8 @@ message Header {
         CASH_OUT = 2;
         CASH_TRANSFER = 3;
         ORDER = 4;
+        RESERVED_CASH = 5;
+        CASH_SWAP = 6;
     }
 }
 
@@ -88,6 +107,18 @@ message CashTransfer {
     string overdraftLimit = 7;
     string assetId = 8;
     repeated Fee fees = 9;
+}
+
+message CashSwap {
+    string brokerId = 1;
+    string accountId1 = 2;
+    string walletId1 = 3;
+    string assetId1 = 4;
+    string volume1 = 5;
+    string accountId2 = 6;
+    string walletId2 = 7;
+    string assetId2 = 8;
+    string volume2 = 9;
 }
 
 message Order {

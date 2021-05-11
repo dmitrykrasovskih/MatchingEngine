@@ -13,14 +13,11 @@ import com.lykke.matching.engine.holders.AssetsHolder
 import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.order.transaction.CurrentTransactionBalancesHolder
 import com.lykke.matching.engine.order.transaction.WalletAssetBalance
-import com.lykke.matching.engine.outgoing.messages.BalanceUpdate
 import com.lykke.matching.engine.outgoing.messages.ClientBalanceUpdate
 import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.utils.logging.MetricsLogger
 import org.apache.log4j.Logger
 import java.math.BigDecimal
-import java.util.*
-import kotlin.collections.HashMap
 
 class WalletOperationsProcessor(
     private val balancesHolder: BalancesHolder,
@@ -141,20 +138,6 @@ class WalletOperationsProcessor(
                 messageSequenceNumber
             )
         )
-    }
-
-    fun sendNotification(id: String, type: String, messageId: String) {
-        if (clientBalanceUpdatesByClientIdAndAssetId.isNotEmpty()) {
-            balancesHolder.sendBalanceUpdate(
-                BalanceUpdate(
-                    id,
-                    type,
-                    Date(),
-                    clientBalanceUpdatesByClientIdAndAssetId.values.toList(),
-                    messageId
-                )
-            )
-        }
     }
 
     fun getClientBalanceUpdates(): List<ClientBalanceUpdate> {

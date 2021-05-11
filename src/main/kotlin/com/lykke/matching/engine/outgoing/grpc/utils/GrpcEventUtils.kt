@@ -1,6 +1,6 @@
-package com.lykke.matching.engine.outgoing.rabbit.utils
+package com.swisschain.matching.engine.outgoing.grpc.utils
 
-class RabbitEventUtils {
+class GrpcEventUtils {
     companion object {
         fun getClientEventConsumerQueueName(exchangeName: String, index: Int): String {
             return "client_queue_${exchangeName}_$index"
@@ -8,6 +8,10 @@ class RabbitEventUtils {
 
         fun getTrustedClientsEventConsumerQueueName(exchangeName: String, index: Int): String {
             return "trusted_client_queue_${exchangeName}_$index"
+        }
+
+        fun getDatabaseLogQueueName(exchangeName: String, index: Int): String {
+            return "database_grpc_log_${exchangeName}_$index"
         }
     }
 }

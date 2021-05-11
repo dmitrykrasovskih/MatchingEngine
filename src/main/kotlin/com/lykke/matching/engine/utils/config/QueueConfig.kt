@@ -1,9 +1,13 @@
 package com.lykke.matching.engine.utils.config
 
-data class QueueConfig(val queueSizeHealthCheckInterval: Long,
-                       val queueSizeLoggerInterval: Long,
-                       val queueSizeLimit: Int,
-                       val maxQueueSizeLimit: Int,
-                       val recoverQueueSizeLimit: Int,
-                       val rabbitMaxQueueSizeLimit: Int,
-                       val rabbitRecoverQueueSizeLimit: Int)
+data class QueueConfig(
+    val queueSizeHealthCheckInterval: Long,
+    val queueSizeLoggerInterval: Long,
+    val queueSizeLimit: Int,
+    val maxQueueSizeLimit: Int,
+    val recoverQueueSizeLimit: Int,
+    val outgoingMaxQueueSizeLimit: Int,
+    val outgoingRecoverQueueSizeLimit: Int,
+    val dataMaxQueueSizeLimit: Int,
+    val dataRecoverQueueSizeLimit: Int
+)

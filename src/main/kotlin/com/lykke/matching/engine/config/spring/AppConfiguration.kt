@@ -15,48 +15,66 @@ import org.springframework.context.annotation.Configuration
 import java.util.concurrent.BlockingQueue
 
 @Configuration
-open class AppConfiguration {
+class AppConfiguration {
 
     @Autowired
     private lateinit var config: Config
 
 
     @Bean
-    open fun appInitData(genericLimitOrderService: GenericLimitOrderService,
-                         genericStopLimitOrderService: GenericStopLimitOrderService,
-                         balanceHolder: BalancesHolder): AppInitialData {
-        return AppInitialData(genericLimitOrderService.initialOrdersCount, genericStopLimitOrderService.initialStopOrdersCount,
-                balanceHolder.initialBalancesCount, balanceHolder.initialClientsCount)
+    fun appInitData(
+        genericLimitOrderService: GenericLimitOrderService,
+        genericStopLimitOrderService: GenericStopLimitOrderService,
+        balanceHolder: BalancesHolder
+    ): AppInitialData {
+        return AppInitialData(
+            genericLimitOrderService.initialOrdersCount, genericStopLimitOrderService.initialStopOrdersCount,
+            balanceHolder.initialBalancesCount, balanceHolder.initialClientsCount
+        )
     }
 
     @Bean
-    open fun azureStatusProcessor(): Runnable {
+    fun azureStatusProcessor(): Runnable {
         return AliveStatusProcessorFactory
-                .createAzureProcessor(connectionString = config.matchingEngine.db.matchingEngineConnString,
-                        appName = config.matchingEngine.name,
-                        config = config.matchingEngine.aliveStatus)
+            .createAzureProcessor(
+                connectionString = config.matchingEngine.db.matchingEngineConnString,
+                appName = config.matchingEngine.name,
+                config = config.matchingEngine.aliveStatus
+            )
     }
 
     @Bean
-    open fun inputQueueSizeChecker(@InputQueue namesToInputQueues: Map<String, BlockingQueue<*>>): QueueSizeHealthChecker {
+    fun inputQueueSizeChecker(@InputQueue namesToInputQueues: Map<String, BlockingQueue<*>>): QueueSizeHealthChecker {
         return QueueSizeHealthChecker(
-                MonitoredComponent.INPUT_QUEUE,
-                namesToInputQueues,
-                config.matchingEngine.queueConfig.maxQueueSizeLimit,
-                config.matchingEngine.queueConfig.recoverQueueSizeLimit)
+            MonitoredComponent.INPUT_QUEUE,
+            namesToInputQueues,
+            config.matchingEngine.queueConfig.maxQueueSizeLimit,
+            config.matchingEngine.queueConfig.recoverQueueSizeLimit
+        )
     }
 
     @Bean
-    open fun rabbitQueueSizeChecker(@RabbitQueue namesToInputQueues: Map<String, BlockingQueue<*>>): QueueSizeHealthChecker {
+    fun outgoingQueueSizeChecker(@OutgoingQueue namesToInputQueues: Map<String, BlockingQueue<*>>): QueueSizeHealthChecker {
         return QueueSizeHealthChecker(
-                MonitoredComponent.RABBIT_QUEUE,
-                namesToInputQueues,
-                config.matchingEngine.queueConfig.rabbitMaxQueueSizeLimit,
-                config.matchingEngine.queueConfig.rabbitRecoverQueueSizeLimit)
+            MonitoredComponent.OUTGOING_QUEUE,
+            namesToInputQueues,
+            config.matchingEngine.queueConfig.outgoingMaxQueueSizeLimit,
+            config.matchingEngine.queueConfig.outgoingRecoverQueueSizeLimit
+        )
     }
 
     @Bean
-    open fun monitoringStatsCollector(): MonitoringStatsCollector {
+    fun dataQueueSizeChecker(@DataQueue namesToInputQueues: Map<String, BlockingQueue<*>>): QueueSizeHealthChecker {
+        return QueueSizeHealthChecker(
+            MonitoredComponent.DATA_QUEUE,
+            namesToInputQueues,
+            config.matchingEngine.queueConfig.dataMaxQueueSizeLimit,
+            config.matchingEngine.queueConfig.dataRecoverQueueSizeLimit
+        )
+    }
+
+    @Bean
+    fun monitoringStatsCollector(): MonitoringStatsCollector {
         return MonitoringStatsCollector()
     }
 }

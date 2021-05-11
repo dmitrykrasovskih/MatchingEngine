@@ -3,7 +3,6 @@ package com.lykke.matching.engine.services
 import com.lykke.matching.engine.balance.BalanceException
 import com.lykke.matching.engine.daos.context.CashInOutContext
 import com.lykke.matching.engine.daos.converters.CashInOutOperationConverter
-import com.lykke.matching.engine.daos.fee.v2.Fee
 import com.lykke.matching.engine.fee.FeeException
 import com.lykke.matching.engine.fee.FeeProcessor
 import com.lykke.matching.engine.holders.BalancesHolder
@@ -13,7 +12,6 @@ import com.lykke.matching.engine.messages.MessageStatus.*
 import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.messages.wrappers.CashInOutOperationMessageWrapper
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
-import com.lykke.matching.engine.outgoing.messages.CashOperation
 import com.lykke.matching.engine.outgoing.messages.v2.builders.EventFactory
 import com.lykke.matching.engine.services.validators.business.CashInOutOperationBusinessValidator
 import com.lykke.matching.engine.services.validators.impl.ValidationException
@@ -22,12 +20,10 @@ import com.lykke.matching.engine.utils.order.MessageStatusUtils
 import org.apache.log4j.Logger
 import org.springframework.stereotype.Service
 import java.util.*
-import java.util.concurrent.BlockingQueue
 
 @Service
 class CashInOutOperationService(
     private val balancesHolder: BalancesHolder,
-    private val rabbitCashInOutQueue: BlockingQueue<CashOperation>,
     private val feeProcessor: FeeProcessor,
     private val cashInOutOperationBusinessValidator: CashInOutOperationBusinessValidator,
     private val messageSequenceNumberHolder: MessageSequenceNumberHolder,
@@ -127,19 +123,13 @@ class CashInOutOperationService(
             )
             return
         }
-        walletProcessor.apply().sendNotification(
-            cashInOutOperation.externalId!!,
-            MessageType.CASH_IN_OUT_OPERATION.name,
-            messageWrapper.messageId
-        )
-
-        publishRabbitMessage(cashInOutContext, fees)
+        walletProcessor.apply()
 
         val outgoingMessage = EventFactory.createCashInOutEvent(
             walletOperation.amount,
             sequenceNumber,
             cashInOutContext.messageId,
-            cashInOutOperation.externalId,
+            cashInOutOperation.externalId!!,
             now,
             MessageType.CASH_IN_OUT_OPERATION,
             walletProcessor.getClientBalanceUpdates(),
@@ -160,24 +150,5 @@ class CashInOutOperationService(
     override fun writeResponse(genericMessageWrapper: MessageWrapper, status: MessageStatus) {
         val messageWrapper = genericMessageWrapper as CashInOutOperationMessageWrapper
         messageWrapper.writeResponse(messageWrapper.id, status)
-    }
-
-    private fun publishRabbitMessage(
-        cashInOutContext: CashInOutContext,
-        fees: List<Fee>
-    ) {
-        val cashInOutOperation = cashInOutContext.cashInOutOperation
-        val asset = cashInOutOperation.asset
-        rabbitCashInOutQueue.put(
-            CashOperation(
-                cashInOutOperation.externalId!!,
-                cashInOutOperation.clientId,
-                cashInOutOperation.dateTime,
-                NumberUtils.setScaleRoundHalfUp(cashInOutOperation.amount, asset!!.accuracy).toPlainString(),
-                asset.symbol,
-                cashInOutContext.messageId,
-                fees
-            )
-        )
     }
 }

@@ -1,11 +1,11 @@
-package com.lykke.matching.engine.outgoing.rabbit.impl.dispatchers
+package com.lykke.matching.engine.outgoing.publishers.dispatchers
 
-import com.lykke.matching.engine.outgoing.rabbit.events.RabbitFailureEvent
-import com.lykke.matching.engine.outgoing.rabbit.events.RabbitReadyEvent
+import com.lykke.matching.engine.outgoing.publishers.events.PublisherFailureEvent
+import com.lykke.matching.engine.outgoing.publishers.events.PublisherReadyEvent
 import com.lykke.matching.engine.utils.monitoring.HealthMonitorEvent
 import com.lykke.matching.engine.utils.monitoring.MonitoredComponent
 import com.lykke.utils.logging.MetricsLogger
-import org.apache.log4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.event.EventListener
@@ -14,7 +14,7 @@ import java.util.concurrent.BlockingQueue
 import java.util.concurrent.locks.ReentrantLock
 import javax.annotation.PostConstruct
 
-class RabbitEventDispatcher<E>(
+class OutgoingEventDispatcher<E>(
     private val dispatcherName: String,
     private val inputDeque: BlockingDeque<E>,
     private val queueNameToQueue: Map<String, BlockingQueue<E>>
@@ -22,7 +22,7 @@ class RabbitEventDispatcher<E>(
 
     companion object {
         val METRICS_LOGGER = MetricsLogger.getLogger()
-        val LOGGER = Logger.getLogger(RabbitEventDispatcher::class.java)
+        val LOGGER = LoggerFactory.getLogger(OutgoingEventDispatcher::class.java)
     }
 
     private var failedEventConsumers = HashSet<String>()
@@ -47,7 +47,7 @@ class RabbitEventDispatcher<E>(
     @PostConstruct
     private fun init() {
         val queueNames = queueNameToQueue.keys.joinToString()
-        LOGGER.info("Starting rabbit dispatcher for queues: $queueNames")
+        LOGGER.info("Starting publishers dispatcher for queues: $queueNames")
         this.start()
     }
 
@@ -80,31 +80,35 @@ class RabbitEventDispatcher<E>(
     }
 
     @EventListener
-    private fun onRabbitFailure(rabbitFailureEvent: RabbitFailureEvent<E>) {
-        if (!queueNameToQueue.keys.contains(rabbitFailureEvent.publisherName)) {
+    fun onPublisherFailure(publisherFailureEvent: PublisherFailureEvent<E>) {
+        if (!queueNameToQueue.keys.contains(publisherFailureEvent.publisherName)) {
             return
         }
 
         try {
             maintenanceModeLock.lock()
-            failedEventConsumers.add(rabbitFailureEvent.publisherName)
+            failedEventConsumers.add(publisherFailureEvent.publisherName)
 
-            logError("Rabbit MQ publisher ${rabbitFailureEvent.publisherName} crashed, count of functional publishers is ${queueNameToQueue.size - failedEventConsumers.size}")
+            logError("Publisher ${publisherFailureEvent.publisherName} crashed, count of functional publishers is ${queueNameToQueue.size - failedEventConsumers.size}")
 
-            val failedConsumerQueue = queueNameToQueue[rabbitFailureEvent.publisherName]
+            val failedConsumerQueue = queueNameToQueue[publisherFailureEvent.publisherName]
 
             failedConsumerQueue?.reversed()?.forEach {
                 inputDeque.putFirst(it)
             }
 
-            rabbitFailureEvent.failedEvent?.let { inputDeque.putFirst(it) }
+            publisherFailureEvent.failedEvent?.let {
+                it.forEach { event ->
+                    inputDeque.putFirst(event)
+                }
+            }
 
             if (queueNameToQueue.size == failedEventConsumers.size) {
-                logError("All Rabbit MQ publishers crashed, dispatcher: $dispatcherName")
+                logError("Publishers crashed, dispatcher: $dispatcherName")
                 applicationEventPublisher.publishEvent(
                     HealthMonitorEvent(
                         false,
-                        MonitoredComponent.RABBIT,
+                        MonitoredComponent.PUBLISHER,
                         dispatcherName
                     )
                 )
@@ -119,24 +123,27 @@ class RabbitEventDispatcher<E>(
     }
 
     @EventListener
-    private fun onRabbitReady(rabbitReadyEvent: RabbitReadyEvent) {
-        if (!queueNameToQueue.keys.contains(rabbitReadyEvent.publisherName)) {
+    fun onPublisherReady(publisherReadyEvent: PublisherReadyEvent) {
+        if (!queueNameToQueue.keys.contains(publisherReadyEvent.publisherName)) {
             return
         }
 
         try {
             maintenanceModeLock.lock()
-            if (failedEventConsumers.remove(rabbitReadyEvent.publisherName)) {
-                log("Rabbit MQ publisher recovered: ${rabbitReadyEvent.publisherName}, count of functional publishers is ${queueNameToQueue.size - failedEventConsumers.size}")
+            if (failedEventConsumers.remove(publisherReadyEvent.publisherName)) {
+                log("Publisher recovered: ${publisherReadyEvent.publisherName}, count of functional publishers is ${queueNameToQueue.size - failedEventConsumers.size}")
             }
             maintenanceModeCondition.signal()
 
-            applicationEventPublisher.publishEvent(HealthMonitorEvent(true, MonitoredComponent.RABBIT, dispatcherName))
-        } catch (e: Exception) {
-            logException(
-                "Error occurred on rabbit dispatcher recovery from maintenance mode for exchange: $dispatcherName",
-                e
+            applicationEventPublisher.publishEvent(
+                HealthMonitorEvent(
+                    true,
+                    MonitoredComponent.PUBLISHER,
+                    dispatcherName
+                )
             )
+        } catch (e: Exception) {
+            logException("Error occurred on dispatcher recovery from maintenance mode for exchange: $dispatcherName", e)
         } finally {
             maintenanceModeLock.unlock()
         }
