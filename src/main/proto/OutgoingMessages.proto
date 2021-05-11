@@ -15,8 +15,7 @@ service GrpcOutgoingEventsService {
 }
 
 message MessageWrapper {
-    int32 messageType = 1;
-    repeated OutgoingEvent events = 2;
+    repeated OutgoingEvent events = 1;
 }
 
 message PublishRequestResult {
