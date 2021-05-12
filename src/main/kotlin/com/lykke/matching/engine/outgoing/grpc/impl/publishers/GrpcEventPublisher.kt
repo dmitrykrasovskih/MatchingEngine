@@ -93,7 +93,7 @@ class GrpcEventPublisher(
             val item = queue.take()
             val messages = ArrayList<Event<*>>(100)
             messages.add(item)
-            Thread.sleep(10)
+            Thread.sleep(100)
             while (messages.size < BATCH_SIZE && queue.size > 0) {
                 messages.add(queue.take())
             }
@@ -121,7 +121,6 @@ class GrpcEventPublisher(
         }
     }
 
-
     private fun fixTime(startTime: Long, endTime: Long, startPersistTime: Long, endPersistTime: Long) {
         messagesCount++
         totalPersistTime += (endPersistTime - startPersistTime).toDouble() / LOG_COUNT
@@ -148,7 +147,7 @@ class GrpcEventPublisher(
     private fun logMessage(item: Event<*>) {
         if (messageDatabaseLogger != null) {
             val message = item.buildGeneratedMessage().toString()
-            MESSAGES_LOGGER.info("$publisherName : $message")
+            MESSAGES_LOGGER.debug("$publisherName : $message")
             messageDatabaseLogger.log(item, message)
         }
     }
