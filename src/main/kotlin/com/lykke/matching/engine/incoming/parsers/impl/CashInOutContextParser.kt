@@ -10,6 +10,7 @@ import com.lykke.matching.engine.incoming.parsers.data.CashInOutParsedData
 import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.messages.wrappers.CashInOutOperationMessageWrapper
 import com.lykke.matching.engine.utils.proto.toDate
+import org.apache.log4j.Logger
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
@@ -17,6 +18,10 @@ import java.util.*
 @Component
 class CashInOutContextParser(private val assetsHolder: AssetsHolder) :
     ContextParser<CashInOutParsedData, CashInOutOperationMessageWrapper> {
+    companion object {
+        private val LOGGER = Logger.getLogger(CashInOutContextParser::class.java.name)
+    }
+
     override fun parse(messageWrapper: CashInOutOperationMessageWrapper): CashInOutParsedData {
         val operationId = UUID.randomUUID().toString()
 
@@ -43,6 +48,9 @@ class CashInOutContextParser(private val assetsHolder: AssetsHolder) :
                 feeInstructions = NewFeeInstruction.create(message.feesList)
             )
         )
+
+        LOGGER.info(message.toString())
+        LOGGER.info(messageWrapper.context!!.cashInOutOperation.toString())
 
         return CashInOutParsedData(messageWrapper, message.assetId)
     }

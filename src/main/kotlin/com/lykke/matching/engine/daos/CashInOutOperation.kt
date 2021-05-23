@@ -6,15 +6,16 @@ import java.math.BigDecimal
 import java.util.*
 
 data class CashInOutOperation(
-        val matchingEngineOperationId: String,
-        val externalId: String?,
-        val brokerId: String,
-        val accountId: String,
-        val clientId: String,
-        val asset: Asset?,
-        val dateTime: Date,
-        val amount: BigDecimal,
-        val feeInstructions: List<NewFeeInstruction>) {
+    val matchingEngineOperationId: String,
+    val externalId: String?,
+    val brokerId: String,
+    val accountId: String,
+    val clientId: String,
+    val asset: Asset?,
+    val dateTime: Date,
+    val amount: BigDecimal,
+    val feeInstructions: List<NewFeeInstruction>
+) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -46,4 +47,10 @@ data class CashInOutOperation(
         result = 31 * result + feeInstructions.hashCode()
         return result
     }
+
+    override fun toString(): String {
+        return "CashInOutOperation(matchingEngineOperationId='$matchingEngineOperationId', externalId=$externalId, brokerId='$brokerId', accountId='$accountId', clientId='$clientId', asset=$asset, dateTime=$dateTime, amount=$amount, feeInstructions=$feeInstructions)"
+    }
+
+
 }
