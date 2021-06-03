@@ -1,6 +1,7 @@
 package com.lykke.matching.engine.incoming.grpc
 
 import com.lykke.matching.engine.messages.wrappers.CashInOutOperationMessageWrapper
+import com.lykke.matching.engine.messages.wrappers.CashSwapOperationMessageWrapper
 import com.lykke.matching.engine.messages.wrappers.CashTransferOperationMessageWrapper
 import com.lykke.matching.engine.messages.wrappers.ReservedCashInOutOperationMessageWrapper
 import com.myjetwallet.messages.incoming.grpc.CashServiceGrpc
@@ -12,6 +13,7 @@ import java.util.concurrent.BlockingQueue
 class CashApiService(
     private val cashInOutInputQueue: BlockingQueue<CashInOutOperationMessageWrapper>,
     private val cashTransferInputQueue: BlockingQueue<CashTransferOperationMessageWrapper>,
+    private val cashSwapInputQueue: BlockingQueue<CashSwapOperationMessageWrapper>,
     private val reservedCashInOutInputQueue: BlockingQueue<ReservedCashInOutOperationMessageWrapper>,
     registry: MeterRegistry
 ) : CashServiceGrpc.CashServiceImplBase() {
@@ -38,11 +40,11 @@ class CashApiService(
     }
 
     override fun cashSwap(
-        request: GrpcIncomingMessages.CashSwapOperation?,
-        responseObserver: StreamObserver<GrpcIncomingMessages.CashSwapOperationResponse>?
+        request: GrpcIncomingMessages.CashSwapOperation,
+        responseObserver: StreamObserver<GrpcIncomingMessages.CashSwapOperationResponse>
     ) {
         cashSwapCounter.increment()
-        super.cashSwap(request, responseObserver)
+        cashSwapInputQueue.put(CashSwapOperationMessageWrapper(request, responseObserver, true))
     }
 
     override fun reservedCashInOut(

@@ -69,6 +69,15 @@ class BalancesHolder(
         return getBalances(clientId)[assetId]?.reserved ?: BigDecimal.ZERO
     }
 
+    override fun getReservedFoSwapBalance(
+        brokerId: String,
+        accountId: String,
+        clientId: String,
+        assetId: String
+    ): BigDecimal {
+        return getBalances(clientId)[assetId]?.reservedForSwap ?: BigDecimal.ZERO
+    }
+
     override fun getReservedTotalBalance(
         brokerId: String,
         accountId: String,

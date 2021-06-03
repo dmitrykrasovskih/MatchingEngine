@@ -1,7 +1,6 @@
 package com.lykke.matching.engine.performance
 
 import com.lykke.matching.engine.balance.util.TestBalanceHolderWrapper
-import com.lykke.matching.engine.daos.LkkTrade
 import com.lykke.matching.engine.daos.TradeInfo
 import com.lykke.matching.engine.database.*
 import com.lykke.matching.engine.database.cache.ApplicationSettingsCache
@@ -97,8 +96,6 @@ abstract class AbstractPerformanceTest {
 
     private val clientLimitOrdersQueue = LinkedBlockingQueue<LimitOrdersReport>()
 
-    private val lkkTradesQueue = LinkedBlockingQueue<List<LkkTrade>>()
-
     private val orderBookQueue = LinkedBlockingQueue<OrderBook>()
 
     private val rabbitOrderBookQueue = LinkedBlockingQueue<OrderBook>()
@@ -114,7 +111,6 @@ abstract class AbstractPerformanceTest {
         rabbitTrustedClientsEventsQueue.clear()
         balanceUpdateQueue.clear()
         clientLimitOrdersQueue.clear()
-        lkkTradesQueue.clear()
         orderBookQueue.clear()
         rabbitOrderBookQueue.clear()
         rabbitSwapQueue.clear()
@@ -141,7 +137,6 @@ abstract class AbstractPerformanceTest {
             balancesDatabaseAccessorsHolder,
             persistenceManager,
             assetsHolder,
-            balanceUpdateQueue,
             applicationSettingsHolder
         )
 
@@ -185,13 +180,7 @@ abstract class AbstractPerformanceTest {
         val executionPersistenceService = ExecutionPersistenceService(persistenceManager)
         val executionEventSender = ExecutionEventSender(
             notificationSender,
-            clientLimitOrdersQueue,
-            trustedClientsLimitOrdersQueue,
-            rabbitSwapQueue,
-            lkkTradesQueue,
-            genericLimitOrderService,
-            orderBookQueue,
-            rabbitOrderBookQueue
+            genericLimitOrderService
         )
         val executionDataApplyService = ExecutionDataApplyService(
             executionEventsSequenceNumbersGenerator,
@@ -263,7 +252,6 @@ abstract class AbstractPerformanceTest {
             matchingResultHandlingHelper,
             genericLimitOrderService,
             assetsPairsHolder,
-            rabbitSwapQueue,
             marketOrderValidator,
             applicationSettingsHolder,
             messageSequenceNumberHolder,

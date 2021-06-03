@@ -93,9 +93,6 @@ abstract class AbstractTest {
     protected lateinit var testClientLimitOrderListener: TestClientLimitOrderListener
 
     @Autowired
-    protected lateinit var testLkkTradeListener: TestLkkTradeListener
-
-    @Autowired
     protected lateinit var testOrderBookListener: TestOrderBookListener
 
     @Autowired
@@ -162,7 +159,6 @@ abstract class AbstractTest {
         testTrustedClientsLimitOrderListener.clear()
         testClientLimitOrderListener.clear()
 
-        testLkkTradeListener.clear()
         rabbitSwapListener.clear()
 
         clientsEventsQueue.clear()

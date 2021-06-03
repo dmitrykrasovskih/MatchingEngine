@@ -11,48 +11,53 @@ import org.springframework.stereotype.Component
 import javax.annotation.PostConstruct
 
 @Component
-open class LoggerConfig {
+class LoggerConfig {
 
     @Autowired
     private lateinit var config: Config
 
     @Bean(destroyMethod = "")
-    open fun appStarterLogger(): Logger {
+    fun appStarterLogger(): Logger {
         return Logger.getLogger("AppStarter")
     }
 
     @Bean
-    open fun singleLimitOrderPreProcessingLogger(): ThrottlingLogger {
+    fun singleLimitOrderPreProcessingLogger(): ThrottlingLogger {
         return ThrottlingLogger.getLogger("SingleLimitOrderPreProcessing")
     }
 
     @Bean
-    open fun cashInOutPreProcessingLogger(): ThrottlingLogger {
+    fun cashInOutPreProcessingLogger(): ThrottlingLogger {
         return ThrottlingLogger.getLogger("CashInOutPreProcessing")
     }
 
     @Bean
-    open fun reservedCashInOutPreProcessingLogger(): ThrottlingLogger {
+    fun reservedCashInOutPreProcessingLogger(): ThrottlingLogger {
         return ThrottlingLogger.getLogger("ReservedCashInOutPreProcessing")
     }
 
     @Bean
-    open fun cashTransferPreProcessingLogger(): ThrottlingLogger {
+    fun cashTransferPreProcessingLogger(): ThrottlingLogger {
         return ThrottlingLogger.getLogger("CashTransferPreProcessing")
     }
 
     @Bean
-    open fun limitOrderCancelPreProcessingLogger(): ThrottlingLogger {
+    fun cashSwapPreProcessingLogger(): ThrottlingLogger {
+        return ThrottlingLogger.getLogger("CashSwapPreProcessing")
+    }
+
+    @Bean
+    fun limitOrderCancelPreProcessingLogger(): ThrottlingLogger {
         return ThrottlingLogger.getLogger("LimitOrderCancelPreProcessing")
     }
 
     @Bean
-    open fun limitOrderMassCancelPreProcessingLogger(): ThrottlingLogger {
+    fun limitOrderMassCancelPreProcessingLogger(): ThrottlingLogger {
         return ThrottlingLogger.getLogger("LimitOrderMassCancelPreProcessing")
     }
 
     @PostConstruct
-    open fun init() {
+    fun init() {
         AppInitializer.init()
         MetricsLogger.init("ME", config.slackNotifications)
         ThrottlingLogger.init(config.throttlingLogger)

@@ -7,14 +7,12 @@ import com.lykke.matching.engine.holders.CurrentTransactionDataHolder
 import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
 import com.lykke.matching.engine.holders.MessageSequenceNumberHolder
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
-import com.lykke.matching.engine.outgoing.database.TransferOperationSaveService
 import com.lykke.matching.engine.performance.PerformanceStatsHolder
 import com.lykke.matching.engine.services.*
 import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import java.util.*
 import java.util.concurrent.BlockingQueue
 import javax.annotation.PostConstruct
 
@@ -40,6 +38,9 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
     private lateinit var cashTransferOperationService: CashTransferOperationService
 
     @Autowired
+    private lateinit var cashSwapOperationService: CashSwapOperationService
+
+    @Autowired
     private lateinit var singleLimitOrderService: SingleLimitOrderService
 
     @Autowired
@@ -56,9 +57,6 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
 
     @Autowired
     private lateinit var multiLimitOrderCancelService: MultiLimitOrderCancelService
-
-    @Autowired
-    private lateinit var transferOperationSaveService: TransferOperationSaveService
 
     @Autowired
     private lateinit var reservedCashInOutOperationService: ReservedCashInOutOperationService
@@ -86,8 +84,6 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
     }
 
     override fun run() {
-        transferOperationSaveService.start()
-
         while (true) {
             processMessage(preProcessedMessageQueue.take())
         }
@@ -179,6 +175,7 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
         result[MessageType.CASH_IN_OUT_OPERATION] = cashInOutOperationService
         result[MessageType.CASH_TRANSFER_OPERATION] = cashTransferOperationService
         result[MessageType.RESERVED_CASH_IN_OUT_OPERATION] = reservedCashInOutOperationService
+        result[MessageType.CASH_SWAP_OPERATION] = cashSwapOperationService
         result[MessageType.LIMIT_ORDER] = singleLimitOrderService
         result[MessageType.MARKET_ORDER] = marketOrderService
         result[MessageType.LIMIT_ORDER_CANCEL] = limitOrderCancelService

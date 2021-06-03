@@ -36,6 +36,9 @@ class GrpcServicesInit(
     private lateinit var cashTransferInputQueue: BlockingQueue<CashTransferOperationMessageWrapper>
 
     @Autowired
+    private lateinit var cashSwapInputQueue: BlockingQueue<CashSwapOperationMessageWrapper>
+
+    @Autowired
     private lateinit var limitOrderInputQueue: BlockingQueue<SingleLimitOrderMessageWrapper>
 
     @Autowired
@@ -81,6 +84,7 @@ class GrpcServicesInit(
                     CashApiService(
                         cashInOutInputQueue,
                         cashTransferInputQueue,
+                        cashSwapInputQueue,
                         reservedCashInOutInputQueue,
                         registry
                     )

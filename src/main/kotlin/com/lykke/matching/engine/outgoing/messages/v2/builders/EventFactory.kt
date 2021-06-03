@@ -1,5 +1,6 @@
 package com.lykke.matching.engine.outgoing.messages.v2.builders
 
+import com.lykke.matching.engine.daos.SwapOperation
 import com.lykke.matching.engine.daos.TransferOperation
 import com.lykke.matching.engine.daos.WalletOperation
 import com.lykke.matching.engine.daos.fee.v2.Fee
@@ -14,75 +15,92 @@ import java.math.BigDecimal
 import java.util.*
 
 class EventFactory {
-// TODO new format!!!
     companion object {
         private val LOGGER = ThrottlingLogger.getLogger(EventFactory::class.java.name)
         private val METRICS_LOGGER = MetricsLogger.getLogger()
 
-        fun createExecutionEvent(sequenceNumber: Long,
-                                 messageId: String,
-                                 requestId: String,
-                                 date: Date,
-                                 messageType: MessageType,
-                                 marketOrderWithTrades: MarketOrderWithTrades): ExecutionEvent {
-            return createExecutionEvent(sequenceNumber,
+        fun createExecutionEvent(
+            sequenceNumber: Long,
+            messageId: String,
+            requestId: String,
+            date: Date,
+            messageType: MessageType,
+            marketOrderWithTrades: MarketOrderWithTrades
+        ): ExecutionEvent {
+            return createExecutionEvent(
+                sequenceNumber,
+                messageId,
+                requestId,
+                date,
+                messageType,
+                emptyList(),
+                emptyList(),
+                marketOrderWithTrades
+            )
+        }
+
+        fun createExecutionEvent(
+            sequenceNumber: Long,
+            messageId: String,
+            requestId: String,
+            date: Date,
+            messageType: MessageType,
+            clientBalanceUpdates: List<ClientBalanceUpdate>,
+            limitOrdersWithTrades: List<LimitOrderWithTrades>,
+            marketOrderWithTrades: MarketOrderWithTrades? = null
+        ): ExecutionEvent {
+            return createEvent {
+                ExecutionEventBuilder()
+                    .setHeaderData(sequenceNumber, messageId, requestId, date, messageType)
+                    .setEventData(
+                        ExecutionEventData(
+                            clientBalanceUpdates,
+                            limitOrdersWithTrades,
+                            marketOrderWithTrades
+                        )
+                    )
+                    .build()
+            }
+        }
+
+        fun createTrustedClientsExecutionEvent(
+            sequenceNumber: Long,
+            messageId: String,
+            requestId: String,
+            date: Date,
+            messageType: MessageType,
+            limitOrdersWithTrades: List<LimitOrderWithTrades>
+        ): ExecutionEvent {
+            return createEvent {
+                ExecutionEventBuilder()
+                    .setHeaderData(sequenceNumber, messageId, requestId, date, messageType)
+                    .setEventData(ExecutionEventData(emptyList(), limitOrdersWithTrades, null))
+                    .build()
+            }
+        }
+
+        fun createCashInOutEvent(
+            volume: BigDecimal,
+            sequenceNumber: Long,
+            messageId: String,
+            requestId: String,
+            date: Date,
+            messageType: MessageType,
+            clientBalanceUpdates: List<ClientBalanceUpdate>,
+            cashInOperation: WalletOperation,
+            internalFees: List<Fee>
+        ): Event<*> {
+            return if (volume > BigDecimal.ZERO) {
+                createCashInEvent(
+                    sequenceNumber,
                     messageId,
                     requestId,
                     date,
                     messageType,
-                    emptyList(),
-                    emptyList(),
-                    marketOrderWithTrades)
-        }
-
-        fun createExecutionEvent(sequenceNumber: Long,
-                                 messageId: String,
-                                 requestId: String,
-                                 date: Date,
-                                 messageType: MessageType,
-                                 clientBalanceUpdates: List<ClientBalanceUpdate>,
-                                 limitOrdersWithTrades: List<LimitOrderWithTrades>,
-                                 marketOrderWithTrades: MarketOrderWithTrades? = null): ExecutionEvent {
-            return createEvent {
-                ExecutionEventBuilder()
-                        .setHeaderData(sequenceNumber, messageId, requestId, date, messageType)
-                        .setEventData(ExecutionEventData(clientBalanceUpdates, limitOrdersWithTrades, marketOrderWithTrades))
-                        .build()
-            }
-        }
-
-        fun createTrustedClientsExecutionEvent(sequenceNumber: Long,
-                                               messageId: String,
-                                               requestId: String,
-                                               date: Date,
-                                               messageType: MessageType,
-                                               limitOrdersWithTrades: List<LimitOrderWithTrades>): ExecutionEvent {
-            return createEvent {
-                ExecutionEventBuilder()
-                        .setHeaderData(sequenceNumber, messageId, requestId, date, messageType)
-                        .setEventData(ExecutionEventData(emptyList(), limitOrdersWithTrades, null))
-                        .build()
-            }
-        }
-
-        fun createCashInOutEvent(volume: BigDecimal,
-                                 sequenceNumber: Long,
-                                 messageId: String,
-                                 requestId: String,
-                                 date: Date,
-                                 messageType: MessageType,
-                                 clientBalanceUpdates: List<ClientBalanceUpdate>,
-                                 cashInOperation: WalletOperation,
-                                 internalFees: List<Fee>): Event<*> {
-            return if (volume > BigDecimal.ZERO) {
-                createCashInEvent(sequenceNumber,
-                        messageId,
-                        requestId,
-                        date,
-                        messageType,
-                        clientBalanceUpdates,
-                        cashInOperation,
-                        internalFees)
+                    clientBalanceUpdates,
+                    cashInOperation,
+                    internalFees
+                )
             } else {
                 createCashOutEvent(
                     sequenceNumber,
@@ -97,70 +115,91 @@ class EventFactory {
             }
         }
 
-    fun createReservedCashInOutEvent(
-        sequenceNumber: Long,
-        messageId: String,
-        requestId: String,
-        date: Date,
-        messageType: MessageType,
-        clientBalanceUpdates: List<ClientBalanceUpdate>,
-        cashInOperation: WalletOperation
-    ): Event<*> {
-        return createEvent {
-            ReservedCashInOutEventBuilder()
-                .setHeaderData(sequenceNumber, messageId, requestId, date, messageType)
-                .setEventData(ReservedCashInOutEventData(clientBalanceUpdates, cashInOperation))
-                .build()
-        }
-    }
-
-    private fun createCashInEvent(
-        sequenceNumber: Long,
-        messageId: String,
-        requestId: String,
-        date: Date,
-        messageType: MessageType,
-        clientBalanceUpdates: List<ClientBalanceUpdate>,
-        cashInOperation: WalletOperation,
-        internalFees: List<Fee>
-    ): CashInEvent {
-        return createEvent {
-                CashInEventBuilder()
-                        .setHeaderData(sequenceNumber, messageId, requestId, date, messageType)
-                        .setEventData(CashInEventData(clientBalanceUpdates, cashInOperation, internalFees))
-                        .build()
+        fun createReservedCashInOutEvent(
+            sequenceNumber: Long,
+            messageId: String,
+            requestId: String,
+            date: Date,
+            messageType: MessageType,
+            clientBalanceUpdates: List<ClientBalanceUpdate>,
+            cashInOperation: WalletOperation
+        ): Event<*> {
+            return createEvent {
+                ReservedCashInOutEventBuilder()
+                    .setHeaderData(sequenceNumber, messageId, requestId, date, messageType)
+                    .setEventData(ReservedCashInOutEventData(clientBalanceUpdates, cashInOperation))
+                    .build()
             }
         }
 
-        private fun createCashOutEvent(sequenceNumber: Long,
-                               messageId: String,
-                               requestId: String,
-                               date: Date,
-                               messageType: MessageType,
-                               clientBalanceUpdates: List<ClientBalanceUpdate>,
-                               cashOutOperation: WalletOperation,
-                               internalFees: List<Fee>): CashOutEvent {
+        private fun createCashInEvent(
+            sequenceNumber: Long,
+            messageId: String,
+            requestId: String,
+            date: Date,
+            messageType: MessageType,
+            clientBalanceUpdates: List<ClientBalanceUpdate>,
+            cashInOperation: WalletOperation,
+            internalFees: List<Fee>
+        ): CashInEvent {
+            return createEvent {
+                CashInEventBuilder()
+                    .setHeaderData(sequenceNumber, messageId, requestId, date, messageType)
+                    .setEventData(CashInEventData(clientBalanceUpdates, cashInOperation, internalFees))
+                    .build()
+            }
+        }
+
+        private fun createCashOutEvent(
+            sequenceNumber: Long,
+            messageId: String,
+            requestId: String,
+            date: Date,
+            messageType: MessageType,
+            clientBalanceUpdates: List<ClientBalanceUpdate>,
+            cashOutOperation: WalletOperation,
+            internalFees: List<Fee>
+        ): CashOutEvent {
             return createEvent {
                 CashOutEventBuilder()
-                        .setHeaderData(sequenceNumber, messageId, requestId, date, messageType)
-                        .setEventData(CashOutEventData(clientBalanceUpdates, cashOutOperation, internalFees))
-                        .build()
+                    .setHeaderData(sequenceNumber, messageId, requestId, date, messageType)
+                    .setEventData(CashOutEventData(clientBalanceUpdates, cashOutOperation, internalFees))
+                    .build()
             }
         }
 
-        fun createCashTransferEvent(sequenceNumber: Long,
-                                    messageId: String,
-                                    requestId: String,
-                                    date: Date,
-                                    messageType: MessageType,
-                                    clientBalanceUpdates: List<ClientBalanceUpdate>,
-                                    transferOperation: TransferOperation,
-                                    internalFees: List<Fee>): CashTransferEvent {
+        fun createCashTransferEvent(
+            sequenceNumber: Long,
+            messageId: String,
+            requestId: String,
+            date: Date,
+            messageType: MessageType,
+            clientBalanceUpdates: List<ClientBalanceUpdate>,
+            transferOperation: TransferOperation,
+            internalFees: List<Fee>
+        ): CashTransferEvent {
             return createEvent {
                 CashTransferEventBuilder()
-                        .setHeaderData(sequenceNumber, messageId, requestId, date, messageType)
-                        .setEventData(CashTransferData(clientBalanceUpdates, transferOperation, internalFees))
-                        .build()
+                    .setHeaderData(sequenceNumber, messageId, requestId, date, messageType)
+                    .setEventData(CashTransferData(clientBalanceUpdates, transferOperation, internalFees))
+                    .build()
+            }
+        }
+
+        fun createCashSwapEvent(
+            sequenceNumber: Long,
+            messageId: String,
+            requestId: String,
+            date: Date,
+            messageType: MessageType,
+            clientBalanceUpdates: List<ClientBalanceUpdate>,
+            swapOperation: SwapOperation
+        ): CashSwapEvent {
+            return createEvent {
+                CashSwapEventBuilder()
+                    .setHeaderData(sequenceNumber, messageId, requestId, date, messageType)
+                    .setEventData(CashSwapData(clientBalanceUpdates, swapOperation))
+                    .build()
             }
         }
 

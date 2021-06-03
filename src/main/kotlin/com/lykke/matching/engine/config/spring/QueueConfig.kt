@@ -1,6 +1,5 @@
 package com.lykke.matching.engine.config.spring
 
-import com.lykke.matching.engine.daos.LkkTrade
 import com.lykke.matching.engine.daos.TransferOperation
 import com.lykke.matching.engine.database.reconciliation.events.AccountPersistEvent
 import com.lykke.matching.engine.database.reconciliation.events.OrderBookPersistEvent
@@ -56,6 +55,12 @@ class QueueConfig {
 
     @Bean
     @InputQueue
+    fun cashSwapInputQueue(): BlockingQueue<CashSwapOperationMessageWrapper> {
+        return LinkedBlockingQueue()
+    }
+
+    @Bean
+    @InputQueue
     fun reservedCashInOutInputQueue(): BlockingQueue<ReservedCashInOutOperationMessageWrapper> {
         return LinkedBlockingQueue<ReservedCashInOutOperationMessageWrapper>()
     }
@@ -89,11 +94,6 @@ class QueueConfig {
     @Bean
     fun dbTransferOperationQueue(): BlockingQueue<TransferOperation> {
         return LinkedBlockingQueue<TransferOperation>()
-    }
-
-    @Bean
-    fun lkkTradesQueue(): BlockingQueue<List<LkkTrade>> {
-        return LinkedBlockingQueue<List<LkkTrade>>()
     }
 
     @Bean

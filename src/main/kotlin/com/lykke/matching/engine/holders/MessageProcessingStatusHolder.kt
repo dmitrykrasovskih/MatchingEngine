@@ -6,24 +6,40 @@ import com.lykke.matching.engine.utils.monitoring.HealthMonitor
 import org.springframework.stereotype.Component
 
 @Component
-open class MessageProcessingStatusHolder(private val generalHealthMonitor: HealthMonitor,
-                                         private val applicationSettingsHolder: ApplicationSettingsHolder,
-                                         private val disabledFunctionalityRulesHolder: DisabledFunctionalityRulesHolder) {
+class MessageProcessingStatusHolder(
+    private val generalHealthMonitor: HealthMonitor,
+    private val applicationSettingsHolder: ApplicationSettingsHolder,
+    private val disabledFunctionalityRulesHolder: DisabledFunctionalityRulesHolder
+) {
 
     fun isTradeDisabled(assetPair: AssetPair?): Boolean {
-        return !applicationSettingsHolder.isMessageProcessingEnabled() || disabledFunctionalityRulesHolder.isTradeDisabled(assetPair)
+        return !applicationSettingsHolder.isMessageProcessingEnabled() || disabledFunctionalityRulesHolder.isTradeDisabled(
+            assetPair
+        )
     }
 
     fun isCashInDisabled(asset: Asset?): Boolean {
-        return !applicationSettingsHolder.isMessageProcessingEnabled() || disabledFunctionalityRulesHolder.isCashInDisabled(asset)
+        return !applicationSettingsHolder.isMessageProcessingEnabled() || disabledFunctionalityRulesHolder.isCashInDisabled(
+            asset
+        )
     }
 
     fun isCashOutDisabled(asset: Asset?): Boolean {
-        return !applicationSettingsHolder.isMessageProcessingEnabled() || disabledFunctionalityRulesHolder.isCashOutDisabled(asset)
+        return !applicationSettingsHolder.isMessageProcessingEnabled() || disabledFunctionalityRulesHolder.isCashOutDisabled(
+            asset
+        )
     }
 
     fun isCashTransferDisabled(asset: Asset?): Boolean {
-        return !applicationSettingsHolder.isMessageProcessingEnabled() || disabledFunctionalityRulesHolder.isCashTransferDisabled(asset)
+        return !applicationSettingsHolder.isMessageProcessingEnabled() || disabledFunctionalityRulesHolder.isCashTransferDisabled(
+            asset
+        )
+    }
+
+    fun isCashSwapDisabled(asset1: Asset?, asset2: Asset?): Boolean {
+        return !applicationSettingsHolder.isMessageProcessingEnabled() || disabledFunctionalityRulesHolder.isCashSwapDisabled(
+            asset1
+        ) || disabledFunctionalityRulesHolder.isCashSwapDisabled(asset2)
     }
 
     fun isMessageProcessingEnabled(): Boolean {

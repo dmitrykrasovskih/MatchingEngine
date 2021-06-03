@@ -180,6 +180,15 @@ class WalletOperationsProcessor(
         return getChangedCopyOrOriginalAssetBalance(brokerId, accountId, clientId, assetId).reserved
     }
 
+    override fun getReservedFoSwapBalance(
+        brokerId: String,
+        accountId: String,
+        clientId: String,
+        assetId: String
+    ): BigDecimal {
+        return getChangedCopyOrOriginalAssetBalance(brokerId, accountId, clientId, assetId).reservedForSwap
+    }
+
     override fun getReservedTotalBalance(
         brokerId: String,
         accountId: String,

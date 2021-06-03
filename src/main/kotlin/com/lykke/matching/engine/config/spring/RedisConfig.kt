@@ -1,4 +1,3 @@
-
 package com.lykke.matching.engine.config.spring
 
 import com.lykke.matching.engine.database.Storage
@@ -18,7 +17,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.scheduling.TaskScheduler
 
 @Configuration
-open class RedisConfig {
+class RedisConfig {
 
     @Autowired
     private lateinit var redisConnectionFactory: RedisConnectionFactory
@@ -28,104 +27,121 @@ open class RedisConfig {
 
     //<editor-fold desc="Redis connections">
     @Bean
-    open fun pingRedisConnection(): RedisConnection? {
+    fun pingRedisConnection(): RedisConnection? {
         return redisConnectionFactory.getConnection("pingRedisConnection")
     }
 
     @Bean
-    open fun cashTransferOperationIdRedisConnection(): RedisConnection? {
+    fun cashTransferOperationIdRedisConnection(): RedisConnection? {
         return redisConnectionFactory.getConnection("cashTransferOperationIdRedisConnection")
     }
 
     @Bean
-    open fun cashInOutOperationIdRedisConnection(): RedisConnection? {
+    fun cashInOutOperationIdRedisConnection(): RedisConnection? {
         return redisConnectionFactory.getConnection("cashInOutOperationIdRedisConnection")
     }
 
     @Bean
-    open fun initialLoadingRedisConnection(): RedisConnection? {
+    fun initialLoadingRedisConnection(): RedisConnection? {
         return redisConnectionFactory.getConnection("initialLoadingRedisConnection")
     }
 
     @Bean
-    open fun persistenceRedisConnection(): RedisConnection? {
+    fun persistenceRedisConnection(): RedisConnection? {
         return redisConnectionFactory.getConnection("persistenceRedisConnection")
     }
 
     @Bean
-    open fun limitOrderCancelOperationPreprocessorRedisConnection(): RedisConnection? {
+    fun limitOrderCancelOperationPreprocessorRedisConnection(): RedisConnection? {
         return redisConnectionFactory.getConnection("limitOrderCancelOperationPreprocessorRedisConnection")
     }
 
     @Bean
-    open fun cashInOutOperationPreprocessorRedisConnection(): RedisConnection? {
+    fun cashInOutOperationPreprocessorRedisConnection(): RedisConnection? {
         return redisConnectionFactory.getConnection("cashInOutOperationPreprocessorRedisConnection")
     }
 
+    @Bean
+    fun cashTransferOperationsPreprocessorRedisConnection(): RedisConnection? {
+        return redisConnectionFactory.getConnection("cashTransferOperationsPreprocessorRedisConnection")
+    }
 
     @Bean
-    open fun cashTransferOperationsPreprocessorRedisConnection(): RedisConnection? {
-        return redisConnectionFactory.getConnection("cashTransferOperationsPreprocessorRedisConnection")
+    fun cashSwapOperationsPreprocessorRedisConnection(): RedisConnection? {
+        return redisConnectionFactory.getConnection("cashSwapOperationsPreprocessorRedisConnection")
     }
     //</editor-fold>
 
     //<editor-fold desc="Redis database accessors">
     @Bean
-    open fun redisProcessedMessagesDatabaseAccessor(): RedisProcessedMessagesDatabaseAccessor? {
+    fun redisProcessedMessagesDatabaseAccessor(): RedisProcessedMessagesDatabaseAccessor? {
         if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
             return null
         }
 
-        return RedisProcessedMessagesDatabaseAccessor(initialLoadingRedisConnection()!!,
-                config.matchingEngine.redis.processedMessageDatabase,
-                getProcessedMessageTTL())
+        return RedisProcessedMessagesDatabaseAccessor(
+            initialLoadingRedisConnection()!!,
+            config.matchingEngine.redis.processedMessageDatabase,
+            getProcessedMessageTTL()
+        )
     }
 
 
     @Bean
-    open fun redisWalletDatabaseAccessor(): RedisWalletDatabaseAccessor? {
+    fun redisWalletDatabaseAccessor(): RedisWalletDatabaseAccessor? {
         if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
             return null
         }
 
-        return RedisWalletDatabaseAccessor(initialLoadingRedisConnection()!!, config.matchingEngine.redis.balanceDatabase)
+        return RedisWalletDatabaseAccessor(
+            initialLoadingRedisConnection()!!,
+            config.matchingEngine.redis.balanceDatabase
+        )
     }
 
     @Bean
-    open fun redisCashOperationIdDatabaseAccessor(): RedisCashOperationIdDatabaseAccessor? {
+    fun redisCashOperationIdDatabaseAccessor(): RedisCashOperationIdDatabaseAccessor? {
         if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
             return null
         }
 
-        return RedisCashOperationIdDatabaseAccessor(cashInOutOperationIdRedisConnection()!!,
-                cashTransferOperationIdRedisConnection()!!,
-                config.matchingEngine.redis.processedCashMessageDatabase)
+        return RedisCashOperationIdDatabaseAccessor(
+            cashInOutOperationIdRedisConnection()!!,
+            cashTransferOperationIdRedisConnection()!!,
+            config.matchingEngine.redis.processedCashMessageDatabase
+        )
     }
 
     @Bean
-    open fun redisMessageSequenceNumberDatabaseAccessor(): RedisMessageSequenceNumberDatabaseAccessor? {
+    fun redisMessageSequenceNumberDatabaseAccessor(): RedisMessageSequenceNumberDatabaseAccessor? {
         if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
             return null
         }
 
-        return RedisMessageSequenceNumberDatabaseAccessor(initialLoadingRedisConnection()!!,
-                config.matchingEngine.redis.sequenceNumberDatabase)
+        return RedisMessageSequenceNumberDatabaseAccessor(
+            initialLoadingRedisConnection()!!,
+            config.matchingEngine.redis.sequenceNumberDatabase
+        )
     }
     //</editor-fold>
 
     //<editor-fold desc="etc">
     @Bean
-    open fun redisReconnectionManager(taskScheduler: TaskScheduler,
-                                      applicationEventPublisher: ApplicationEventPublisher,
-                                      allRedisConnections: List<RedisConnection>,
-                                      @Value("\${redis.health.check.interval}") updateInterval: Long,
-                                      @Value("\${redis.health.check.reconnect.interval}") reconnectInterval: Long): RedisReconnectionManager? {
+    fun redisReconnectionManager(
+        taskScheduler: TaskScheduler,
+        applicationEventPublisher: ApplicationEventPublisher,
+        allRedisConnections: List<RedisConnection>,
+        @Value("\${redis.health.check.interval}") updateInterval: Long,
+        @Value("\${redis.health.check.reconnect.interval}") reconnectInterval: Long
+    ): RedisReconnectionManager? {
         if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
             return null
         }
 
-        return RedisReconnectionManager(config.matchingEngine, allRedisConnections, pingRedisConnection()!!,
-                taskScheduler, applicationEventPublisher, updateInterval, reconnectInterval)
+        return RedisReconnectionManager(
+            config.matchingEngine, allRedisConnections, pingRedisConnection()!!,
+            taskScheduler, applicationEventPublisher, updateInterval, reconnectInterval
+        )
     }
     //</editor-fold>
 

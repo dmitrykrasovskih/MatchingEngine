@@ -1,6 +1,5 @@
 package com.lykke.matching.engine.config
 
-import com.lykke.matching.engine.daos.LkkTrade
 import com.lykke.matching.engine.database.PersistenceManager
 import com.lykke.matching.engine.fee.FeeProcessor
 import com.lykke.matching.engine.holders.*
@@ -71,20 +70,13 @@ class TestExecutionContext {
         clientLimitOrdersQueue: BlockingQueue<LimitOrdersReport>,
         trustedClientsLimitOrdersQueue: BlockingQueue<LimitOrdersReport>,
         rabbitSwapQueue: BlockingQueue<MarketOrderWithTrades>,
-        lkkTradesQueue: BlockingQueue<List<LkkTrade>>,
         genericLimitOrderService: GenericLimitOrderService,
         orderBookQueue: BlockingQueue<OrderBook>,
         rabbitOrderBookQueue: BlockingQueue<OrderBook>
     ): ExecutionEventSender {
         return ExecutionEventSender(
             messageSender,
-            clientLimitOrdersQueue,
-            trustedClientsLimitOrdersQueue,
-            rabbitSwapQueue,
-            lkkTradesQueue,
-            genericLimitOrderService,
-            orderBookQueue,
-            rabbitOrderBookQueue
+            genericLimitOrderService
         )
     }
 

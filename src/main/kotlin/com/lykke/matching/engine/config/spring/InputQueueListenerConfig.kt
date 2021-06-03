@@ -11,10 +11,10 @@ import org.springframework.context.annotation.Configuration
 import java.util.concurrent.BlockingQueue
 
 @Configuration
-open class InputQueueListenerConfig {
+class InputQueueListenerConfig {
 
     @Bean
-    open fun cashTransferInputQueueListener(
+    fun cashTransferInputQueueListener(
         cashTransferInputQueue: BlockingQueue<CashTransferOperationMessageWrapper>,
         cashTransferPreprocessor: CashTransferPreprocessor,
         @Qualifier("cashTransferPreProcessingLogger")
@@ -29,7 +29,22 @@ open class InputQueueListenerConfig {
     }
 
     @Bean
-    open fun cashInOutInputQueueListener(
+    fun cashSwapInputQueueListener(
+        cashSwapInputQueue: BlockingQueue<CashSwapOperationMessageWrapper>,
+        cashSwapPreprocessor: CashSwapPreprocessor,
+        @Qualifier("cashTransferPreProcessingLogger")
+        logger: ThrottlingLogger
+    ): InputQueueListener<CashSwapOperationMessageWrapper> {
+        return InputQueueListener(
+            cashSwapInputQueue,
+            cashSwapPreprocessor,
+            logger,
+            "CashTransferInputQueueListener"
+        )
+    }
+
+    @Bean
+    fun cashInOutInputQueueListener(
         cashInOutInputQueue: BlockingQueue<CashInOutOperationMessageWrapper>,
         cashInOutPreprocessor: CashInOutPreprocessor,
         @Qualifier("cashInOutPreProcessingLogger")
@@ -44,7 +59,7 @@ open class InputQueueListenerConfig {
     }
 
     @Bean
-    open fun reservedCashInOutInputQueueListener(
+    fun reservedCashInOutInputQueueListener(
         reservedCashInOutInputQueue: BlockingQueue<ReservedCashInOutOperationMessageWrapper>,
         reservedCashInOutPreprocessor: ReservedCashInOutPreprocessor,
         @Qualifier("cashInOutPreProcessingLogger")
@@ -59,7 +74,7 @@ open class InputQueueListenerConfig {
     }
 
     @Bean
-    open fun limitOrderCancelInputQueueListener(
+    fun limitOrderCancelInputQueueListener(
         limitOrderCancelInputQueue: BlockingQueue<LimitOrderCancelMessageWrapper>,
         limitOrderCancelOperationPreprocessor: LimitOrderCancelOperationPreprocessor,
         @Qualifier("limitOrderCancelPreProcessingLogger")
@@ -74,7 +89,7 @@ open class InputQueueListenerConfig {
     }
 
     @Bean
-    open fun limitOrderInputQueueListener(
+    fun limitOrderInputQueueListener(
         limitOrderInputQueue: BlockingQueue<SingleLimitOrderMessageWrapper>,
         singleLimitOrderPreprocessor: SingleLimitOrderPreprocessor,
         @Qualifier("singleLimitOrderPreProcessingLogger")
@@ -89,7 +104,7 @@ open class InputQueueListenerConfig {
     }
 
     @Bean
-    open fun limitOrderMassCancelInputQueueListener(
+    fun limitOrderMassCancelInputQueueListener(
         limitOrderMassCancelInputQueue: BlockingQueue<LimitOrderMassCancelMessageWrapper>,
         limitOrderMassCancelOperationPreprocessor: LimitOrderMassCancelOperationPreprocessor,
         @Qualifier("limitOrderMassCancelPreProcessingLogger")

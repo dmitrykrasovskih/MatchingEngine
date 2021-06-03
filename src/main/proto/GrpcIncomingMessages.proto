@@ -97,7 +97,6 @@ message CashSwapOperationResponse {
   google.protobuf.StringValue messageId = 5;
 }
 
-
 message LimitOrder {
   string id = 1;
   string brokerId = 2;

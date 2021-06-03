@@ -75,6 +75,19 @@ class DisabledFunctionalityRulesHolder(
                 || disabledFunctionalityDataToCheck.disabledAssetIds.contains(asset.symbol)
     }
 
+    fun isCashSwapDisabled(asset: Asset?): Boolean {
+        val disabledFunctionalityDataToCheck = disabledFunctionalityData
+
+        if (asset == null) {
+            return disabledFunctionalityDataToCheck.disabledOperations.contains(OperationType.CASH_SWAP)
+        }
+
+        return disabledFunctionalityDataToCheck.disabledOperations.contains(OperationType.CASH_SWAP)
+                || (disabledFunctionalityDataToCheck.disabledOperationsByAsset[asset.symbol]?.contains(OperationType.CASH_SWAP)
+            ?: false)
+                || disabledFunctionalityDataToCheck.disabledAssetIds.contains(asset.symbol)
+    }
+
     @PostConstruct
     private fun init() {
         val disabledAssetPairIds = HashSet<String>()
@@ -127,17 +140,17 @@ class DisabledFunctionalityRulesHolder(
     }
 
     @EventListener
-    private fun onSettingCreateOrUpdate(applicationSettingUpdateEvent: ApplicationSettingCreateOrUpdateEvent) {
+    fun onSettingCreateOrUpdate(applicationSettingUpdateEvent: ApplicationSettingCreateOrUpdateEvent) {
         init()
     }
 
     @EventListener
-    private fun onSettingRemove(applicationSettingDeleteEvent: ApplicationSettingDeleteEvent) {
+    fun onSettingRemove(applicationSettingDeleteEvent: ApplicationSettingDeleteEvent) {
         init()
     }
 
     @EventListener
-    private fun onSettingGroupRemove(applicationGroupDeleteEvent: ApplicationGroupDeleteEvent) {
+    fun onSettingGroupRemove(applicationGroupDeleteEvent: ApplicationGroupDeleteEvent) {
         init()
     }
 
