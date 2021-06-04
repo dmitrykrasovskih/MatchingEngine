@@ -17,8 +17,7 @@ class ConfigFactory(private val environment: Environment) : FactoryBean<Config> 
                 config = if (environment.acceptsProfiles(LOCAL_CONFIG_PROFILE)) {
                     LocalConfigFactory.getConfig()
                 } else {
-                    LocalConfigFactory.getConfig()
-//                    HttpConfigFactory.getConfig(environment)
+                    HttpConfigFactory.getConfig(environment)
                 }
             }
 
