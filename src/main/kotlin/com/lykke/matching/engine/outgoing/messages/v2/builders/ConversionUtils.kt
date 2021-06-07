@@ -27,10 +27,10 @@ fun convertBalanceUpdates(clientBalanceUpdates: List<ClientBalanceUpdate>): List
             balanceUpdate.accountId,
             balanceUpdate.walletId,
             balanceUpdate.asset,
-            bigDecimalToString(balanceUpdate.oldBalance)!!,
-            bigDecimalToString(balanceUpdate.newBalance)!!,
-            bigDecimalToString(balanceUpdate.oldReserved)!!,
-            bigDecimalToString(balanceUpdate.newReserved)!!,
+            bigDecimalToString(balanceUpdate.oldBalance),
+            bigDecimalToString(balanceUpdate.newBalance),
+            bigDecimalToString(balanceUpdate.oldReserved),
+            bigDecimalToString(balanceUpdate.newReserved),
             balanceUpdate.version
         )
     }
@@ -64,7 +64,7 @@ private fun convertLimitOrder(limitOrderWithTrades: LimitOrderWithTrades): Order
         limitOrder.accountId,
         limitOrder.clientId,
         orderSide(limitOrder),
-        bigDecimalToString(limitOrder.volume)!!,
+        bigDecimalToString(limitOrder.volume),
         bigDecimalToString(limitOrder.remainingVolume),
         bigDecimalToString(limitOrder.price),
         statusInfo.status,
@@ -77,7 +77,7 @@ private fun convertLimitOrder(limitOrderWithTrades: LimitOrderWithTrades): Order
         bigDecimalToString(limitOrder.lowerPrice),
         bigDecimalToString(limitOrder.upperLimitPrice),
         bigDecimalToString(limitOrder.upperPrice),
-        null,
+        true,
         feeInstructions?.mapIndexed { index, feeInstruction -> convertFeeInstruction(index, feeInstruction) },
         limitOrderWithTrades.trades.map { convertTrade(it) },
         orderTimeInForce(limitOrder.timeInForce),
@@ -101,7 +101,7 @@ private fun convertMarketOrder(marketOrderWithTrades: MarketOrderWithTrades): Or
         marketOrder.accountId,
         marketOrder.clientId,
         orderSide(marketOrder),
-        bigDecimalToString(marketOrder.volume)!!,
+        bigDecimalToString(marketOrder.volume),
         null,
         bigDecimalToString(marketOrder.price),
         statusInfo.status,
@@ -219,7 +219,7 @@ private fun convertTrade(tradeInfo: LimitTradeInfo): Trade {
         tradeInfo.tradeId,
         tradeInfo.baseAssetId,
         tradeInfo.baseVolume,
-        bigDecimalToString(tradeInfo.price)!!,
+        bigDecimalToString(tradeInfo.price),
         tradeInfo.timestamp,
         tradeInfo.oppositeOrderId,
         tradeInfo.oppositeOrderExternalId,
@@ -239,7 +239,7 @@ private fun convertTrade(tradeInfo: TradeInfo): Trade {
         tradeInfo.tradeId,
         tradeInfo.baseAssetId,
         tradeInfo.baseVolume,
-        bigDecimalToString(tradeInfo.price)!!,
+        bigDecimalToString(tradeInfo.price),
         tradeInfo.timestamp,
         tradeInfo.limitOrderId,
         tradeInfo.limitOrderExternalId,
@@ -299,7 +299,7 @@ private fun convertFeeTransfer(
         return null
     }
     return FeeTransfer(
-        bigDecimalToString(internalFeeTransfer.volume)!!,
+        bigDecimalToString(internalFeeTransfer.volume),
         internalFeeTransfer.fromClientId,
         internalFeeTransfer.toClientId,
         internalFeeTransfer.asset,
