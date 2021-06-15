@@ -88,7 +88,7 @@ class MarketOrderService @Autowired constructor(
                     "straight: ${parsedMessage.straight}, fees: $feeInstructions"
         )
 
-        val order = MarketOrder(
+        var order = MarketOrder(
             UUID.randomUUID().toString(),
             parsedMessage.id,
             parsedMessage.assetPairId,
@@ -156,6 +156,7 @@ class MarketOrderService @Autowired constructor(
             executionContext = executionContext
         )
         marketOrderExecutionContext.matchingResult = matchingResult
+        order = matchingResult.orderCopy as MarketOrder
 
         when (OrderStatus.valueOf(matchingResult.orderCopy.status)) {
             ReservedVolumeGreaterThanBalance,

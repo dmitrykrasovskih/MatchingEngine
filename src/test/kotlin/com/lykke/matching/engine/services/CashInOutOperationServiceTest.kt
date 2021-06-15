@@ -8,10 +8,9 @@ import com.lykke.matching.engine.daos.FeeType
 import com.lykke.matching.engine.daos.wallet.AssetBalance
 import com.lykke.matching.engine.daos.wallet.Wallet
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
-import com.lykke.matching.engine.notification.TestReservedCashOperationListener
-import com.lykke.matching.engine.outgoing.messages.CashOperation
 import com.lykke.matching.engine.outgoing.messages.v2.events.CashInEvent
 import com.lykke.matching.engine.outgoing.messages.v2.events.CashOutEvent
+import com.lykke.matching.engine.outgoing.messages.v2.events.ReservedCashInOutEvent
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildFeeInstruction
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildFeeInstructions
@@ -34,10 +33,6 @@ import java.math.BigDecimal
 @SpringBootTest(classes = [(TestApplicationContext::class), (CashInOutOperationServiceTest.Config::class)])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class CashInOutOperationServiceTest : AbstractTest() {
-
-    @Autowired
-    private lateinit var testReservedCashOperationListener: TestReservedCashOperationListener
-
     @Autowired
     private lateinit var messageBuilder: MessageBuilder
 
@@ -68,7 +63,6 @@ class CashInOutOperationServiceTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client3", "Asset1", 100.0)
         testBalanceHolderWrapper.updateReservedBalance("Client3", "Asset1", 50.0)
 
-        cashInOutQueue.clear()
         initServices()
     }
 
@@ -78,11 +72,6 @@ class CashInOutOperationServiceTest : AbstractTest() {
         val balance = testWalletDatabaseAccessor.getBalance("Client1", "Asset1")
         assertNotNull(balance)
         assertEquals(BigDecimal.valueOf(150.0), balance)
-
-        val cashInTransaction = cashInOutQueue.poll() as CashOperation
-        assertEquals("Client1", cashInTransaction.clientId)
-        assertEquals("50.00", cashInTransaction.volume)
-        assertEquals("Asset1", cashInTransaction.asset)
 
         val cashInEvent = clientsEventsQueue.poll() as CashInEvent
         assertEquals("Client1", cashInEvent.cashIn.walletId)
@@ -104,10 +93,15 @@ class CashInOutOperationServiceTest : AbstractTest() {
         assertEquals(BigDecimal.valueOf(100.0), balance)
         assertEquals(BigDecimal.valueOf(100.0), reservedBalance)
 
-        val operation = testReservedCashOperationListener.getQueue().take()
-        assertEquals("Client3", operation.clientId)
-        assertEquals("50.00", operation.reservedVolume)
-        assertEquals("Asset1", operation.asset)
+        val cashInEvent = clientsEventsQueue.poll() as ReservedCashInOutEvent
+        assertEquals("Client3", cashInEvent.reservedCashInOut.walletId)
+        assertEquals("50", cashInEvent.reservedCashInOut.reservedForOrders)
+        assertEquals("Asset1", cashInEvent.reservedCashInOut.assetId)
+
+        assertEquals(1, cashInEvent.balanceUpdates.size)
+        val balanceUpdate = cashInEvent.balanceUpdates.first()
+        assertEquals("50", balanceUpdate.oldReserved)
+        assertEquals("100", balanceUpdate.newReserved)
     }
 
     @Test
@@ -121,10 +115,15 @@ class CashInOutOperationServiceTest : AbstractTest() {
         assertEquals(BigDecimal.valueOf(50.0), reservedBalance)
         assertEquals(BigDecimal.valueOf(50.0), reservedSwapBalance)
 
-        val operation = testReservedCashOperationListener.getQueue().take()
-        assertEquals("Client3", operation.clientId)
-        assertEquals("50.00", operation.reservedForSwapVolume)
-        assertEquals("Asset1", operation.asset)
+        val cashInEvent = clientsEventsQueue.poll() as ReservedCashInOutEvent
+        assertEquals("Client3", cashInEvent.reservedCashInOut.walletId)
+        assertEquals("50", cashInEvent.reservedCashInOut.reservedForSwap)
+        assertEquals("Asset1", cashInEvent.reservedCashInOut.assetId)
+
+        assertEquals(1, cashInEvent.balanceUpdates.size)
+        val balanceUpdate = cashInEvent.balanceUpdates.first()
+        assertEquals("50", balanceUpdate.oldReserved)
+        assertEquals("100", balanceUpdate.newReserved)
     }
 
     @Test
@@ -134,10 +133,15 @@ class CashInOutOperationServiceTest : AbstractTest() {
         assertNotNull(balance)
         assertEquals(BigDecimal.valueOf(100.01), balance)
 
-        val cashInTransaction = cashInOutQueue.poll() as CashOperation
-        assertEquals("Client1", cashInTransaction.clientId)
-        assertEquals("0.01", cashInTransaction.volume)
-        assertEquals("Asset1", cashInTransaction.asset)
+        val cashInEvent = clientsEventsQueue.poll() as CashInEvent
+        assertEquals("Client1", cashInEvent.cashIn.walletId)
+        assertEquals("0.01", cashInEvent.cashIn.volume)
+        assertEquals("Asset1", cashInEvent.cashIn.assetId)
+
+        assertEquals(1, cashInEvent.balanceUpdates.size)
+        val balanceUpdate = cashInEvent.balanceUpdates.first()
+        assertEquals("100", balanceUpdate.oldBalance)
+        assertEquals("100.01", balanceUpdate.newBalance)
     }
 
     @Test
@@ -147,10 +151,15 @@ class CashInOutOperationServiceTest : AbstractTest() {
         val reservedBalance = testWalletDatabaseAccessor.getReservedBalance("Client3", "Asset1")
         assertEquals(BigDecimal.valueOf(50.01), reservedBalance)
 
-        val operation = testReservedCashOperationListener.getQueue().take()
-        assertEquals("Client3", operation.clientId)
-        assertEquals("0.01", operation.reservedVolume)
-        assertEquals("Asset1", operation.asset)
+        val cashInEvent = clientsEventsQueue.poll() as ReservedCashInOutEvent
+        assertEquals("Client3", cashInEvent.reservedCashInOut.walletId)
+        assertEquals("0.01", cashInEvent.reservedCashInOut.reservedForOrders)
+        assertEquals("Asset1", cashInEvent.reservedCashInOut.assetId)
+
+        assertEquals(1, cashInEvent.balanceUpdates.size)
+        val balanceUpdate = cashInEvent.balanceUpdates.first()
+        assertEquals("50", balanceUpdate.oldReserved)
+        assertEquals("50.01", balanceUpdate.newReserved)
     }
 
     @Test
@@ -159,11 +168,6 @@ class CashInOutOperationServiceTest : AbstractTest() {
         val balance = testWalletDatabaseAccessor.getBalance("Client1", "Asset1")
         assertNotNull(balance)
         assertEquals(BigDecimal.valueOf(50.0), balance)
-
-        val cashOutTransaction = cashInOutQueue.poll() as CashOperation
-        assertEquals("Client1", cashOutTransaction.clientId)
-        assertEquals("-50.00", cashOutTransaction.volume)
-        assertEquals("Asset1", cashOutTransaction.asset)
 
         val cashOutEvent = clientsEventsQueue.poll() as CashOutEvent
         assertEquals("Client1", cashOutEvent.cashOut.walletId)
@@ -185,10 +189,15 @@ class CashInOutOperationServiceTest : AbstractTest() {
         val balance = testWalletDatabaseAccessor.getBalance("Client3", "Asset1")
         assertEquals(BigDecimal.valueOf(100.0), balance)
 
-        val operation = testReservedCashOperationListener.getQueue().poll()
-        assertEquals("Client3", operation.clientId)
-        assertEquals("-49.00", operation.reservedVolume)
-        assertEquals("Asset1", operation.asset)
+        val cashInEvent = clientsEventsQueue.poll() as ReservedCashInOutEvent
+        assertEquals("Client3", cashInEvent.reservedCashInOut.walletId)
+        assertEquals("-49", cashInEvent.reservedCashInOut.reservedForOrders)
+        assertEquals("Asset1", cashInEvent.reservedCashInOut.assetId)
+
+        assertEquals(1, cashInEvent.balanceUpdates.size)
+        val balanceUpdate = cashInEvent.balanceUpdates.first()
+        assertEquals("50", balanceUpdate.oldReserved)
+        assertEquals("1", balanceUpdate.newReserved)
     }
 
     @Test
@@ -198,10 +207,15 @@ class CashInOutOperationServiceTest : AbstractTest() {
         assertNotNull(balance)
         assertEquals(BigDecimal.valueOf(50.0), balance)
 
-        val cashOutTransaction = cashInOutQueue.poll() as CashOperation
-        assertEquals("Client1", cashOutTransaction.clientId)
-        assertEquals("-50.00", cashOutTransaction.volume)
-        assertEquals("Asset1", cashOutTransaction.asset)
+        val cashInEvent = clientsEventsQueue.poll() as CashOutEvent
+        assertEquals("Client1", cashInEvent.cashOut.walletId)
+        assertEquals("50", cashInEvent.cashOut.volume)
+        assertEquals("Asset1", cashInEvent.cashOut.assetId)
+
+        assertEquals(1, cashInEvent.balanceUpdates.size)
+        val balanceUpdate = cashInEvent.balanceUpdates.first()
+        assertEquals("100", balanceUpdate.oldBalance)
+        assertEquals("50", balanceUpdate.newBalance)
 
         clearMessageQueues()
         cashInOutOperationService.processMessage(messageBuilder.buildCashInOutWrapper("Client1", "Asset1", -60.0))
@@ -216,10 +230,17 @@ class CashInOutOperationServiceTest : AbstractTest() {
         var reservedBalance = testWalletDatabaseAccessor.getReservedBalance("Client3", "Asset1")
         assertEquals(BigDecimal.valueOf(26.0), reservedBalance)
 
-        val operation = testReservedCashOperationListener.getQueue().poll()
-        assertEquals("Client3", operation.clientId)
-        assertEquals("-24.00", operation.reservedVolume)
-        assertEquals("Asset1", operation.asset)
+        val cashInEvent = clientsEventsQueue.poll() as ReservedCashInOutEvent
+        assertEquals("Client3", cashInEvent.reservedCashInOut.walletId)
+        assertEquals("-24", cashInEvent.reservedCashInOut.reservedForOrders)
+        assertEquals("Asset1", cashInEvent.reservedCashInOut.assetId)
+
+        assertEquals(1, cashInEvent.balanceUpdates.size)
+        val balanceUpdate = cashInEvent.balanceUpdates.first()
+        assertEquals("100", balanceUpdate.oldBalance)
+        assertEquals("100", balanceUpdate.newBalance)
+        assertEquals("50", balanceUpdate.oldReserved)
+        assertEquals("26", balanceUpdate.newReserved)
 
         val messageWrapper1 = messageBuilder.buildReservedCashInOutWrapper("Client3", "Asset1", -30.0)
         reservedCashInOutOperationService.processMessage(messageWrapper1)
@@ -282,12 +303,15 @@ class CashInOutOperationServiceTest : AbstractTest() {
 
         cashInOutOperationService.processMessage(messageBuilder.buildCashInOutWrapper("Client1", "Asset5", -1.0))
 
-        assertEquals(1, cashInOutQueue.size)
-        val cashInTransaction = cashInOutQueue.peek() as CashOperation
-        assertNotNull(cashInTransaction)
-        assertEquals("Client1", cashInTransaction.clientId)
-        assertEquals("-1.00000000", cashInTransaction.volume)
-        assertEquals("Asset5", cashInTransaction.asset)
+        val cashInEvent = clientsEventsQueue.poll() as CashOutEvent
+        assertEquals("Client1", cashInEvent.cashOut.walletId)
+        assertEquals("1", cashInEvent.cashOut.volume)
+        assertEquals("Asset5", cashInEvent.cashOut.assetId)
+
+        assertEquals(1, cashInEvent.balanceUpdates.size)
+        val balanceUpdate = cashInEvent.balanceUpdates.first()
+        assertEquals("1.00418803", balanceUpdate.oldBalance)
+        assertEquals("0.00418803", balanceUpdate.newBalance)
 
     }
 

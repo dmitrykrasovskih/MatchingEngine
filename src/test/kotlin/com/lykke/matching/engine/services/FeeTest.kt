@@ -7,10 +7,8 @@ import com.lykke.matching.engine.daos.FeeSizeType
 import com.lykke.matching.engine.daos.FeeType
 import com.lykke.matching.engine.daos.fee.v2.NewLimitOrderFeeInstruction
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
-import com.lykke.matching.engine.order.OrderStatus
-import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
-import com.lykke.matching.engine.outgoing.messages.MarketOrderWithTrades
 import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderRejectReason
+import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderStatus.*
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
@@ -30,23 +28,21 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
-import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderStatus as OutgoingOrderStatus
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [(TestApplicationContext::class), (FeeTest.Config::class)])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-class FeeTest: AbstractTest() {
+class FeeTest : AbstractTest() {
 
     @Autowired
     private lateinit var messageBuilder: MessageBuilder
 
     @TestConfiguration
-    open class Config {
+    class Config {
 
         @Bean
         @Primary
-        open fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
             val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
             testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
             testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
@@ -71,44 +67,54 @@ class FeeTest: AbstractTest() {
         testBalanceHolderWrapper.updateBalance(clientId = "Client4", assetId = "USD", balance = 10.0)
         testBalanceHolderWrapper.updateBalance(clientId = "Client4", assetId = "BTC", balance = 0.1)
 
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
                 clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = -0.05,
                 fees = listOf(
-                        buildLimitOrderFeeInstruction(
-                                type = FeeType.CLIENT_FEE,
-                                makerSizeType = FeeSizeType.PERCENTAGE,
-                                makerSize = BigDecimal.valueOf(0.04),
-                                targetClientId = "Client3",
-                                assetIds = listOf("BTC"))!!,
-                        buildLimitOrderFeeInstruction(
-                                type = FeeType.EXTERNAL_FEE,
-                                makerSizeType = FeeSizeType.PERCENTAGE,
-                                makerSize = BigDecimal.valueOf(0.05),
-                                sourceClientId = "Client4",
-                                targetClientId = "Client3",
-                                assetIds = listOf("BTC"))!!
+                    buildLimitOrderFeeInstruction(
+                        type = FeeType.CLIENT_FEE,
+                        makerSizeType = FeeSizeType.PERCENTAGE,
+                        makerSize = BigDecimal.valueOf(0.04),
+                        targetClientId = "Client3",
+                        assetIds = listOf("BTC")
+                    )!!,
+                    buildLimitOrderFeeInstruction(
+                        type = FeeType.EXTERNAL_FEE,
+                        makerSizeType = FeeSizeType.PERCENTAGE,
+                        makerSize = BigDecimal.valueOf(0.05),
+                        sourceClientId = "Client4",
+                        targetClientId = "Client3",
+                        assetIds = listOf("BTC")
+                    )!!
                 )
-        ))
+            )
+        )
         initServices()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = 0.005,
-                fees = listOf(
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = 0.005,
+                    fees = listOf(
                         buildLimitOrderFeeInstruction(
-                                type = FeeType.CLIENT_FEE,
-                                takerSizeType = FeeSizeType.PERCENTAGE,
-                                takerSize = BigDecimal.valueOf(0.03),
-                                targetClientId = "Client3",
-                                assetIds = listOf("USD"))!!,
+                            type = FeeType.CLIENT_FEE,
+                            takerSizeType = FeeSizeType.PERCENTAGE,
+                            takerSize = BigDecimal.valueOf(0.03),
+                            targetClientId = "Client3",
+                            assetIds = listOf("USD")
+                        )!!,
                         buildLimitOrderFeeInstruction(
-                                type = FeeType.EXTERNAL_FEE,
-                                takerSizeType = FeeSizeType.PERCENTAGE,
-                                takerSize = BigDecimal.valueOf(0.02),
-                                sourceClientId = "Client4",
-                                targetClientId = "Client3",
-                                assetIds = listOf("USD"))!!
+                            type = FeeType.EXTERNAL_FEE,
+                            takerSizeType = FeeSizeType.PERCENTAGE,
+                            takerSize = BigDecimal.valueOf(0.02),
+                            sourceClientId = "Client4",
+                            targetClientId = "Client3",
+                            assetIds = listOf("USD")
+                        )!!
+                    )
                 )
-        )))
+            )
+        )
 
         assertEquals(BigDecimal.valueOf(75.0), balancesHolder.getBalance("Client1", "USD"))
         assertEquals(BigDecimal.valueOf(0.0948), balancesHolder.getBalance("Client1", "BTC"))
@@ -145,42 +151,78 @@ class FeeTest: AbstractTest() {
         testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCEUR", "BTC", "EUR", 8))
 
         testBalanceHolderWrapper.updateBalance(clientId = "Client1", assetId = "BTC", balance = 0.1)
-        testBalanceHolderWrapper.updateReservedBalance(clientId = "Client1", assetId = "BTC", reservedBalance =  0.05)
+        testBalanceHolderWrapper.updateReservedBalance(clientId = "Client1", assetId = "BTC", reservedBalance = 0.05)
         testBalanceHolderWrapper.updateBalance(clientId = "Client1", assetId = "EUR", balance = 25.0)
 
         testBalanceHolderWrapper.updateBalance(clientId = "Client2", assetId = "USD", balance = 100.0)
         testBalanceHolderWrapper.updateBalance(clientId = "Client2", assetId = "EUR", balance = 1.88)
 
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(clientId = "Client4", assetId = "EURUSD", price = 1.3, volume = -1.0))
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(clientId = "Client4", assetId = "EURUSD", price = 1.1, volume = 1.0))
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(clientId = "Client4", assetId = "BTCEUR", price = 13000.0, volume = -1.0))
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(clientId = "Client4", assetId = "BTCEUR", price = 12000.0, volume = 1.0))
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                clientId = "Client4",
+                assetId = "EURUSD",
+                price = 1.3,
+                volume = -1.0
+            )
+        )
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                clientId = "Client4",
+                assetId = "EURUSD",
+                price = 1.1,
+                volume = 1.0
+            )
+        )
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                clientId = "Client4",
+                assetId = "BTCEUR",
+                price = 13000.0,
+                volume = -1.0
+            )
+        )
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                clientId = "Client4",
+                assetId = "BTCEUR",
+                price = 12000.0,
+                volume = 1.0
+            )
+        )
 
 
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
                 clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = -0.05,
                 fees = listOf(
-                        buildLimitOrderFeeInstruction(
-                                type = FeeType.CLIENT_FEE,
-                                makerSizeType = FeeSizeType.PERCENTAGE,
-                                makerSize = BigDecimal.valueOf(0.04),
-                                targetClientId = "Client3",
-                                assetIds = listOf("EUR"))!!
+                    buildLimitOrderFeeInstruction(
+                        type = FeeType.CLIENT_FEE,
+                        makerSizeType = FeeSizeType.PERCENTAGE,
+                        makerSize = BigDecimal.valueOf(0.04),
+                        targetClientId = "Client3",
+                        assetIds = listOf("EUR")
+                    )!!
                 )
-        ))
+            )
+        )
         initServices()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = 0.005,
-                fees = listOf(
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = 0.005,
+                    fees = listOf(
                         buildLimitOrderFeeInstruction(
-                                type = FeeType.CLIENT_FEE,
-                                takerSizeType = FeeSizeType.PERCENTAGE,
-                                takerSize = BigDecimal.valueOf(0.03),
-                                targetClientId = "Client3",
-                                assetIds = listOf("EUR"))!!
+                            type = FeeType.CLIENT_FEE,
+                            takerSizeType = FeeSizeType.PERCENTAGE,
+                            takerSize = BigDecimal.valueOf(0.03),
+                            targetClientId = "Client3",
+                            assetIds = listOf("EUR")
+                        )!!
+                    )
                 )
-        )))
+            )
+        )
 
         assertEquals(BigDecimal.valueOf(75.0), balancesHolder.getBalance("Client1", "USD"))
         assertEquals(BigDecimal.valueOf(0.095), balancesHolder.getBalance("Client1", "BTC"))
@@ -201,45 +243,55 @@ class FeeTest: AbstractTest() {
         testBalanceHolderWrapper.updateBalance(clientId = "Client4", assetId = "USD", balance = 10.0)
         testBalanceHolderWrapper.updateBalance(clientId = "Client4", assetId = "BTC", balance = 0.1)
 
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
                 clientId = "Client1", assetId = "BTCUSD", price = 15154.123, volume = 0.005412,
                 fees = listOf(
-                        buildLimitOrderFeeInstruction(
-                                type = FeeType.CLIENT_FEE,
-                                makerSizeType = FeeSizeType.PERCENTAGE,
-                                makerSize = BigDecimal.valueOf(0.04),
-                                targetClientId = "Client3",
-                                assetIds = listOf("USD"))!!,
-                        buildLimitOrderFeeInstruction(
-                                type = FeeType.EXTERNAL_FEE,
-                                makerSizeType = FeeSizeType.PERCENTAGE,
-                                makerSize = BigDecimal.valueOf(0.05),
-                                sourceClientId = "Client4",
-                                targetClientId = "Client3",
-                                assetIds = listOf("USD"))!!
+                    buildLimitOrderFeeInstruction(
+                        type = FeeType.CLIENT_FEE,
+                        makerSizeType = FeeSizeType.PERCENTAGE,
+                        makerSize = BigDecimal.valueOf(0.04),
+                        targetClientId = "Client3",
+                        assetIds = listOf("USD")
+                    )!!,
+                    buildLimitOrderFeeInstruction(
+                        type = FeeType.EXTERNAL_FEE,
+                        makerSizeType = FeeSizeType.PERCENTAGE,
+                        makerSize = BigDecimal.valueOf(0.05),
+                        sourceClientId = "Client4",
+                        targetClientId = "Client3",
+                        assetIds = listOf("USD")
+                    )!!
                 )
-        ))
+            )
+        )
 
         initServices()
 
-        marketOrderService.processMessage(buildMarketOrderWrapper(buildMarketOrder(
-                clientId = "Client2", assetId = "BTCUSD", volume = -0.005,
-                fees = listOf(
+        marketOrderService.processMessage(
+            buildMarketOrderWrapper(
+                buildMarketOrder(
+                    clientId = "Client2", assetId = "BTCUSD", volume = -0.005,
+                    fees = listOf(
                         buildLimitOrderFeeInstruction(
-                                type = FeeType.CLIENT_FEE,
-                                takerSizeType = FeeSizeType.PERCENTAGE,
-                                takerSize = BigDecimal.valueOf(0.03),
-                                targetClientId = "Client3",
-                                assetIds = listOf("BTC"))!!,
+                            type = FeeType.CLIENT_FEE,
+                            takerSizeType = FeeSizeType.PERCENTAGE,
+                            takerSize = BigDecimal.valueOf(0.03),
+                            targetClientId = "Client3",
+                            assetIds = listOf("BTC")
+                        )!!,
                         buildLimitOrderFeeInstruction(
-                                type = FeeType.EXTERNAL_FEE,
-                                takerSizeType = FeeSizeType.PERCENTAGE,
-                                takerSize = BigDecimal.valueOf(0.02),
-                                sourceClientId = "Client4",
-                                targetClientId = "Client3",
-                                assetIds = listOf("BTC"))!!
+                            type = FeeType.EXTERNAL_FEE,
+                            takerSizeType = FeeSizeType.PERCENTAGE,
+                            takerSize = BigDecimal.valueOf(0.02),
+                            sourceClientId = "Client4",
+                            targetClientId = "Client3",
+                            assetIds = listOf("BTC")
+                        )!!
+                    )
                 )
-        )))
+            )
+        )
 
         assertEquals(BigDecimal.valueOf(0.005), balancesHolder.getBalance("Client1", "BTC"))
         assertEquals(BigDecimal.valueOf(21.19), balancesHolder.getBalance("Client1", "USD"))
@@ -259,31 +311,44 @@ class FeeTest: AbstractTest() {
         initServices()
 
         for (i in 1..5) {
-            singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                    uid = "order$i", clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.01,
-                    fees = listOf(buildLimitOrderFeeInstruction(type = FeeType.CLIENT_FEE,
-                            makerSizeType = FeeSizeType.PERCENTAGE,
-                            makerSize = BigDecimal.valueOf(0.01),
-                            targetClientId = "Client3",
-                            assetIds = listOf("BTC"))!!))))
+            singleLimitOrderService.processMessage(
+                messageBuilder.buildLimitOrderWrapper(
+                    buildLimitOrder(
+                        uid = "order$i", clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.01,
+                        fees = listOf(
+                            buildLimitOrderFeeInstruction(
+                                type = FeeType.CLIENT_FEE,
+                                makerSizeType = FeeSizeType.PERCENTAGE,
+                                makerSize = BigDecimal.valueOf(0.01),
+                                targetClientId = "Client3",
+                                assetIds = listOf("BTC")
+                            )!!
+                        )
+                    )
+                )
+            )
             Thread.sleep(10)
         }
 
         assertEquals(5, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
 
-        balanceUpdateHandlerTest.clear()
-        testClientLimitOrderListener.clear()
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order", clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = 0.05
-        )))
+        clientsEventsQueue.clear()
 
-        val result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.Processing.name, result.orders.first { it.order.externalId == "order" }.order.status)
-        assertEquals(OrderStatus.Matched.name, result.orders.first { it.order.externalId == "order1" }.order.status)
-        assertEquals(OrderStatus.Matched.name, result.orders.first { it.order.externalId == "order2" }.order.status)
-        assertEquals(OrderStatus.Matched.name, result.orders.first { it.order.externalId == "order3" }.order.status)
-        assertEquals(OrderStatus.Cancelled.name, result.orders.first { it.order.externalId == "order4" }.order.status)
-        assertEquals(OrderStatus.Cancelled.name, result.orders.first { it.order.externalId == "order5" }.order.status)
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order", clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = 0.05
+                )
+            )
+        )
+
+        val result = clientsEventsQueue.poll() as ExecutionEvent
+        assertEquals(PARTIALLY_MATCHED, result.orders.first { it.externalId == "order" }.status)
+        assertEquals(MATCHED, result.orders.first { it.externalId == "order1" }.status)
+        assertEquals(MATCHED, result.orders.first { it.externalId == "order2" }.status)
+        assertEquals(MATCHED, result.orders.first { it.externalId == "order3" }.status)
+        assertEquals(CANCELLED, result.orders.first { it.externalId == "order4" }.status)
+        assertEquals(CANCELLED, result.orders.first { it.externalId == "order5" }.status)
         assertEquals(BigDecimal.valueOf(0.02), balancesHolder.getBalance("Client2", "BTC"))
         assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
         assertEquals(1, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
@@ -296,52 +361,85 @@ class FeeTest: AbstractTest() {
         initServices()
 
         for (i in 1..2) {
-            singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                    uid = "order$i", clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.01,
-                    fees = listOf(buildLimitOrderFeeInstruction(type = FeeType.CLIENT_FEE,
-                            makerSizeType = FeeSizeType.PERCENTAGE,
-                            makerSize = BigDecimal.valueOf(0.01),
-                            targetClientId = "Client3",
-                            assetIds = listOf("BTC"))!!))))
+            singleLimitOrderService.processMessage(
+                messageBuilder.buildLimitOrderWrapper(
+                    buildLimitOrder(
+                        uid = "order$i", clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.01,
+                        fees = listOf(
+                            buildLimitOrderFeeInstruction(
+                                type = FeeType.CLIENT_FEE,
+                                makerSizeType = FeeSizeType.PERCENTAGE,
+                                makerSize = BigDecimal.valueOf(0.01),
+                                targetClientId = "Client3",
+                                assetIds = listOf("BTC")
+                            )!!
+                        )
+                    )
+                )
+            )
             Thread.sleep(10)
         }
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order3", clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.01,
-                fees = listOf(
-                        buildLimitOrderFeeInstruction(type = FeeType.CLIENT_FEE,
-                                makerSizeType = FeeSizeType.PERCENTAGE,
-                                makerSize = BigDecimal.valueOf(0.01),
-                                targetClientId = "Client3",
-                                assetIds = listOf("BTC"))!!,
-                        buildLimitOrderFeeInstruction(type = FeeType.CLIENT_FEE,
-                                makerSizeType = FeeSizeType.PERCENTAGE,
-                                makerSize = BigDecimal.valueOf(0.01),
-                                targetClientId = "Client3",
-                                assetIds = listOf("BTC"))!!))))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order3", clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.01,
+                    fees = listOf(
+                        buildLimitOrderFeeInstruction(
+                            type = FeeType.CLIENT_FEE,
+                            makerSizeType = FeeSizeType.PERCENTAGE,
+                            makerSize = BigDecimal.valueOf(0.01),
+                            targetClientId = "Client3",
+                            assetIds = listOf("BTC")
+                        )!!,
+                        buildLimitOrderFeeInstruction(
+                            type = FeeType.CLIENT_FEE,
+                            makerSizeType = FeeSizeType.PERCENTAGE,
+                            makerSize = BigDecimal.valueOf(0.01),
+                            targetClientId = "Client3",
+                            assetIds = listOf("BTC")
+                        )!!
+                    )
+                )
+            )
+        )
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order4", clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.01,
-                fees = listOf(buildLimitOrderFeeInstruction(type = FeeType.CLIENT_FEE,
-                        makerSizeType = FeeSizeType.PERCENTAGE,
-                        makerSize = BigDecimal.valueOf(0.01),
-                        targetClientId = "Client3",
-                        assetIds = listOf("BTC"))!!))))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order4", clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.01,
+                    fees = listOf(
+                        buildLimitOrderFeeInstruction(
+                            type = FeeType.CLIENT_FEE,
+                            makerSizeType = FeeSizeType.PERCENTAGE,
+                            makerSize = BigDecimal.valueOf(0.01),
+                            targetClientId = "Client3",
+                            assetIds = listOf("BTC")
+                        )!!
+                    )
+                )
+            )
+        )
 
         assertEquals(4, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
 
-        balanceUpdateHandlerTest.clear()
-        testClientLimitOrderListener.clear()
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order", clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = 0.04
-        )))
+        clientsEventsQueue.clear()
 
-        val result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.Processing.name, result.orders.first { it.order.externalId == "order" }.order.status)
-        assertEquals(OrderStatus.Matched.name, result.orders.first { it.order.externalId == "order1" }.order.status)
-        assertEquals(OrderStatus.Matched.name, result.orders.first { it.order.externalId == "order2" }.order.status)
-        assertEquals(OrderStatus.Cancelled.name, result.orders.first { it.order.externalId == "order3" }.order.status)
-        assertEquals(OrderStatus.Matched.name, result.orders.first { it.order.externalId == "order4" }.order.status)
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order", clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = 0.04
+                )
+            )
+        )
+
+        val result = clientsEventsQueue.poll() as ExecutionEvent
+        assertEquals(PARTIALLY_MATCHED, result.orders.first { it.externalId == "order" }.status)
+        assertEquals(MATCHED, result.orders.first { it.externalId == "order1" }.status)
+        assertEquals(MATCHED, result.orders.first { it.externalId == "order2" }.status)
+        assertEquals(CANCELLED, result.orders.first { it.externalId == "order3" }.status)
+        assertEquals(MATCHED, result.orders.first { it.externalId == "order4" }.status)
+
         assertEquals(BigDecimal.valueOf(0.01), balancesHolder.getBalance("Client2", "BTC"))
         assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
         assertEquals(1, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
@@ -355,25 +453,36 @@ class FeeTest: AbstractTest() {
         initServices()
 
         for (i in 1..5) {
-            singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                    clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.01
-            )))
+            singleLimitOrderService.processMessage(
+                messageBuilder.buildLimitOrderWrapper(
+                    buildLimitOrder(
+                        clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.01
+                    )
+                )
+            )
         }
 
-        balanceUpdateHandlerTest.clear()
-        testClientLimitOrderListener.clear()
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order", clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = 0.05,
-                fees = listOf(buildLimitOrderFeeInstruction(
-                        type = FeeType.CLIENT_FEE,
-                        takerSizeType = FeeSizeType.PERCENTAGE,
-                        takerSize = BigDecimal.valueOf(0.02),
-                        targetClientId = "Client3",
-                        assetIds = listOf("USD"))!!))))
+        clientsEventsQueue.clear()
 
-        val result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.NotEnoughFunds.name, result.orders.first { it.order.externalId == "order" }.order.status)
-        assertEquals(0, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order", clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = 0.05,
+                    fees = listOf(
+                        buildLimitOrderFeeInstruction(
+                            type = FeeType.CLIENT_FEE,
+                            takerSizeType = FeeSizeType.PERCENTAGE,
+                            takerSize = BigDecimal.valueOf(0.02),
+                            targetClientId = "Client3",
+                            assetIds = listOf("USD")
+                        )!!
+                    )
+                )
+            )
+        )
+
+        val result = clientsEventsQueue.poll() as ExecutionEvent
+        assertEquals(REJECTED, result.orders.first { it.externalId == "order" }.status)
         assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
         assertEquals(5, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
     }
@@ -386,25 +495,36 @@ class FeeTest: AbstractTest() {
         initServices()
 
         for (i in 1..5) {
-            singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                    clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.01
-            )))
+            singleLimitOrderService.processMessage(
+                messageBuilder.buildLimitOrderWrapper(
+                    buildLimitOrder(
+                        clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.01
+                    )
+                )
+            )
         }
 
-        balanceUpdateHandlerTest.clear()
-        testClientLimitOrderListener.clear()
-        marketOrderService.processMessage(buildMarketOrderWrapper(buildMarketOrder(
-                clientId = "Client1", assetId = "BTCUSD", volume = 0.05,
-                fees = listOf(buildLimitOrderFeeInstruction(
-                        type = FeeType.CLIENT_FEE,
-                        takerSizeType = FeeSizeType.PERCENTAGE,
-                        takerSize = BigDecimal.valueOf(0.02),
-                        targetClientId = "Client3",
-                        assetIds = listOf("USD"))!!))))
+        clientsEventsQueue.clear()
 
-        val result = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(OrderStatus.NotEnoughFunds.name, result.order.status)
-        assertEquals(0, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
+        marketOrderService.processMessage(
+            buildMarketOrderWrapper(
+                buildMarketOrder(
+                    clientId = "Client1", assetId = "BTCUSD", volume = 0.05,
+                    fees = listOf(
+                        buildLimitOrderFeeInstruction(
+                            type = FeeType.CLIENT_FEE,
+                            takerSizeType = FeeSizeType.PERCENTAGE,
+                            takerSize = BigDecimal.valueOf(0.02),
+                            targetClientId = "Client3",
+                            assetIds = listOf("USD")
+                        )!!
+                    )
+                )
+            )
+        )
+
+        val result = clientsEventsQueue.poll() as ExecutionEvent
+        assertEquals(REJECTED, result.orders.first().status)
         assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
         assertEquals(5, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
     }
@@ -417,25 +537,36 @@ class FeeTest: AbstractTest() {
         initServices()
 
         for (i in 1..5) {
-            singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                    clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.01
-            )))
+            singleLimitOrderService.processMessage(
+                messageBuilder.buildLimitOrderWrapper(
+                    buildLimitOrder(
+                        clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.01
+                    )
+                )
+            )
         }
 
-        balanceUpdateHandlerTest.clear()
-        testClientLimitOrderListener.clear()
-        marketOrderService.processMessage(buildMarketOrderWrapper(buildMarketOrder(
-                clientId = "Client1", assetId = "BTCUSD", volume = -750.0, straight = false,
-                fees = listOf(buildLimitOrderFeeInstruction(
-                        type = FeeType.CLIENT_FEE,
-                        takerSizeType = FeeSizeType.PERCENTAGE,
-                        takerSize = BigDecimal.valueOf(0.02),
-                        targetClientId = "Client3",
-                        assetIds = listOf("USD"))!!))))
+        clientsEventsQueue.clear()
+        clientsEventsQueue.clear()
+        marketOrderService.processMessage(
+            buildMarketOrderWrapper(
+                buildMarketOrder(
+                    clientId = "Client1", assetId = "BTCUSD", volume = -750.0, straight = false,
+                    fees = listOf(
+                        buildLimitOrderFeeInstruction(
+                            type = FeeType.CLIENT_FEE,
+                            takerSizeType = FeeSizeType.PERCENTAGE,
+                            takerSize = BigDecimal.valueOf(0.02),
+                            targetClientId = "Client3",
+                            assetIds = listOf("USD")
+                        )!!
+                    )
+                )
+            )
+        )
 
-        val result = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(OrderStatus.NotEnoughFunds.name, result.order.status)
-        assertEquals(0, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
+        val result = clientsEventsQueue.poll() as ExecutionEvent
+        assertEquals(REJECTED, result.orders.first().status)
         assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
         assertEquals(5, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
     }
@@ -449,51 +580,76 @@ class FeeTest: AbstractTest() {
 
         val feeSizes = arrayListOf(0.01, 0.1, 0.01)
         feeSizes.forEachIndexed { index, feeSize ->
-            singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                    uid = "order$index", clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.005,
-                    fees = listOf(buildLimitOrderFeeInstruction(type = FeeType.CLIENT_FEE,
-                            makerSizeType = FeeSizeType.PERCENTAGE,
-                            makerSize = BigDecimal.valueOf(feeSize),
-                            targetClientId = "Client3",
-                            assetIds = listOf("BTC"))!!))))
+            singleLimitOrderService.processMessage(
+                messageBuilder.buildLimitOrderWrapper(
+                    buildLimitOrder(
+                        uid = "order$index", clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.005,
+                        fees = listOf(
+                            buildLimitOrderFeeInstruction(
+                                type = FeeType.CLIENT_FEE,
+                                makerSizeType = FeeSizeType.PERCENTAGE,
+                                makerSize = BigDecimal.valueOf(feeSize),
+                                targetClientId = "Client3",
+                                assetIds = listOf("BTC")
+                            )!!
+                        )
+                    )
+                )
+            )
             Thread.sleep(10)
         }
 
         clearMessageQueues()
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order4", clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = 0.01,
-                fees = listOf(buildLimitOrderFeeInstruction(
-                        type = FeeType.CLIENT_FEE,
-                        takerSizeType = FeeSizeType.PERCENTAGE,
-                        takerSize = BigDecimal.valueOf(0.02),
-                        targetClientId = "Client3",
-                        assetIds = listOf("USD"))!!))))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order4", clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = 0.01,
+                    fees = listOf(
+                        buildLimitOrderFeeInstruction(
+                            type = FeeType.CLIENT_FEE,
+                            takerSizeType = FeeSizeType.PERCENTAGE,
+                            takerSize = BigDecimal.valueOf(0.02),
+                            targetClientId = "Client3",
+                            assetIds = listOf("USD")
+                        )!!
+                    )
+                )
+            )
+        )
 
         var event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(2, event.orders.size)
         assertEquals(1, event.balanceUpdates?.size)
-        assertEquals(OutgoingOrderStatus.CANCELLED, event.orders.single {it.externalId == "order1"}.status)
-        assertEquals(OutgoingOrderStatus.REJECTED, event.orders.single {it.externalId == "order4"}.status)
-        assertEquals(OrderRejectReason.NOT_ENOUGH_FUNDS, event.orders.single {it.externalId == "order4"}.rejectReason)
+        assertEquals(CANCELLED, event.orders.single { it.externalId == "order1" }.status)
+        assertEquals(REJECTED, event.orders.single { it.externalId == "order4" }.status)
+        assertEquals(OrderRejectReason.NOT_ENOUGH_FUNDS, event.orders.single { it.externalId == "order4" }.rejectReason)
         assertOrderBookSize("BTCUSD", true, 0)
         assertOrderBookSize("BTCUSD", false, 2)
         assertBalance("Client2", "BTC", 0.01521, 0.01)
 
         clearMessageQueues()
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order5", clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = 0.01,
-                fees = listOf(buildLimitOrderFeeInstruction(
-                        type = FeeType.CLIENT_FEE,
-                        takerSizeType = FeeSizeType.PERCENTAGE,
-                        takerSize = BigDecimal.valueOf(0.01),
-                        targetClientId = "Client3",
-                        assetIds = listOf("USD"))!!))))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order5", clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = 0.01,
+                    fees = listOf(
+                        buildLimitOrderFeeInstruction(
+                            type = FeeType.CLIENT_FEE,
+                            takerSizeType = FeeSizeType.PERCENTAGE,
+                            takerSize = BigDecimal.valueOf(0.01),
+                            targetClientId = "Client3",
+                            assetIds = listOf("USD")
+                        )!!
+                    )
+                )
+            )
+        )
 
         event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(3, event.orders.size)
-        assertEquals(OutgoingOrderStatus.MATCHED, event.orders.single { it.externalId == "order0" }.status)
-        assertEquals(OutgoingOrderStatus.MATCHED, event.orders.single { it.externalId == "order2" }.status)
-        assertEquals(OutgoingOrderStatus.MATCHED, event.orders.single { it.externalId == "order5" }.status)
+        assertEquals(MATCHED, event.orders.single { it.externalId == "order0" }.status)
+        assertEquals(MATCHED, event.orders.single { it.externalId == "order2" }.status)
+        assertEquals(MATCHED, event.orders.single { it.externalId == "order5" }.status)
 
         assertOrderBookSize("BTCUSD", true, 0)
         assertOrderBookSize("BTCUSD", false, 0)
@@ -511,59 +667,112 @@ class FeeTest: AbstractTest() {
         testBalanceHolderWrapper.updateBalance(clientId = "Client1", assetId = "EUR", balance = 1.06)
 
 
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(clientId = "Client4", assetId = "EURUSD", price = 1.3, volume = -1.0))
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(clientId = "Client4", assetId = "EURUSD", price = 1.1, volume = 1.0))
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(clientId = "Client4", assetId = "BTCEUR", price = 11000.0, volume = -1.0))
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(clientId = "Client4", assetId = "BTCEUR", price = 10000.0, volume = 1.0))
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                clientId = "Client4",
+                assetId = "EURUSD",
+                price = 1.3,
+                volume = -1.0
+            )
+        )
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                clientId = "Client4",
+                assetId = "EURUSD",
+                price = 1.1,
+                volume = 1.0
+            )
+        )
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                clientId = "Client4",
+                assetId = "BTCEUR",
+                price = 11000.0,
+                volume = -1.0
+            )
+        )
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                clientId = "Client4",
+                assetId = "BTCEUR",
+                price = 10000.0,
+                volume = 1.0
+            )
+        )
 
         initServices()
 
         val feeSizes = arrayListOf(0.01, 0.1, 0.01)
         feeSizes.forEachIndexed { index, feeSize ->
-            singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                    uid = "order$index", clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.005,
-                    fees = listOf(buildLimitOrderFeeInstruction(type = FeeType.CLIENT_FEE,
-                            makerSizeType = FeeSizeType.PERCENTAGE,
-                            makerSize = BigDecimal.valueOf(feeSize),
-                            targetClientId = "Client3",
-                            assetIds = listOf("EUR"))!!))))
+            singleLimitOrderService.processMessage(
+                messageBuilder.buildLimitOrderWrapper(
+                    buildLimitOrder(
+                        uid = "order$index", clientId = "Client2", assetId = "BTCUSD", price = 15000.0, volume = -0.005,
+                        fees = listOf(
+                            buildLimitOrderFeeInstruction(
+                                type = FeeType.CLIENT_FEE,
+                                makerSizeType = FeeSizeType.PERCENTAGE,
+                                makerSize = BigDecimal.valueOf(feeSize),
+                                targetClientId = "Client3",
+                                assetIds = listOf("EUR")
+                            )!!
+                        )
+                    )
+                )
+            )
             Thread.sleep(10)
         }
 
         clearMessageQueues()
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order4", clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = 0.01,
-                fees = listOf(buildLimitOrderFeeInstruction(
-                        type = FeeType.CLIENT_FEE,
-                        takerSizeType = FeeSizeType.PERCENTAGE,
-                        takerSize = BigDecimal.valueOf(0.02),
-                        targetClientId = "Client3",
-                        assetIds = listOf("EUR"))!!))))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order4", clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = 0.01,
+                    fees = listOf(
+                        buildLimitOrderFeeInstruction(
+                            type = FeeType.CLIENT_FEE,
+                            takerSizeType = FeeSizeType.PERCENTAGE,
+                            takerSize = BigDecimal.valueOf(0.02),
+                            targetClientId = "Client3",
+                            assetIds = listOf("EUR")
+                        )!!
+                    )
+                )
+            )
+        )
 
         var event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(2, event.orders.size)
         assertEquals(1, event.balanceUpdates?.size)
-        assertEquals(OutgoingOrderStatus.CANCELLED, event.orders.single { it.externalId == "order1" }.status)
-        assertEquals(OutgoingOrderStatus.REJECTED, event.orders.single { it.externalId == "order4" }.status)
+        assertEquals(CANCELLED, event.orders.single { it.externalId == "order1" }.status)
+        assertEquals(REJECTED, event.orders.single { it.externalId == "order4" }.status)
         assertEquals(OrderRejectReason.NOT_ENOUGH_FUNDS, event.orders.single { it.externalId == "order4" }.rejectReason)
         assertBalance("Client2", "BTC", 0.015, 0.01)
         assertOrderBookSize("BTCUSD", true, 0)
         assertOrderBookSize("BTCUSD", false, 2)
 
         clearMessageQueues()
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(
-                uid = "order5", clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = 0.01,
-                fees = listOf(buildLimitOrderFeeInstruction(
-                        type = FeeType.CLIENT_FEE,
-                        takerSizeType = FeeSizeType.PERCENTAGE,
-                        takerSize = BigDecimal.valueOf(0.01),
-                        targetClientId = "Client3",
-                        assetIds = listOf("EUR"))!!))))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    uid = "order5", clientId = "Client1", assetId = "BTCUSD", price = 15000.0, volume = 0.01,
+                    fees = listOf(
+                        buildLimitOrderFeeInstruction(
+                            type = FeeType.CLIENT_FEE,
+                            takerSizeType = FeeSizeType.PERCENTAGE,
+                            takerSize = BigDecimal.valueOf(0.01),
+                            targetClientId = "Client3",
+                            assetIds = listOf("EUR")
+                        )!!
+                    )
+                )
+            )
+        )
 
         event = clientsEventsQueue.poll() as ExecutionEvent
-        assertEquals(OutgoingOrderStatus.MATCHED, event.orders.single { it.externalId == "order0" }.status)
-        assertEquals(OutgoingOrderStatus.MATCHED, event.orders.single { it.externalId == "order2" }.status)
-        assertEquals(OutgoingOrderStatus.MATCHED, event.orders.single { it.externalId == "order5" }.status)
+        assertEquals(MATCHED, event.orders.single { it.externalId == "order0" }.status)
+        assertEquals(MATCHED, event.orders.single { it.externalId == "order2" }.status)
+        assertEquals(MATCHED, event.orders.single { it.externalId == "order5" }.status)
 
         assertOrderBookSize("BTCUSD", true, 0)
         assertOrderBookSize("BTCUSD", false, 0)
@@ -574,45 +783,78 @@ class FeeTest: AbstractTest() {
         testBalanceHolderWrapper.updateBalance(clientId = "Client1", assetId = "BTC", balance = 0.1)
         testBalanceHolderWrapper.updateBalance(clientId = "Client2", assetId = "USD", balance = 100.0)
 
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(clientId = "AnotherClient", assetId = "BTCUSD", volume = -1.0, price = 10000.0))
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(clientId = "AnotherClient", assetId = "BTCUSD", volume = -1.0, price = 11000.0))
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                clientId = "AnotherClient",
+                assetId = "BTCUSD",
+                volume = -1.0,
+                price = 10000.0
+            )
+        )
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                clientId = "AnotherClient",
+                assetId = "BTCUSD",
+                volume = -1.0,
+                price = 11000.0
+            )
+        )
 
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = 0.01, price = 9700.0,
-                fees = listOf(buildLimitOrderFeeInstruction(
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                clientId = "Client2", assetId = "BTCUSD", volume = 0.01, price = 9700.0,
+                fees = listOf(
+                    buildLimitOrderFeeInstruction(
                         type = FeeType.CLIENT_FEE,
                         makerSizeType = FeeSizeType.PERCENTAGE,
                         makerSize = BigDecimal.valueOf(0.04),
                         makerFeeModificator = BigDecimal.valueOf(50.0),
-                        targetClientId = "TargetClient")!!)))
+                        targetClientId = "TargetClient"
+                    )!!
+                )
+            )
+        )
 
         initServices()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client1", assetId = "BTCUSD", volume = -0.1, price = 9000.0,
-                fees = listOf(buildLimitOrderFeeInstruction(type = FeeType.CLIENT_FEE, takerSize = BigDecimal.valueOf(0.01), targetClientId = "TargetClient")!!))))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD", volume = -0.1, price = 9000.0,
+                    fees = listOf(
+                        buildLimitOrderFeeInstruction(
+                            type = FeeType.CLIENT_FEE,
+                            takerSize = BigDecimal.valueOf(0.01),
+                            targetClientId = "TargetClient"
+                        )!!
+                    )
+                )
+            )
+        )
 
         // 0.01 * 0.04 * (1 - exp(-(10000.0 - 9700.0)/10000.0 * 50.0))
         assertEquals(BigDecimal.valueOf(0.00031075), balancesHolder.getBalance("TargetClient", "BTC"))
 
-        val result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
+        val result = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(2, result.orders.size)
 
-        assertEquals(1, result.orders.filter { it.order.clientId == "Client1" }.size)
-        val takerResult = result.orders.first { it.order.clientId == "Client1" }
-        assertEquals(1, takerResult.trades.size)
-        assertEquals(BigDecimal.valueOf(300.0), takerResult.trades.first().absoluteSpread)
-        assertEquals(BigDecimal.valueOf(0.03), takerResult.trades.first().relativeSpread)
+        assertEquals(1, result.orders.filter { it.walletId == "Client1" }.size)
+        val takerResult = result.orders.first { it.walletId == "Client1" }
+        assertEquals(1, takerResult.trades!!.size)
+        assertEquals("300", takerResult.trades!!.first().absoluteSpread)
+        assertEquals("0.03", takerResult.trades!!.first().relativeSpread)
 
-        assertEquals(1, takerResult.trades.first().fees.size)
-        assertNull(takerResult.trades.first().fees.first().transfer!!.feeCoef)
+        assertEquals(1, takerResult.trades!!.first().fees!!.size)
+        assertEquals("0.0", takerResult.trades!!.first().fees!!.first().feeCoef)
 
-        assertEquals(1, result.orders.filter { it.order.clientId == "Client2" }.size)
-        val makerResult = result.orders.first { it.order.clientId == "Client2" }
-        assertEquals(1, makerResult.trades.size)
-        assertEquals(BigDecimal.valueOf(300.0), makerResult.trades.first().absoluteSpread)
-        assertEquals(BigDecimal.valueOf(0.03), makerResult.trades.first().relativeSpread)
+        assertEquals(1, result.orders.filter { it.walletId == "Client2" }.size)
+        val makerResult = result.orders.first { it.walletId == "Client2" }
+        assertEquals(1, makerResult.trades!!.size)
+        assertEquals("300", makerResult.trades!!.first().absoluteSpread)
+        assertEquals("0.03", makerResult.trades!!.first().relativeSpread)
 
-        assertEquals(1, makerResult.trades.first().fees.size)
-        assertEquals(BigDecimal.valueOf(0.776869839852), makerResult.trades.first().fees.first().transfer?.feeCoef)
+        assertEquals(1, makerResult.trades!!.first().fees!!.size)
+        assertEquals("0.776869839852", makerResult.trades!!.first().fees!!.first().feeCoef)
     }
 
     @Test
@@ -620,53 +862,84 @@ class FeeTest: AbstractTest() {
         testBalanceHolderWrapper.updateBalance(clientId = "Client1", assetId = "BTC", balance = 0.1)
         testBalanceHolderWrapper.updateBalance(clientId = "Client2", assetId = "USD", balance = 100.0)
 
-        testOrderBookWrapper.addLimitOrder(buildLimitOrder(clientId = "Client2", assetId = "BTCUSD", volume = 0.01, price = 9700.0,
-                fees = listOf(buildLimitOrderFeeInstruction(
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                clientId = "Client2", assetId = "BTCUSD", volume = 0.01, price = 9700.0,
+                fees = listOf(
+                    buildLimitOrderFeeInstruction(
                         type = FeeType.CLIENT_FEE,
                         makerSizeType = FeeSizeType.PERCENTAGE,
                         makerSize = BigDecimal.valueOf(0.04),
                         makerFeeModificator = BigDecimal.valueOf(50.0),
-                        targetClientId = "TargetClient")!!)))
+                        targetClientId = "TargetClient"
+                    )!!
+                )
+            )
+        )
 
         initServices()
 
-        singleLimitOrderService.processMessage(messageBuilder.buildLimitOrderWrapper(buildLimitOrder(clientId = "Client1", assetId = "BTCUSD", volume = -0.1, price = 9000.0,
-                fees = listOf(buildLimitOrderFeeInstruction(type = FeeType.CLIENT_FEE, takerSize = BigDecimal.valueOf(0.01), targetClientId = "TargetClient")!!))))
+        singleLimitOrderService.processMessage(
+            messageBuilder.buildLimitOrderWrapper(
+                buildLimitOrder(
+                    clientId = "Client1", assetId = "BTCUSD", volume = -0.1, price = 9000.0,
+                    fees = listOf(
+                        buildLimitOrderFeeInstruction(
+                            type = FeeType.CLIENT_FEE,
+                            takerSize = BigDecimal.valueOf(0.01),
+                            targetClientId = "TargetClient"
+                        )!!
+                    )
+                )
+            )
+        )
 
         assertEquals(BigDecimal.valueOf(0.0004), balancesHolder.getBalance("TargetClient", "BTC"))
 
-        val result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
+        val result = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(2, result.orders.size)
 
-        assertEquals(1, result.orders.filter { it.order.clientId == "Client1" }.size)
-        val takerResult = result.orders.first { it.order.clientId == "Client1" }
-        assertEquals(1, takerResult.trades.size)
-        assertNull(takerResult.trades.first().absoluteSpread)
-        assertNull(takerResult.trades.first().relativeSpread)
+        assertEquals(1, result.orders.filter { it.walletId == "Client1" }.size)
+        val takerResult = result.orders.first { it.walletId == "Client1" }
+        assertEquals(1, takerResult.trades!!.size)
+        assertEquals("0.0", takerResult.trades!!.first().absoluteSpread)
+        assertEquals("0.0", takerResult.trades!!.first().relativeSpread)
 
-        assertEquals(1, takerResult.trades.first().fees.size)
-        assertNull(takerResult.trades.first().fees.first().transfer!!.feeCoef)
+        assertEquals(1, takerResult.trades!!.first().fees!!.size)
+        assertEquals("0.0", takerResult.trades!!.first().fees!!.first().feeCoef)
 
-        assertEquals(1, result.orders.filter { it.order.clientId == "Client2" }.size)
-        val makerResult = result.orders.first { it.order.clientId == "Client2" }
-        assertEquals(1, makerResult.trades.size)
-        assertNull(makerResult.trades.first().absoluteSpread)
-        assertNull(makerResult.trades.first().relativeSpread)
+        assertEquals(1, result.orders.filter { it.walletId == "Client2" }.size)
+        val makerResult = result.orders.first { it.walletId == "Client2" }
+        assertEquals(1, makerResult.trades!!.size)
+        assertEquals("0.0", makerResult.trades!!.first().absoluteSpread)
+        assertEquals("0.0", makerResult.trades!!.first().relativeSpread)
 
-        assertEquals(1, makerResult.trades.first().fees.size)
-        assertNull(makerResult.trades.first().fees.first().transfer!!.feeCoef)
+        assertEquals(1, makerResult.trades!!.first().fees!!.size)
+        assertEquals("0.0", makerResult.trades!!.first().fees!!.first().feeCoef)
     }
 
-    private fun buildLimitOrderFeeInstruction(type: FeeType? = null,
-                                              takerSizeType: FeeSizeType? = FeeSizeType.PERCENTAGE,
-                                              takerSize: BigDecimal? = null,
-                                              makerSizeType: FeeSizeType? = FeeSizeType.PERCENTAGE,
-                                              makerSize: BigDecimal? = null,
-                                              sourceClientId: String? = null,
-                                              targetClientId: String? = null,
-                                              assetIds: List<String> = listOf(),
-                                              makerFeeModificator: BigDecimal? = null): NewLimitOrderFeeInstruction? {
+    private fun buildLimitOrderFeeInstruction(
+        type: FeeType? = null,
+        takerSizeType: FeeSizeType? = FeeSizeType.PERCENTAGE,
+        takerSize: BigDecimal? = null,
+        makerSizeType: FeeSizeType? = FeeSizeType.PERCENTAGE,
+        makerSize: BigDecimal? = null,
+        sourceClientId: String? = null,
+        targetClientId: String? = null,
+        assetIds: List<String> = listOf(),
+        makerFeeModificator: BigDecimal? = null
+    ): NewLimitOrderFeeInstruction? {
         return if (type == null) null
-        else return NewLimitOrderFeeInstruction(type, takerSizeType, takerSize, makerSizeType, makerSize, sourceClientId, targetClientId, assetIds, makerFeeModificator)
+        else return NewLimitOrderFeeInstruction(
+            type,
+            takerSizeType,
+            takerSize,
+            makerSizeType,
+            makerSize,
+            sourceClientId,
+            targetClientId,
+            assetIds,
+            makerFeeModificator
+        )
     }
 }

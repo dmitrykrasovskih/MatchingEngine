@@ -7,7 +7,6 @@ import com.lykke.matching.engine.daos.IncomingLimitOrder
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
-import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderWrapper
@@ -223,14 +222,28 @@ class MinVolumeOrderCancellerTest : AbstractTest() {
         )
 
 
-        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 5, BigDecimal.valueOf(0.0001)))
-        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 2, BigDecimal.valueOf(5.0)))
+        testDictionariesDatabaseAccessor.addAssetPair(
+            createAssetPair(
+                "",
+                "BTCUSD",
+                "BTC",
+                "USD",
+                5,
+                BigDecimal.valueOf(0.0001)
+            )
+        )
+        testDictionariesDatabaseAccessor.addAssetPair(
+            createAssetPair(
+                "",
+                "EURUSD",
+                "EUR",
+                "USD",
+                2,
+                BigDecimal.valueOf(5.0)
+            )
+        )
         initServices()
 
-        testTrustedClientsLimitOrderListener.clear()
-        testClientLimitOrderListener.clear()
-        balanceUpdateHandlerTest.clear()
-        testRabbitOrderBookListener.clear()
         testOrderBookListener.clear()
         minVolumeOrderCanceller.cancel()
 
@@ -291,21 +304,6 @@ class MinVolumeOrderCancellerTest : AbstractTest() {
         // check order is removed from ordersMap
         assertNull(genericLimitOrderService.cancelLimitOrder(Date(), "order1", false))
         assertNull(genericLimitOrderService.cancelLimitOrder(Date(), "order2", false))
-
-        assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
-        assertEquals(1, (testTrustedClientsLimitOrderListener.getQueue().first() as LimitOrdersReport).orders.size)
-        assertEquals(
-            BigDecimal.valueOf(11000.0),
-            (testTrustedClientsLimitOrderListener.getQueue().first() as LimitOrdersReport).orders.first().order.price
-        )
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        assertEquals(5, (testClientLimitOrderListener.getQueue().first() as LimitOrdersReport).orders.size)
-
-        assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
-
-        assertEquals(4, testRabbitOrderBookListener.getCount())
-        assertEquals(4, testOrderBookListener.getCount())
     }
 
     @Test

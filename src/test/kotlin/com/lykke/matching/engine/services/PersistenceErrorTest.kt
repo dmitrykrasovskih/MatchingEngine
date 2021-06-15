@@ -75,7 +75,16 @@ class PersistenceErrorTest : AbstractTest() {
             testBalanceHolderWrapper.updateBalance(clientId, "BTC", 1.0)
         }
 
-        testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "EURUSD", "EUR", "USD", 5, BigDecimal.valueOf(0.05)))
+        testDictionariesDatabaseAccessor.addAssetPair(
+            createAssetPair(
+                "",
+                "EURUSD",
+                "EUR",
+                "USD",
+                5,
+                BigDecimal.valueOf(0.05)
+            )
+        )
         testDictionariesDatabaseAccessor.addAssetPair(createAssetPair("", "BTCUSD", "BTC", "USD", 5))
 
         initServices()
@@ -132,11 +141,11 @@ class PersistenceErrorTest : AbstractTest() {
     fun testCashInOutOperation() {
         cashInOutOperationService.processMessage(messageBuilder.buildCashInOutWrapper("Client1", "EUR", 5.0))
         assertData()
-        assertEquals(0, cashInOutQueue.size)
+        assertEquals(0, clientsEventsQueue.size)
 
         cashInOutOperationService.processMessage(messageBuilder.buildCashInOutWrapper("Client1", "EUR", -4.0))
         assertData()
-        assertEquals(0, cashInOutQueue.size)
+        assertEquals(0, clientsEventsQueue.size)
     }
 
     @Test
@@ -148,7 +157,7 @@ class PersistenceErrorTest : AbstractTest() {
             )
         )
         assertData()
-        assertEquals(0, rabbitTransferQueue.size)
+        assertEquals(0, clientsEventsQueue.size)
     }
 
     @Test
@@ -156,22 +165,22 @@ class PersistenceErrorTest : AbstractTest() {
         // Limit Order
         limitOrderCancelService.processMessage(messageBuilder.buildLimitOrderCancelWrapper("order1"))
         assertData()
-        assertEquals(0, testClientLimitOrderListener.getCount())
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
+        assertEquals(0, clientsEventsQueue.size)
+        assertEquals(0, trustedClientsEventsQueue.size)
 
         // Stop Limit Order
         limitOrderCancelService.processMessage(messageBuilder.buildLimitOrderCancelWrapper("stopOrder1"))
         assertData()
-        assertEquals(0, testClientLimitOrderListener.getCount())
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
+        assertEquals(0, clientsEventsQueue.size)
+        assertEquals(0, trustedClientsEventsQueue.size)
     }
 
     @Test
     fun testLimitOrderMassCancel() {
         limitOrderMassCancelService.processMessage(messageBuilder.buildLimitOrderMassCancelWrapper("Client1"))
         assertData()
-        assertEquals(0, testClientLimitOrderListener.getCount())
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
+        assertEquals(0, clientsEventsQueue.size)
+        assertEquals(0, trustedClientsEventsQueue.size)
     }
 
     @Test
@@ -179,8 +188,8 @@ class PersistenceErrorTest : AbstractTest() {
         val messageWrapper = buildMultiLimitOrderCancelWrapper("TrustedClient", "EURUSD", false)
         multiLimitOrderCancelService.processMessage(messageWrapper)
         assertData()
-        assertEquals(0, testClientLimitOrderListener.getCount())
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
+        assertEquals(0, clientsEventsQueue.size)
+        assertEquals(0, trustedClientsEventsQueue.size)
     }
 
     @Test
@@ -188,8 +197,8 @@ class PersistenceErrorTest : AbstractTest() {
         val messageWrapper = buildMultiLimitOrderCancelWrapper("Client1", "EURUSD", true)
         multiLimitOrderCancelService.processMessage(messageWrapper)
         assertData()
-        assertEquals(0, testClientLimitOrderListener.getCount())
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
+        assertEquals(0, clientsEventsQueue.size)
+        assertEquals(0, trustedClientsEventsQueue.size)
     }
 
     @Test
@@ -373,8 +382,8 @@ class PersistenceErrorTest : AbstractTest() {
         )
 
         assertData()
-        assertEquals(0, testClientLimitOrderListener.getCount())
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
+        assertEquals(0, clientsEventsQueue.size)
+        assertEquals(0, trustedClientsEventsQueue.size)
     }
 
     @Test
@@ -412,9 +421,8 @@ class PersistenceErrorTest : AbstractTest() {
 
     private fun assertMarketOrderResult() {
         assertData()
-        assertEquals(0, testClientLimitOrderListener.getCount())
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
-        assertEquals(0, rabbitSwapListener.getCount())
+        assertEquals(0, clientsEventsQueue.size)
+        assertEquals(0, trustedClientsEventsQueue.size)
     }
 
     private fun assertLimitOrderResult() {
@@ -423,19 +431,13 @@ class PersistenceErrorTest : AbstractTest() {
 
     private fun assertMultiLimitOrderResult() {
         assertData()
-        assertEquals(0, testClientLimitOrderListener.getCount())
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
-        assertEquals(0, rabbitSwapListener.getCount())
+        assertEquals(0, clientsEventsQueue.size)
+        assertEquals(0, trustedClientsEventsQueue.size)
     }
 
     private fun assertData() {
         assertBalances()
         assertOrderBooks()
-        assertNotifications()
-    }
-
-    private fun assertNotifications() {
-        assertEquals(0, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
     }
 
     private fun assertBalances() {

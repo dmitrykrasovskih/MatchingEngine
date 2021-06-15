@@ -8,8 +8,6 @@ import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
 import com.lykke.matching.engine.order.OrderStatus
-import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
-import com.lykke.matching.engine.outgoing.messages.MarketOrderWithTrades
 import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderRejectReason
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.utils.MessageBuilder
@@ -102,14 +100,6 @@ class InvalidBalanceTest : AbstractTest() {
             )
         )
 
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
-        assertEquals(1, testClientLimitOrderListener.getCount())
-
-        val report = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(1, report.orders.size)
-        assertEquals("Client1", report.orders.first().order.clientId)
-        assertEquals(OrderStatus.NotEnoughFunds.name, report.orders.first().order.status)
-
         assertEquals(0, trustedClientsEventsQueue.size)
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
@@ -118,8 +108,6 @@ class InvalidBalanceTest : AbstractTest() {
         assertEquals(OrderRejectReason.NOT_ENOUGH_FUNDS, event.orders.single().rejectReason)
 
         assertEquals(0, testOrderBookListener.getCount())
-        assertEquals(0, testRabbitOrderBookListener.getCount())
-        assertEquals(0, testLkkTradeListener.getCount())
         assertEquals(0, tradesInfoListener.getCount())
 
         assertEquals(0, genericLimitOrderService.getOrderBook("", "ETHUSD").getOrderBook(true).size)
@@ -179,33 +167,12 @@ class InvalidBalanceTest : AbstractTest() {
             )
         )
 
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        assertEquals(1, rabbitSwapListener.getCount())
-
-        val limitReport = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(2, limitReport.orders.size)
-        limitReport.orders.forEach {
-            assertEquals("Client2", it.order.clientId)
-            assertEquals(OrderStatus.Matched.name, it.order.status)
-        }
-
-        val report = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals("Client1", report.order.clientId)
-        assertEquals(OrderStatus.Matched.name, report.order.status)
-
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(3, event.orders.size)
         event.orders.forEach {
             assertEquals(OutgoingOrderStatus.MATCHED, it.status)
         }
-
-        assertEquals(1, testOrderBookListener.getCount())
-        assertEquals(1, testRabbitOrderBookListener.getCount())
-        assertEquals(1, testLkkTradeListener.getCount())
-        assertEquals(4, testLkkTradeListener.getQueue().poll().size)
-        assertEquals(1, tradesInfoListener.getCount())
 
         assertEquals(0, genericLimitOrderService.getOrderBook("", "ETHUSD").getOrderBook(true).size)
         assertEquals(0, testOrderDatabaseAccessor.getOrders("ETHUSD", true).size)
@@ -289,8 +256,6 @@ class InvalidBalanceTest : AbstractTest() {
         )
 
         assertBalance("Client1", "USD", -0.45, 0.0)
-        val report = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.Cancelled.name, report.orders.first { it.order.clientId == "Client1" }.order.status)
 
         val event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(OutgoingOrderStatus.CANCELLED, event.orders.first { it.walletId == "Client1" }.status)
@@ -344,15 +309,6 @@ class InvalidBalanceTest : AbstractTest() {
         assertEquals(BigDecimal.valueOf(0.05), balancesHolder.getBalance("Client2", "ETH"))
         assertEquals(BigDecimal.valueOf(224.5), balancesHolder.getBalance("Client2", "USD"))
 
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        val report = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(4, report.orders.size)
-
-        assertEquals(OrderStatus.Cancelled.name, report.orders.first { it.order.externalId == "1" }.order.status)
-        assertEquals(OrderStatus.Matched.name, report.orders.first { it.order.externalId == "2" }.order.status)
-        assertEquals(OrderStatus.Cancelled.name, report.orders.first { it.order.externalId == "3" }.order.status)
-        assertEquals(OrderStatus.Processing.name, report.orders.first { it.order.externalId == "4" }.order.status)
-
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(4, event.orders.size)
@@ -387,7 +343,6 @@ class InvalidBalanceTest : AbstractTest() {
         applicationSettingsCache.update()
         applicationSettingsHolder.update()
 
-        testClientLimitOrderListener.clear()
         singleLimitOrderService.processMessage(
             messageBuilder.buildLimitOrderWrapper(
                 buildLimitOrder(
@@ -407,13 +362,6 @@ class InvalidBalanceTest : AbstractTest() {
         assertEquals(BigDecimal.ZERO, balancesHolder.getReservedForOrdersBalance("", "", "Client1", "ETH"))
         assertEquals(BigDecimal.ZERO, balancesHolder.getBalance("Client2", "ETH"))
         assertEquals(BigDecimal.valueOf(275.0), balancesHolder.getBalance("Client2", "USD"))
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        val report = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(2, report.orders.size)
-
-        assertEquals(OrderStatus.Cancelled.name, report.orders.first { it.order.externalId == "1" }.order.status)
-        assertEquals(OrderStatus.InOrderBook.name, report.orders.first { it.order.externalId == "2" }.order.status)
 
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent

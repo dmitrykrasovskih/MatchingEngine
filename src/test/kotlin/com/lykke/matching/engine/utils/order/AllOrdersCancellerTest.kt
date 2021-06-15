@@ -7,7 +7,6 @@ import com.lykke.matching.engine.daos.order.LimitOrderType
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
-import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.assertEquals
@@ -123,10 +122,6 @@ class AllOrdersCancellerTest : AbstractTest() {
                 )
             )
         )
-
-        testClientLimitOrderListener.clear()
-        balanceUpdateHandlerTest.clear()
-
         //when
         allOrdersCanceller.cancelAllOrders()
 
@@ -142,11 +137,6 @@ class AllOrdersCancellerTest : AbstractTest() {
         assertEquals(0, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
         assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
         assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        assertEquals(3, (testClientLimitOrderListener.getQueue().first() as LimitOrdersReport).orders.size)
-
-        assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
     }
 
     @Test

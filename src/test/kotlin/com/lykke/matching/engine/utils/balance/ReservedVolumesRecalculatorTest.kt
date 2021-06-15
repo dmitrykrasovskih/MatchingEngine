@@ -10,10 +10,7 @@ import com.lykke.matching.engine.database.TestReservedVolumesDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
 import com.lykke.matching.engine.database.TestWalletDatabaseAccessor
 import com.lykke.matching.engine.holders.BalancesDatabaseAccessorsHolder
-import com.lykke.matching.engine.notification.BalanceUpdateHandlerTest
 import com.lykke.matching.engine.order.utils.TestOrderBookWrapper
-import com.lykke.matching.engine.outgoing.messages.BalanceUpdate
-import com.lykke.matching.engine.outgoing.messages.ClientBalanceUpdate
 import com.lykke.matching.engine.outgoing.messages.v2.events.CashInEvent
 import com.lykke.matching.engine.outgoing.messages.v2.events.CashOutEvent
 import com.lykke.matching.engine.outgoing.messages.v2.events.Event
@@ -94,9 +91,6 @@ class ReservedVolumesRecalculatorTest {
 
     @Autowired
     lateinit var reservedVolumesDatabaseAccessor: TestReservedVolumesDatabaseAccessor
-
-    @Autowired
-    lateinit var balanceUpdateHandlerTest: BalanceUpdateHandlerTest
 
     @Before
     fun setUp() {
@@ -237,17 +231,6 @@ class ReservedVolumesRecalculatorTest {
             }.orderIds
         )
 
-        assertEquals(1, balanceUpdateHandlerTest.balanceUpdateQueue.size)
-        val balanceUpdate = balanceUpdateHandlerTest.balanceUpdateQueue.poll() as BalanceUpdate
-        assertEquals(7, balanceUpdate.balances.size)
-        assertBalanceUpdateNotification("trustedClient", "BTC", 10.0, 2.0, 0.0, balanceUpdate.balances)
-        assertBalanceUpdateNotification("trustedClient2", "BTC", 1.0, -0.001, 0.0, balanceUpdate.balances)
-        assertBalanceUpdateNotification("Client3", "BTC", 0.0, -0.001, 0.0, balanceUpdate.balances)
-        assertBalanceUpdateNotification("Client1", "BTC", 10.0, 2.0, 0.5, balanceUpdate.balances)
-        assertBalanceUpdateNotification("Client1", "USD", 10.0, 1.0, 0.0, balanceUpdate.balances)
-        assertBalanceUpdateNotification("Client1", "EUR", 10.0, 3.0, 0.7, balanceUpdate.balances)
-        assertBalanceUpdateNotification("Client2", "USD", 990.0, 1.0, 2080.0, balanceUpdate.balances)
-
         assertEquals(7, clientsEventsQueue.size)
         assertEvent(false, "trustedClient", "BTC", "10", "2", "0", clientsEventsQueue)
         assertEvent(true, "trustedClient2", "BTC", "1", "-0.001", "0", clientsEventsQueue)
@@ -256,22 +239,6 @@ class ReservedVolumesRecalculatorTest {
         assertEvent(false, "Client1", "USD", "10", "1", "0", clientsEventsQueue)
         assertEvent(false, "Client1", "EUR", "10", "3", "0.7", clientsEventsQueue)
         assertEvent(true, "Client2", "USD", "990", "1", "2080", clientsEventsQueue)
-    }
-
-    private fun assertBalanceUpdateNotification(
-        clientId: String,
-        assetId: String,
-        balance: Double,
-        oldReserved: Double,
-        newReserved: Double,
-        balanceUpdates: Collection<ClientBalanceUpdate>
-    ) {
-        val balanceUpdate = balanceUpdates.single { it.walletId == clientId && it.asset == assetId }
-        val message = "Client $clientId, assetId $assetId"
-        assertEquals(BigDecimal.valueOf(balance), balanceUpdate.oldBalance, message)
-        assertEquals(BigDecimal.valueOf(balance), balanceUpdate.newBalance, message)
-        assertEquals(BigDecimal.valueOf(oldReserved), balanceUpdate.oldReserved, message)
-        assertEquals(BigDecimal.valueOf(newReserved), balanceUpdate.newReserved, message)
     }
 
     private fun assertEvent(

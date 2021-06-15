@@ -13,14 +13,11 @@ import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
 import com.lykke.matching.engine.order.OrderCancelMode
 import com.lykke.matching.engine.order.OrderStatus
-import com.lykke.matching.engine.outgoing.messages.BalanceUpdate
-import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderCancelWrapper
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderWrapper
-import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.assertEquals
 import com.lykke.matching.engine.utils.balance.ReservedVolumesRecalculator
 import com.lykke.matching.engine.utils.createAssetPair
@@ -110,7 +107,8 @@ class MultiLimitOrderServiceTest : AbstractTest() {
         testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
         testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
         testDictionariesDatabaseAccessor.addAssetPair(
-            createAssetPair("",
+            createAssetPair(
+                "",
                 "EURUSD",
                 "EUR",
                 "USD",
@@ -136,14 +134,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 )
             )
         )
-        assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
-        val limitOrders = testTrustedClientsLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(5, limitOrders.orders.size)
-        assertEquals(BigDecimal.valueOf(2.0), limitOrders.orders[0].order.price)
-        assertEquals(BigDecimal.valueOf(1.5), limitOrders.orders[1].order.price)
-        assertEquals(BigDecimal.valueOf(1.2), limitOrders.orders[2].order.price)
-        assertEquals(BigDecimal.valueOf(2.1), limitOrders.orders[3].order.price)
-        assertEquals(BigDecimal.valueOf(2.4), limitOrders.orders[4].order.price)
 
         assertEquals(0, clientsEventsQueue.size)
         assertEquals(1, trustedClientsEventsQueue.size)
@@ -167,12 +157,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
 
         assertEquals(BigDecimal.valueOf(1000.0), testWalletDatabaseAccessor.getBalance("Client1", "USD"))
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
-
-        assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
-        val limitOrders = testTrustedClientsLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(2, limitOrders.orders.size)
-        assertEquals(BigDecimal.valueOf(1.2), limitOrders.orders[0].order.price)
-        assertEquals(BigDecimal.valueOf(1.3), limitOrders.orders[1].order.price)
 
         assertEquals(0, clientsEventsQueue.size)
         assertEquals(1, trustedClientsEventsQueue.size)
@@ -199,12 +183,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
         assertEquals(BigDecimal.valueOf(1000.0), testWalletDatabaseAccessor.getBalance("Client1", "USD"))
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
 
-        assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
-        var limitOrders = testTrustedClientsLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(2, limitOrders.orders.size)
-        assertEquals(BigDecimal.valueOf(1.2), limitOrders.orders[0].order.price)
-        assertEquals(BigDecimal.valueOf(1.3), limitOrders.orders[1].order.price)
-
         assertEquals(1, trustedClientsEventsQueue.size)
         var event = trustedClientsEventsQueue.poll() as ExecutionEvent
         assertEquals(2, event.orders.size)
@@ -219,12 +197,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 cancel = false
             )
         )
-
-        assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
-        limitOrders = testTrustedClientsLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(2, limitOrders.orders.size)
-        assertEquals(BigDecimal.valueOf(1.4), limitOrders.orders[0].order.price)
-        assertEquals(BigDecimal.valueOf(1.5), limitOrders.orders[1].order.price)
 
         assertEquals(1, trustedClientsEventsQueue.size)
         event = trustedClientsEventsQueue.poll() as ExecutionEvent
@@ -245,13 +217,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
         assertEquals(BigDecimal.valueOf(1000.0), testWalletDatabaseAccessor.getBalance("Client1", "USD"))
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
 
-        assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
-        var limitOrders = testTrustedClientsLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(2, limitOrders.orders.size)
-        assertEquals(BigDecimal.valueOf(1.2), limitOrders.orders[0].order.price)
-        assertEquals(BigDecimal.valueOf(1.3), limitOrders.orders[1].order.price)
-        assertOrderBookSize("EURUSD", true, 2)
-
         assertEquals(1, trustedClientsEventsQueue.size)
         var event = trustedClientsEventsQueue.poll() as ExecutionEvent
         assertEquals(2, event.orders.size)
@@ -266,13 +231,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
-        limitOrders = testTrustedClientsLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(2, limitOrders.orders.size)
-        assertEquals(BigDecimal.valueOf(1.4), limitOrders.orders[0].order.price)
-        assertEquals(BigDecimal.valueOf(1.5), limitOrders.orders[1].order.price)
-        assertOrderBookSize("EURUSD", true, 4)
-
         assertEquals(1, trustedClientsEventsQueue.size)
         event = trustedClientsEventsQueue.poll() as ExecutionEvent
         assertEquals(2, event.orders.size)
@@ -286,15 +244,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
-        limitOrders = testTrustedClientsLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(6, limitOrders.orders.size)
-        assertEquals(BigDecimal.valueOf(1.2), limitOrders.orders[0].order.price)
-        assertEquals(BigDecimal.valueOf(1.3), limitOrders.orders[1].order.price)
-        assertEquals(BigDecimal.valueOf(1.4), limitOrders.orders[2].order.price)
-        assertEquals(BigDecimal.valueOf(1.5), limitOrders.orders[3].order.price)
-        assertEquals(BigDecimal.valueOf(2.0), limitOrders.orders[4].order.price)
-        assertEquals(BigDecimal.valueOf(2.1), limitOrders.orders[5].order.price)
         assertOrderBookSize("EURUSD", true, 2)
 
         assertEquals(1, trustedClientsEventsQueue.size)
@@ -316,9 +265,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 listOf(IncomingLimitOrder(100.0, 1.3), IncomingLimitOrder(100.0, 1.2))
             )
         )
-
-        assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
-        testTrustedClientsLimitOrderListener.clear()
         singleLimitOrderService.processMessage(
             messageBuilder.buildLimitOrderWrapper(
                 buildLimitOrder(
@@ -328,14 +274,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 )
             )
         )
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        var result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-
-        assertEquals(OrderStatus.Processing.name, result.orders[0].order.status)
-        assertEquals(BigDecimal.valueOf(-50.0), result.orders[0].order.remainingVolume)
-        assertEquals(OrderStatus.Matched.name, result.orders[1].order.status)
-        assertEquals(BigDecimal.valueOf(1.3), result.orders[1].order.price)
 
         assertEquals(1, clientsEventsQueue.size)
         var event = clientsEventsQueue.poll() as ExecutionEvent
@@ -362,19 +300,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 ), cancel = true
             )
         )
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-
-        assertEquals(3, result.orders.size)
-        assertEquals(OrderStatus.Matched.name, result.orders[0].order.status)
-        assertEquals(BigDecimal.ZERO, result.orders[0].order.remainingVolume)
-        assertEquals(BigDecimal.valueOf(1.3), result.orders[0].order.price)
-        assertEquals(OrderStatus.Matched.name, result.orders[1].order.status)
-        assertEquals(BigDecimal.valueOf(1.25), result.orders[1].order.price)
-        assertEquals(OrderStatus.Processing.name, result.orders[2].order.status)
-        assertEquals(BigDecimal.valueOf(60.0), result.orders[2].order.remainingVolume)
-        assertEquals(BigDecimal.valueOf(1.26), result.orders[2].order.price)
 
         assertEquals(1, clientsEventsQueue.size)
         event = clientsEventsQueue.poll() as ExecutionEvent
@@ -408,9 +333,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
-        testTrustedClientsLimitOrderListener.getQueue().poll()
-
         singleLimitOrderService.processMessage(
             messageBuilder.buildLimitOrderWrapper(
                 buildLimitOrder(
@@ -420,14 +342,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 )
             )
         )
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        var result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-
-        assertEquals(OrderStatus.Processing.name, result.orders[0].order.status)
-        assertEquals(BigDecimal.valueOf(50.0), result.orders[0].order.remainingVolume)
-        assertEquals(OrderStatus.Matched.name, result.orders[1].order.status)
-        assertEquals(BigDecimal.valueOf(1.2), result.orders[1].order.price)
 
         assertEquals(1, clientsEventsQueue.size)
         var event = clientsEventsQueue.poll() as ExecutionEvent
@@ -455,20 +369,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 ), cancel = true
             )
         )
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-
-        assertEquals(3, result.orders.size)
-        assertEquals(OrderStatus.Matched.name, result.orders[0].order.status)
-        assertEquals(BigDecimal.ZERO, result.orders[0].order.remainingVolume)
-        assertEquals(BigDecimal.valueOf(1.2), result.orders[0].order.price)
-        assertEquals(OrderStatus.Processing.name, result.orders[1].order.status)
-        assertEquals(BigDecimal.valueOf(30.0), result.orders[1].order.remainingVolume)
-        assertEquals(BigDecimal.valueOf(1.25), result.orders[1].order.price)
-        assertEquals(OrderStatus.Matched.name, result.orders[2].order.status)
-        assertEquals(BigDecimal.ZERO, result.orders[2].order.remainingVolume)
-        assertEquals(BigDecimal.valueOf(1.24), result.orders[2].order.price)
 
         assertEquals(1, clientsEventsQueue.size)
         event = clientsEventsQueue.poll() as ExecutionEvent
@@ -515,10 +415,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(2, testTrustedClientsLimitOrderListener.getCount())
-        testTrustedClientsLimitOrderListener.getQueue().poll()
-        testTrustedClientsLimitOrderListener.getQueue().poll()
-
         assertEquals(2, trustedClientsEventsQueue.size)
         clearMessageQueues()
 
@@ -532,14 +428,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 )
             )
         )
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        val result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-
-        assertEquals(OrderStatus.Processing.name, result.orders[0].order.status)
-        assertEquals(BigDecimal.valueOf(-25.30968057), result.orders[0].order.remainingVolume)
-        assertEquals(OrderStatus.Matched.name, result.orders[1].order.status)
-        assertEquals(BigDecimal.valueOf(26.915076), result.orders[1].order.price)
 
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
@@ -573,7 +461,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(0, testClientLimitOrderListener.getCount())
         assertEquals(0, clientsEventsQueue.size)
 
         orderBook = genericLimitOrderService.getOrderBook("", "TIMEUSD")
@@ -604,12 +491,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        var result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-
-        assertEquals(OrderStatus.InOrderBook.name, result.orders[0].order.status)
-        assertEquals(BigDecimal.valueOf(0.19259621), result.orders[0].order.remainingVolume)
-        assertEquals(BigDecimal.valueOf(699.01), result.orders[0].order.reservedLimitVolume!!)
         assertEquals(BigDecimal.valueOf(699.01), testWalletDatabaseAccessor.getReservedBalance("Client2", "EUR"))
 
         assertEquals(1, clientsEventsQueue.size)
@@ -623,11 +504,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 listOf(IncomingLimitOrder(-0.00574996, 3628.707)), cancel = true
             )
         )
-        result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.Matched.name, result.orders[0].order.status)
-        assertEquals(OrderStatus.Processing.name, result.orders[1].order.status)
-        assertEquals(BigDecimal.valueOf(0.18684625), result.orders[1].order.remainingVolume)
-        assertEquals(BigDecimal.valueOf(678.15), result.orders[1].order.reservedLimitVolume!!)
         assertEquals(BigDecimal.valueOf(678.15), testWalletDatabaseAccessor.getReservedBalance("Client2", "EUR"))
 
         event = clientsEventsQueue.poll() as ExecutionEvent
@@ -644,13 +520,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 ), cancel = true
             )
         )
-        result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.Matched.name, result.orders[0].order.status)
-        assertEquals(OrderStatus.Processing.name, result.orders[1].order.status)
-        assertEquals(BigDecimal.valueOf(0.14296848), result.orders[1].order.remainingVolume)
-        assertEquals(BigDecimal.valueOf(518.91), result.orders[1].order.reservedLimitVolume!!)
         assertEquals(BigDecimal.valueOf(518.91), testWalletDatabaseAccessor.getReservedBalance("Client2", "EUR"))
-        assertEquals(OrderStatus.Matched.name, result.orders[2].order.status)
 
         event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(OutgoingOrderStatus.MATCHED, event.orders[0].status)
@@ -664,11 +534,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 listOf(IncomingLimitOrder(-0.04996673, 3625.855)), cancel = true
             )
         )
-        result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.Matched.name, result.orders[0].order.status)
-        assertEquals(OrderStatus.Processing.name, result.orders[1].order.status)
-        assertEquals(BigDecimal.valueOf(0.09300175), result.orders[1].order.remainingVolume)
-        assertEquals(BigDecimal.valueOf(337.57), result.orders[1].order.reservedLimitVolume!!)
         assertEquals(BigDecimal.valueOf(337.57), testWalletDatabaseAccessor.getReservedBalance("Client2", "EUR"))
 
         event = clientsEventsQueue.poll() as ExecutionEvent
@@ -687,15 +552,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 ), cancel = true
             )
         )
-        result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.Matched.name, result.orders[0].order.status)
-        assertEquals(OrderStatus.Processing.name, result.orders[1].order.status)
-        assertEquals(BigDecimal.valueOf(0.02561563), result.orders[1].order.remainingVolume)
-        assertEquals(BigDecimal.valueOf(93.02), result.orders[1].order.reservedLimitVolume!!)
         assertEquals(BigDecimal.valueOf(93.02), testWalletDatabaseAccessor.getReservedBalance("Client2", "EUR"))
-        assertEquals(OrderStatus.Matched.name, result.orders[2].order.status)
-        assertEquals(OrderStatus.Matched.name, result.orders[3].order.status)
-        assertEquals(OrderStatus.Matched.name, result.orders[4].order.status)
 
         event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(OutgoingOrderStatus.MATCHED, event.orders[0].status)
@@ -711,11 +568,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 listOf(IncomingLimitOrder(-0.01708411, 3626.11)), cancel = true
             )
         )
-        result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.Matched.name, result.orders[0].order.status)
-        assertEquals(OrderStatus.Processing.name, result.orders[1].order.status)
-        assertEquals(BigDecimal.valueOf(0.00853152), result.orders[1].order.remainingVolume)
-        assertEquals(BigDecimal.valueOf(31.02), result.orders[1].order.reservedLimitVolume!!)
         assertEquals(BigDecimal.valueOf(31.02), testWalletDatabaseAccessor.getReservedBalance("Client2", "EUR"))
 
         event = clientsEventsQueue.poll() as ExecutionEvent
@@ -729,11 +581,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 listOf(IncomingLimitOrder(-0.00959341, 3625.302)), cancel = true
             )
         )
-        result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.Processing.name, result.orders[0].order.status)
-        assertEquals(OrderStatus.Matched.name, result.orders[1].order.status)
-        assertEquals(BigDecimal.ZERO, result.orders[1].order.remainingVolume)
-        assertEquals(BigDecimal.ZERO, result.orders[1].order.reservedLimitVolume!!)
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client2", "EUR"))
 
         event = clientsEventsQueue.poll() as ExecutionEvent
@@ -777,10 +624,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 )
             )
         )
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        var result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.InOrderBook.name, result.orders[0].order.status)
         assertEquals(BigDecimal.valueOf(0.26170853), testWalletDatabaseAccessor.getBalance("Client2", "BTC"))
         assertEquals(BigDecimal.valueOf(0.26170853), testWalletDatabaseAccessor.getReservedBalance("Client2", "BTC"))
 
@@ -798,14 +641,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 ), cancel = true
             )
         )
-        result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.Matched.name, result.orders[0].order.status)
-        assertEquals(OrderStatus.Processing.name, result.orders[1].order.status)
-        assertEquals(BigDecimal.valueOf(-0.22034592), result.orders[1].order.remainingVolume)
-        assertEquals(BigDecimal.valueOf(0.22034592), result.orders[1].order.reservedLimitVolume!!)
         assertEquals(BigDecimal.valueOf(0.22134592), testWalletDatabaseAccessor.getReservedBalance("Client2", "BTC"))
-        assertEquals(OrderStatus.Matched.name, result.orders[2].order.status)
-        assertEquals(OrderStatus.Matched.name, result.orders[3].order.status)
 
         event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(OutgoingOrderStatus.MATCHED, event.orders[0].status)
@@ -820,11 +656,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 listOf(IncomingLimitOrder(0.01691068, 4387.21)), cancel = true
             )
         )
-        result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.Matched.name, result.orders[0].order.status)
-        assertEquals(OrderStatus.Processing.name, result.orders[1].order.status)
-        assertEquals(BigDecimal.valueOf(-0.20343524), result.orders[1].order.remainingVolume)
-        assertEquals(BigDecimal.valueOf(0.20343524), result.orders[1].order.reservedLimitVolume!!)
         assertEquals(BigDecimal.valueOf(0.20443524), testWalletDatabaseAccessor.getReservedBalance("Client2", "BTC"))
 
         event = clientsEventsQueue.poll() as ExecutionEvent
@@ -855,10 +686,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 )
             )
         )
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        var result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.InOrderBook.name, result.orders[0].order.status)
         assertEquals(BigDecimal.valueOf(0.26170853), testWalletDatabaseAccessor.getBalance("Client2", "BTC"))
         assertEquals(BigDecimal.valueOf(0.26170853), testWalletDatabaseAccessor.getReservedBalance("Client2", "BTC"))
 
@@ -876,13 +703,7 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 ), cancel = true
             )
         )
-        result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.Matched.name, result.orders[0].order.status)
-        assertEquals(OrderStatus.Processing.name, result.orders[1].order.status)
-        assertEquals(BigDecimal.valueOf(-0.24068577), result.orders[1].order.remainingVolume)
-        assertEquals(BigDecimal.valueOf(0.24068577), result.orders[1].order.reservedLimitVolume!!)
         assertEquals(BigDecimal.valueOf(0.24168577), testWalletDatabaseAccessor.getReservedBalance("Client2", "BTC"))
-        assertEquals(OrderStatus.Matched.name, result.orders[2].order.status)
 
         event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(OutgoingOrderStatus.MATCHED, event.orders[0].status)
@@ -919,10 +740,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 listOf(IncomingLimitOrder(-0.4435, 4721.403)), cancel = true
             )
         )
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        val result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(OrderStatus.Matched.name, result.orders[1].order.status)
 
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
@@ -1077,20 +894,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
         assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
         assertEquals(BigDecimal.valueOf(1.1), genericLimitOrderService.getOrderBook("", "EURUSD").getBidPrice())
 
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        val trustedResult = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(1, trustedResult.orders.filter { it.order.clientId == marketMaker }.size)
-
-        assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
-        val result = testTrustedClientsLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(2, result.orders.filter { it.order.clientId == marketMaker }.size)
-
-        assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
-        assertEquals(
-            0,
-            (balanceUpdateHandlerTest.balanceUpdateQueue.poll() as BalanceUpdate).balances.filter { it.walletId == marketMaker }.size
-        )
-
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(1, event.orders.filter { it.walletId == marketMaker }.size)
@@ -1124,27 +927,12 @@ class MultiLimitOrderServiceTest : AbstractTest() {
 
         assertEquals(0, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
         assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", false).size)
-        assertEquals(2, testRabbitOrderBookListener.getCount())
 
         val orderSell = testOrderDatabaseAccessor.getOrders("EURUSD", false).first()
         assertEquals(BigDecimal.valueOf(-2.0), orderSell.remainingVolume)
 
         assertEquals(BigDecimal.valueOf(1000.0), testWalletDatabaseAccessor.getBalance(client, "USD"))
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance(client, "USD"))
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        val result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-
-        val clientOrderReport = result.orders.filter { it.order.clientId == client }
-        assertEquals(1, clientOrderReport.size)
-        assertEquals(client, clientOrderReport.first().order.clientId)
-
-        assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
-        val balanceUpdate = balanceUpdateHandlerTest.balanceUpdateQueue.poll() as BalanceUpdate
-
-        assertEquals(1, balanceUpdate.balances.size)
-        assertEquals(client, balanceUpdate.balances.first().walletId)
-        assertEquals(BigDecimal.ZERO, balanceUpdate.balances.first().newReserved)
 
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
@@ -1177,22 +965,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
 
         assertEquals(BigDecimal.valueOf(-10.0), testOrderDatabaseAccessor.getOrders("EURUSD", false).first().volume)
         assertEquals(OrderStatus.InOrderBook.name, testOrderDatabaseAccessor.getOrders("EURUSD", false).first().status)
-
-        assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
-        val result = testTrustedClientsLimitOrderListener.getQueue().first() as LimitOrdersReport
-
-        assertEquals(2, result.orders.size)
-
-        val order =
-            result.orders.first { NumberUtils.equalsIgnoreScale(it.order.volume, BigDecimal.valueOf(-10.0)) }.order
-        assertEquals(OrderStatus.InOrderBook.name, order.status)
-        assertEquals(BigDecimal.valueOf(0.488), order.price)
-
-        val oldOrder =
-            result.orders.first { NumberUtils.equalsIgnoreScale(it.order.volume, BigDecimal.valueOf(-9.0)) }.order
-        assertEquals(OrderStatus.Cancelled.name, oldOrder.status)
-        assertEquals(BigDecimal.valueOf(-9.0), oldOrder.volume)
-        assertEquals(BigDecimal.valueOf(0.4875), oldOrder.price)
 
         assertEquals(1, trustedClientsEventsQueue.size)
         val event = trustedClientsEventsQueue.poll() as ExecutionEvent
@@ -1237,11 +1009,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
 
         assertOrderBookSize("BTCEUR", true, 0)
         assertOrderBookSize("BTCEUR", false, 0)
-        val report = testTrustedClientsLimitOrderListener.getQueue().first() as LimitOrdersReport
-        assertEquals(5, report.orders.size)
-        report.orders.forEach {
-            assertEquals(OrderStatus.Cancelled.name, it.order.status)
-        }
         val event = trustedClientsEventsQueue.poll() as ExecutionEvent
         assertEquals(5, event.orders.size)
         event.orders.forEach {
@@ -1266,8 +1033,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
 
         assertOrderBookSize("BTCEUR", true, 0)
         assertOrderBookSize("BTCEUR", false, 2)
-        val report = testTrustedClientsLimitOrderListener.getQueue().first() as LimitOrdersReport
-        assertEquals(7, report.orders.size)
 
         val event = trustedClientsEventsQueue.poll() as ExecutionEvent
         assertEquals(7, event.orders.size)
@@ -1294,8 +1059,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
 
         assertOrderBookSize("BTCEUR", true, 1)
         assertOrderBookSize("BTCEUR", false, 5)
-        val report = testTrustedClientsLimitOrderListener.getQueue().first() as LimitOrdersReport
-        assertEquals(5, report.orders.size)
 
         val event = trustedClientsEventsQueue.poll() as ExecutionEvent
         assertEquals(5, event.orders.size)
@@ -1360,52 +1123,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
 
         assertBalance("Client1", "BTC", 2.1, 0.0)
         assertBalance("Client1", "EUR", 2200.0, 0.0)
-
-        assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
-        val trustedReport = testTrustedClientsLimitOrderListener.getQueue().first() as LimitOrdersReport
-        assertEquals(13, trustedReport.orders.size)
-
-        val replacedOrders = trustedReport.orders.filter { it.order.status == OrderStatus.Replaced.name }
-        assertEquals(4, replacedOrders.size)
-        assertTrue(
-            listOf("Ask-ToReplace-1", "Ask-ToReplace-2", "Bid-ToReplace-1", "Bid-ToReplace-2")
-                .containsAll(replacedOrders.map { it.order.externalId })
-        )
-
-        val inOrderBookOrders = trustedReport.orders.filter { it.order.status == OrderStatus.InOrderBook.name }
-        assertEquals(6, inOrderBookOrders.size)
-        assertTrue(
-            listOf(
-                "ask2",
-                "ask3",
-                "ask4",
-                "ask5",
-                "bid2",
-                "bid4"
-            ).containsAll(inOrderBookOrders.map { it.order.externalId })
-        )
-
-        val cancelledOrders = trustedReport.orders.filter { it.order.status == OrderStatus.Cancelled.name }
-        assertEquals(3, cancelledOrders.size)
-        assertTrue(
-            listOf(
-                "Ask-ToCancel-1",
-                "Ask-ToCancel-2",
-                "Bid-ToCancel-1"
-            ).containsAll(cancelledOrders.map { it.order.externalId })
-        )
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        val report = testClientLimitOrderListener.getQueue().take()
-        assertEquals(2, report.orders.size)
-
-        val matchedOrders = report.orders.filter { it.order.status == OrderStatus.Matched.name }
-        assertEquals(1, matchedOrders.size)
-        assertTrue(listOf("ClientOrder").containsAll(matchedOrders.map { it.order.externalId }))
-
-        val processedOrders = report.orders.filter { it.order.status == OrderStatus.Processing.name }
-        assertEquals(1, processedOrders.size)
-        assertTrue(listOf("bid1").containsAll(processedOrders.map { it.order.externalId }))
 
         assertEquals(1, trustedClientsEventsQueue.size)
         val trustedEvent = trustedClientsEventsQueue.poll() as ExecutionEvent
@@ -1520,20 +1237,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 listOf(IncomingLimitOrder(10.0, 1.3, "1"))
             )
         )
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        val result = testClientLimitOrderListener.getQueue().first() as LimitOrdersReport
-        assertEquals(3, result.orders.size)
-
-        val orders = result.orders.filter { it.order.externalId == "1" }
-        assertEquals(2, orders.size)
-
-        val previousOrderWithTrades = orders.first { it.order.status == OrderStatus.Cancelled.name }
-        val newOrderWithTrades = orders.first { it.order.status != OrderStatus.Cancelled.name }
-
-        assertTrue(previousOrderWithTrades.order.id != newOrderWithTrades.order.id)
-        assertEquals(0, previousOrderWithTrades.trades.size)
-        assertEquals(1, newOrderWithTrades.trades.size)
 
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
@@ -1732,7 +1435,8 @@ class MultiLimitOrderServiceTest : AbstractTest() {
     fun testOrderMaxValue() {
         testBalanceHolderWrapper.updateBalance("Client1", "BTC", 1.1)
         testDictionariesDatabaseAccessor.addAssetPair(
-            createAssetPair("",
+            createAssetPair(
+                "",
                 "BTCUSD", "BTC", "USD", 8,
                 maxValue = BigDecimal.valueOf(10000.0)
             )
@@ -1754,7 +1458,8 @@ class MultiLimitOrderServiceTest : AbstractTest() {
     fun testOrderMaxVolume() {
         testBalanceHolderWrapper.updateBalance("Client1", "BTC", 1.1)
         testDictionariesDatabaseAccessor.addAssetPair(
-            createAssetPair("",
+            createAssetPair(
+                "",
                 "BTCUSD", "BTC", "USD", 8,
                 maxVolume = BigDecimal.valueOf(1.0)
             )

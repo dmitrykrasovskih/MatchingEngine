@@ -10,7 +10,6 @@ import com.lykke.matching.engine.grpc.TestStreamObserver
 import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.incoming.parsers.impl.CashTransferContextParser
 import com.lykke.matching.engine.messages.wrappers.CashTransferOperationMessageWrapper
-import com.lykke.matching.engine.notification.BalanceUpdateHandlerTest
 import com.lykke.matching.engine.services.validators.business.CashTransferOperationBusinessValidator
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.utils.proto.createProtobufTimestampBuilder
@@ -57,10 +56,9 @@ class CashTransferOperationBusinessValidatorTest {
         @Bean
         @Primary
         fun testBalanceHolderWrapper(
-            balanceUpdateHandlerTest: BalanceUpdateHandlerTest,
             balancesHolder: BalancesHolder
         ): TestBalanceHolderWrapper {
-            val testBalanceHolderWrapper = TestBalanceHolderWrapper(balanceUpdateHandlerTest, balancesHolder)
+            val testBalanceHolderWrapper = TestBalanceHolderWrapper(balancesHolder)
             testBalanceHolderWrapper.updateBalance(CLIENT_NAME1, ASSET_ID, 100.0)
             testBalanceHolderWrapper.updateReservedBalance(CLIENT_NAME1, ASSET_ID, 50.0)
             return testBalanceHolderWrapper

@@ -4,10 +4,6 @@ import com.lykke.matching.engine.AbstractTest
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
-import com.lykke.matching.engine.messages.MessageType
-import com.lykke.matching.engine.order.OrderStatus
-import com.lykke.matching.engine.outgoing.messages.BalanceUpdate
-import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
@@ -69,25 +65,6 @@ class LimitOrderCancelServiceTest : AbstractTest() {
     @Test
     fun testCancel() {
         limitOrderCancelService.processMessage(messageBuilder.buildLimitOrderCancelWrapper("3"))
-
-        assertEquals(1, testOrderBookListener.getCount())
-        assertEquals(1, testRabbitOrderBookListener.getCount())
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        assertEquals(
-            OrderStatus.Cancelled.name,
-            (testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport).orders.first().order.status
-        )
-        assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
-
-        val balanceUpdate = balanceUpdateHandlerTest.balanceUpdateQueue.poll() as BalanceUpdate
-        assertEquals(1, balanceUpdate.balances.size)
-        assertEquals("Client1", balanceUpdate.balances.first().walletId)
-        assertEquals("EUR", balanceUpdate.balances.first().asset)
-        assertEquals(BigDecimal.valueOf(1000.0), balanceUpdate.balances.first().oldBalance)
-        assertEquals(BigDecimal.valueOf(1000.0), balanceUpdate.balances.first().newBalance)
-        assertEquals(BigDecimal.valueOf(1.0), balanceUpdate.balances.first().oldReserved)
-        assertEquals(BigDecimal.ZERO, balanceUpdate.balances.first().newReserved)
 
         assertEquals(BigDecimal.ZERO, balancesHolder.getReservedForOrdersBalance("", "", "Client1", "EUR"))
 
@@ -172,31 +149,6 @@ class LimitOrderCancelServiceTest : AbstractTest() {
 
         assertBalance("Client2", "BTC", 1.0, 0.2)
         assertBalance("Client2", "USD", 1000.0, 0.0)
-
-        assertEquals(2, testOrderBookListener.getCount())
-        assertEquals(2, testRabbitOrderBookListener.getCount())
-        assertEquals(1, testClientLimitOrderListener.getCount())
-
-        val report = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(3, report.orders.size)
-        assertEquals(OrderStatus.Cancelled.name, report.orders.first { it.order.externalId == "10" }.order.status)
-        assertEquals(OrderStatus.Cancelled.name, report.orders.first { it.order.externalId == "11" }.order.status)
-        assertEquals(OrderStatus.Cancelled.name, report.orders.first { it.order.externalId == "13" }.order.status)
-
-        assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
-        val balanceUpdate = balanceUpdateHandlerTest.balanceUpdateQueue.poll() as BalanceUpdate
-        assertEquals(MessageType.LIMIT_ORDER_CANCEL.name, balanceUpdate.type)
-        assertEquals(2, balanceUpdate.balances.size)
-
-        val btc = balanceUpdate.balances.first { it.asset == "BTC" }
-        assertEquals("Client2", btc.walletId)
-        assertEquals(BigDecimal.valueOf(1.0), btc.oldReserved)
-        assertEquals(BigDecimal.valueOf(0.2), btc.newReserved)
-
-        val usd = balanceUpdate.balances.first { it.asset == "USD" }
-        assertEquals("Client2", usd.walletId)
-        assertEquals(BigDecimal.valueOf(800.0), usd.oldReserved)
-        assertEquals(BigDecimal.ZERO, usd.newReserved)
 
         assertEquals(1, clientsEventsQueue.size)
         val executionEvent = clientsEventsQueue.poll() as ExecutionEvent

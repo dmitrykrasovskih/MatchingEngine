@@ -9,10 +9,9 @@ import com.lykke.matching.engine.database.cache.ApplicationSettingsCache
 import com.lykke.matching.engine.database.cache.AssetPairsCache
 import com.lykke.matching.engine.database.cache.AssetsCache
 import com.lykke.matching.engine.holders.*
-import com.lykke.matching.engine.notification.*
+import com.lykke.matching.engine.notification.TestOrderBookListener
+import com.lykke.matching.engine.notification.TradeInfoListener
 import com.lykke.matching.engine.order.utils.TestOrderBookWrapper
-import com.lykke.matching.engine.outgoing.messages.CashOperation
-import com.lykke.matching.engine.outgoing.messages.CashTransferOperation
 import com.lykke.matching.engine.outgoing.messages.v2.events.Event
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.outgoing.messages.v2.events.common.BalanceUpdate
@@ -22,7 +21,6 @@ import com.lykke.matching.engine.utils.assertEquals
 import com.lykke.matching.engine.utils.order.MinVolumeOrderCanceller
 import org.junit.After
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
 import java.math.BigDecimal
 import java.util.concurrent.BlockingQueue
 import kotlin.test.assertEquals
@@ -57,9 +55,6 @@ abstract class AbstractTest {
     protected lateinit var testBalanceHolderWrapper: TestBalanceHolderWrapper
 
     @Autowired
-    protected lateinit var balanceUpdateHandlerTest: BalanceUpdateHandlerTest
-
-    @Autowired
     protected lateinit var testDictionariesDatabaseAccessor: TestDictionariesDatabaseAccessor
 
     @Autowired
@@ -87,16 +82,7 @@ abstract class AbstractTest {
     protected lateinit var minVolumeOrderCanceller: MinVolumeOrderCanceller
 
     @Autowired
-    protected lateinit var testTrustedClientsLimitOrderListener: TestTrustedClientsLimitOrderListener
-
-    @Autowired
-    protected lateinit var testClientLimitOrderListener: TestClientLimitOrderListener
-
-    @Autowired
     protected lateinit var testOrderBookListener: TestOrderBookListener
-
-    @Autowired
-    protected lateinit var testRabbitOrderBookListener: TestRabbitOrderBookListener
 
     @Autowired
     protected lateinit var genericStopLimitOrderService: GenericStopLimitOrderService
@@ -105,13 +91,7 @@ abstract class AbstractTest {
     protected lateinit var testOrderBookWrapper: TestOrderBookWrapper
 
     @Autowired
-    protected lateinit var rabbitSwapListener: RabbitSwapListener
-
-    @Autowired
     protected lateinit var tradesInfoListener: TradeInfoListener
-
-    @Autowired
-    protected lateinit var rabbitTransferQueue: BlockingQueue<CashTransferOperation>
 
     @Autowired
     protected lateinit var limitOrderCancelService: LimitOrderCancelService
@@ -124,10 +104,6 @@ abstract class AbstractTest {
 
     @Autowired
     protected lateinit var trustedClientsEventsQueue: BlockingQueue<ExecutionEvent>
-
-    @Autowired
-    @Qualifier("rabbitCashInOutQueue")
-    protected lateinit var cashInOutQueue: BlockingQueue<CashOperation>
 
     @Autowired
     protected lateinit var limitOrderMassCancelService: LimitOrderMassCancelService
@@ -150,16 +126,9 @@ abstract class AbstractTest {
     }
 
     protected fun clearMessageQueues() {
-        balanceUpdateHandlerTest.clear()
         tradesInfoListener.clear()
 
         testOrderBookListener.clear()
-        testRabbitOrderBookListener.clear()
-
-        testTrustedClientsLimitOrderListener.clear()
-        testClientLimitOrderListener.clear()
-
-        rabbitSwapListener.clear()
 
         clientsEventsQueue.clear()
         trustedClientsEventsQueue.clear()

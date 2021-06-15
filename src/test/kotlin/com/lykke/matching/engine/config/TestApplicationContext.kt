@@ -4,7 +4,6 @@ import com.lykke.matching.engine.balance.util.TestBalanceHolderWrapper
 import com.lykke.matching.engine.config.spring.JsonConfig
 import com.lykke.matching.engine.config.spring.QueueConfig
 import com.lykke.matching.engine.daos.TradeInfo
-import com.lykke.matching.engine.daos.TransferOperation
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.database.*
 import com.lykke.matching.engine.database.cache.ApplicationSettingsCache
@@ -24,7 +23,9 @@ import com.lykke.matching.engine.matching.MatchingEngine
 import com.lykke.matching.engine.messages.wrappers.LimitOrderCancelMessageWrapper
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.messages.wrappers.socket.LimitOrderMassCancelMessageWrapper
-import com.lykke.matching.engine.notification.*
+import com.lykke.matching.engine.notification.SettingsListener
+import com.lykke.matching.engine.notification.TestOrderBookListener
+import com.lykke.matching.engine.notification.TradeInfoListener
 import com.lykke.matching.engine.order.ExecutionDataApplyService
 import com.lykke.matching.engine.order.ExpiryOrdersQueue
 import com.lykke.matching.engine.order.process.GenericLimitOrdersProcessor
@@ -34,7 +35,6 @@ import com.lykke.matching.engine.order.process.common.LimitOrdersCancelExecutor
 import com.lykke.matching.engine.order.process.common.MatchingResultHandlingHelper
 import com.lykke.matching.engine.order.transaction.ExecutionContextFactory
 import com.lykke.matching.engine.order.utils.TestOrderBookWrapper
-import com.lykke.matching.engine.outgoing.messages.*
 import com.lykke.matching.engine.outgoing.messages.v2.events.Event
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.services.*
@@ -70,7 +70,7 @@ class TestApplicationContext {
 
     @Bean
     fun tradeInfoQueue(): BlockingQueue<TradeInfo> {
-        return LinkedBlockingQueue<TradeInfo>()
+        return LinkedBlockingQueue()
     }
 
     @Bean
@@ -87,13 +87,14 @@ class TestApplicationContext {
     fun balanceHolder(
         balancesDatabaseAccessorsHolder: BalancesDatabaseAccessorsHolder,
         persistenceManager: PersistenceManager,
-        balanceUpdateQueue: BlockingQueue<BalanceUpdate>,
         applicationSettingsHolder: ApplicationSettingsHolder,
         dictionariesDatabaseAccessor: DictionariesDatabaseAccessor
     ): BalancesHolder {
         return BalancesHolder(
-            balancesDatabaseAccessorsHolder, persistenceManager, assetHolder(dictionariesDatabaseAccessor),
-            balanceUpdateQueue, applicationSettingsHolder
+            balancesDatabaseAccessorsHolder,
+            persistenceManager,
+            assetHolder(dictionariesDatabaseAccessor),
+            applicationSettingsHolder
         )
     }
 
@@ -173,21 +174,10 @@ class TestApplicationContext {
     }
 
     @Bean
-    fun balanceUpdateHandler(balanceUpdateQueue: BlockingQueue<BalanceUpdate>): BalanceUpdateHandlerTest {
-        return BalanceUpdateHandlerTest(balanceUpdateQueue)
-    }
-
-    @Bean
-    fun testReservedCashOperationListener(): TestReservedCashOperationListener {
-        return TestReservedCashOperationListener()
-    }
-
-    @Bean
     fun testBalanceHolderWrapper(
-        balanceUpdateHandlerTest: BalanceUpdateHandlerTest,
         balancesHolder: BalancesHolder
     ): TestBalanceHolderWrapper {
-        return TestBalanceHolderWrapper(balanceUpdateHandlerTest, balancesHolder)
+        return TestBalanceHolderWrapper(balancesHolder)
     }
 
     @Bean
@@ -269,15 +259,17 @@ class TestApplicationContext {
     @Bean
     fun cashInOutOperationService(
         balancesHolder: BalancesHolder,
-        rabbitCashInOutQueue: BlockingQueue<CashOperation>,
         feeProcessor: FeeProcessor,
         cashInOutOperationBusinessValidator: CashInOutOperationBusinessValidator,
         messageSequenceNumberHolder: MessageSequenceNumberHolder,
         messageSender: MessageSender
     ): CashInOutOperationService {
         return CashInOutOperationService(
-            balancesHolder, rabbitCashInOutQueue, feeProcessor,
-            cashInOutOperationBusinessValidator, messageSequenceNumberHolder, messageSender
+            balancesHolder,
+            feeProcessor,
+            cashInOutOperationBusinessValidator,
+            messageSequenceNumberHolder,
+            messageSender
         )
     }
 
@@ -304,14 +296,12 @@ class TestApplicationContext {
     fun reservedCashInOutOperation(
         balancesHolder: BalancesHolder,
         assetsHolder: AssetsHolder,
-        reservedCashOperationQueue: BlockingQueue<ReservedCashOperation>,
         reservedCashInOutOperationBusinessValidator: ReservedCashInOutOperationBusinessValidator,
         messageSequenceNumberHolder: MessageSequenceNumberHolder,
         messageSender: MessageSender
     ): ReservedCashInOutOperationService {
         return ReservedCashInOutOperationService(
-            balancesHolder, reservedCashOperationQueue,
-            reservedCashInOutOperationBusinessValidator, messageSequenceNumberHolder, messageSender
+            balancesHolder, reservedCashInOutOperationBusinessValidator, messageSequenceNumberHolder, messageSender
         )
     }
 
@@ -411,7 +401,6 @@ class TestApplicationContext {
         matchingResultHandlingHelper: MatchingResultHandlingHelper,
         genericLimitOrderService: GenericLimitOrderService,
         assetsPairsHolder: AssetsPairsHolder,
-        rabbitSwapQueue: BlockingQueue<MarketOrderWithTrades>,
         marketOrderValidator: MarketOrderValidator,
         messageSequenceNumberHolder: MessageSequenceNumberHolder,
         messageSender: MessageSender,
@@ -427,7 +416,6 @@ class TestApplicationContext {
             matchingResultHandlingHelper,
             genericLimitOrderService,
             assetsPairsHolder,
-            rabbitSwapQueue,
             marketOrderValidator,
             applicationSettingsHolder,
             messageSequenceNumberHolder,
@@ -460,11 +448,6 @@ class TestApplicationContext {
     }
 
     @Bean
-    fun testTrustedClientsLimitOrderListener(): TestTrustedClientsLimitOrderListener {
-        return TestTrustedClientsLimitOrderListener()
-    }
-
-    @Bean
     fun testStopOrderBookDatabaseAccessor(testFileStopOrderDatabaseAccessor: TestFileStopOrderDatabaseAccessor): TestStopOrderBookDatabaseAccessor {
         return TestStopOrderBookDatabaseAccessor(testFileStopOrderDatabaseAccessor)
     }
@@ -480,23 +463,8 @@ class TestApplicationContext {
     }
 
     @Bean
-    fun testClientLimitOrderListener(): TestClientLimitOrderListener {
-        return TestClientLimitOrderListener()
-    }
-
-    @Bean
     fun orderBookListener(): TestOrderBookListener {
         return TestOrderBookListener()
-    }
-
-    @Bean
-    fun rabbitOrderBookListener(): TestRabbitOrderBookListener {
-        return TestRabbitOrderBookListener()
-    }
-
-    @Bean
-    fun lkkTradeListener(): TestLkkTradeListener {
-        return TestLkkTradeListener()
     }
 
     @Bean
@@ -512,11 +480,6 @@ class TestApplicationContext {
             genericStopLimitOrderService,
             stopOrderBookDatabaseAccessor
         )
-    }
-
-    @Bean
-    fun rabbitSwapListener(): RabbitSwapListener {
-        return RabbitSwapListener()
     }
 
     @Bean
@@ -645,16 +608,17 @@ class TestApplicationContext {
     @Bean
     fun cashTransferOperationService(
         balancesHolder: BalancesHolder,
-        notification: BlockingQueue<CashTransferOperation>,
-        dbTransferOperationQueue: BlockingQueue<TransferOperation>,
         feeProcessor: FeeProcessor,
         cashTransferOperationBusinessValidator: CashTransferOperationBusinessValidator,
         messageSequenceNumberHolder: MessageSequenceNumberHolder,
         messageSender: MessageSender
     ): CashTransferOperationService {
         return CashTransferOperationService(
-            balancesHolder, notification, dbTransferOperationQueue, feeProcessor,
-            cashTransferOperationBusinessValidator, messageSequenceNumberHolder, messageSender
+            balancesHolder,
+            feeProcessor,
+            cashTransferOperationBusinessValidator,
+            messageSequenceNumberHolder,
+            messageSender
         )
     }
 
@@ -784,23 +748,4 @@ class TestApplicationContext {
 
     @Bean
     fun expiryOrdersQueue() = ExpiryOrdersQueue()
-
-//    @Bean
-//    fun messageRouter(
-//        limitOrderInputQueue: BlockingQueue<MessageWrapper>,
-//        cashInOutInputQueue: BlockingQueue<MessageWrapper>,
-//        cashTransferInputQueue: BlockingQueue<MessageWrapper>,
-//        limitOrderCancelInputQueue: BlockingQueue<MessageWrapper>,
-//        limitOrderMassCancelInputQueue: BlockingQueue<MessageWrapper>,
-//        preProcessedMessageQueue: BlockingQueue<MessageWrapper>
-//    ): MessageRouter {
-//        return MessageRouter(
-//            limitOrderInputQueue,
-//            cashInOutInputQueue,
-//            cashTransferInputQueue,
-//            limitOrderCancelInputQueue,
-//            limitOrderMassCancelInputQueue,
-//            preProcessedMessageQueue
-//        )
-//    }
 }

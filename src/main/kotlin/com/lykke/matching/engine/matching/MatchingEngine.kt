@@ -422,15 +422,15 @@ class MatchingEngine(
                 val quotingMarketVolume: String
                 val quotingLimitVolume: String
                 if (isBuy) {
-                    baseMarketVolume = bigDecimalToString(marketRoundedVolume.abs())!!
-                    quotingMarketVolume = bigDecimalToString(-oppositeRoundedVolume.abs())!!
-                    baseLimitVolume = bigDecimalToString(-marketRoundedVolume.abs())!!
-                    quotingLimitVolume = bigDecimalToString(oppositeRoundedVolume.abs())!!
+                    baseMarketVolume = bigDecimalToString(marketRoundedVolume.abs())
+                    quotingMarketVolume = bigDecimalToString(-oppositeRoundedVolume.abs())
+                    baseLimitVolume = bigDecimalToString(-marketRoundedVolume.abs())
+                    quotingLimitVolume = bigDecimalToString(oppositeRoundedVolume.abs())
                 } else {
-                    baseMarketVolume = bigDecimalToString(-marketRoundedVolume.abs())!!
-                    quotingMarketVolume = bigDecimalToString(oppositeRoundedVolume.abs())!!
-                    baseLimitVolume = bigDecimalToString(marketRoundedVolume.abs())!!
-                    quotingLimitVolume = bigDecimalToString(-oppositeRoundedVolume.abs())!!
+                    baseMarketVolume = bigDecimalToString(-marketRoundedVolume.abs())
+                    quotingMarketVolume = bigDecimalToString(oppositeRoundedVolume.abs())
+                    baseLimitVolume = bigDecimalToString(marketRoundedVolume.abs())
+                    quotingLimitVolume = bigDecimalToString(-oppositeRoundedVolume.abs())
                 }
 
                 marketOrderTrades.add(

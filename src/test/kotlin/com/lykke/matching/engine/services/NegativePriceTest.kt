@@ -7,8 +7,8 @@ import com.lykke.matching.engine.daos.IncomingLimitOrder
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
-import com.lykke.matching.engine.order.OrderStatus
-import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
+import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderStatus
+import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderWrapper
@@ -78,11 +78,11 @@ class NegativePriceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        val result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
+        assertEquals(1, clientsEventsQueue.size)
+        val result = clientsEventsQueue.poll() as ExecutionEvent
 
         assertEquals(1, result.orders.size)
-        assertEquals(OrderStatus.InvalidPrice.name, result.orders.first().order.status)
+        assertEquals(OrderStatus.REJECTED, result.orders.first().status)
     }
 
     @Test
@@ -102,10 +102,11 @@ class NegativePriceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
-        val result = testTrustedClientsLimitOrderListener.getQueue().poll() as LimitOrdersReport
+        assertEquals(1, trustedClientsEventsQueue.size)
+        val result = trustedClientsEventsQueue.poll() as ExecutionEvent
+
         assertEquals(1, result.orders.size)
-        assertEquals(OrderStatus.InOrderBook.name, result.orders.first { it.order.externalId == "order1" }.order.status)
+        assertEquals(OrderStatus.PLACED, result.orders.first { it.externalId == "order1" }.status)
 
         assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
     }

@@ -11,9 +11,6 @@ import com.lykke.matching.engine.order.process.*
 import com.lykke.matching.engine.order.process.common.*
 import com.lykke.matching.engine.order.transaction.ExecutionContextFactory
 import com.lykke.matching.engine.order.transaction.ExecutionEventsSequenceNumbersGenerator
-import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
-import com.lykke.matching.engine.outgoing.messages.MarketOrderWithTrades
-import com.lykke.matching.engine.outgoing.messages.OrderBook
 import com.lykke.matching.engine.services.GenericLimitOrderService
 import com.lykke.matching.engine.services.GenericStopLimitOrderService
 import com.lykke.matching.engine.services.MessageSender
@@ -22,7 +19,6 @@ import com.lykke.matching.engine.services.validators.business.StopOrderBusinessV
 import com.lykke.matching.engine.services.validators.input.LimitOrderInputValidator
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import java.util.concurrent.BlockingQueue
 
 @Configuration
 class TestExecutionContext {
@@ -67,12 +63,7 @@ class TestExecutionContext {
     @Bean
     fun executionEventSender(
         messageSender: MessageSender,
-        clientLimitOrdersQueue: BlockingQueue<LimitOrdersReport>,
-        trustedClientsLimitOrdersQueue: BlockingQueue<LimitOrdersReport>,
-        rabbitSwapQueue: BlockingQueue<MarketOrderWithTrades>,
-        genericLimitOrderService: GenericLimitOrderService,
-        orderBookQueue: BlockingQueue<OrderBook>,
-        rabbitOrderBookQueue: BlockingQueue<OrderBook>
+        genericLimitOrderService: GenericLimitOrderService
     ): ExecutionEventSender {
         return ExecutionEventSender(
             messageSender,

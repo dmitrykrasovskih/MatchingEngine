@@ -98,12 +98,12 @@ class WalletOperationsProcessor(
                 changedAssetBalance.version,
                 changedAssetBalance.originBalance,
                 changedAssetBalance.balance,
-                changedAssetBalance.originReserved,
-                changedAssetBalance.reservedForOrders
+                changedAssetBalance.originReserved + changedAssetBalance.originReservedForSwap,
+                changedAssetBalance.reservedForOrders + changedAssetBalance.reservedForSwap
             )
         }
         update.newBalance = changedAssetBalance.balance
-        update.newReserved = changedAssetBalance.reservedForOrders.add(changedAssetBalance.reservedForSwap)
+        update.newReserved = changedAssetBalance.reservedForOrders + changedAssetBalance.reservedForSwap
         if (isBalanceUpdateNotificationNotNeeded(update)) {
             clientBalanceUpdatesByClientIdAndAssetId.remove(key)
         }

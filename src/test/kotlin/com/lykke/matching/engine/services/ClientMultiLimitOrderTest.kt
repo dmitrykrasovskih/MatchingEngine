@@ -11,8 +11,6 @@ import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
 import com.lykke.matching.engine.order.OrderCancelMode
-import com.lykke.matching.engine.order.OrderStatus
-import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
 import com.lykke.matching.engine.outgoing.messages.v2.enums.MessageType
 import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderRejectReason
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
@@ -45,10 +43,10 @@ class ClientMultiLimitOrderTest : AbstractTest() {
 
 
     @TestConfiguration
-    open class Config {
+    class Config {
         @Bean
         @Primary
-        open fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
+        fun testDictionariesDatabaseAccessor(): TestDictionariesDatabaseAccessor {
             val testDictionariesDatabaseAccessor = TestDictionariesDatabaseAccessor()
             testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
             testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
@@ -115,44 +113,8 @@ class ClientMultiLimitOrderTest : AbstractTest() {
         assertOrderBookSize("BTCUSD", false, 3)
         assertOrderBookSize("BTCUSD", true, 2)
 
-        assertEquals(2, testOrderBookListener.getCount())
-        assertEquals(2, testRabbitOrderBookListener.getCount())
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
-
-        assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
-
-        assertEquals(2, tradesInfoListener.getCount())
-
         assertBalance("Client1", "BTC", 1.0, 0.60000001)
         assertBalance("Client1", "USD", 3000.0, 2750.0)
-
-        val report = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(5, report.orders.size)
-        report.orders.forEach {
-            assertEquals(OrderStatus.InOrderBook.name, it.order.status)
-        }
-        assertEquals(
-            BigDecimal.valueOf(0.1),
-            report.orders.first { it.order.externalId == "1" }.order.reservedLimitVolume
-        )
-        assertEquals(
-            BigDecimal.valueOf(0.2),
-            report.orders.first { it.order.externalId == "2" }.order.reservedLimitVolume
-        )
-        assertEquals(
-            BigDecimal.valueOf(0.30000001),
-            report.orders.first { it.order.externalId == "3" }.order.reservedLimitVolume
-        )
-        assertEquals(
-            BigDecimal.valueOf(950.0),
-            report.orders.first { it.order.externalId == "4" }.order.reservedLimitVolume
-        )
-        assertEquals(
-            BigDecimal.valueOf(1800.0),
-            report.orders.first { it.order.externalId == "5" }.order.reservedLimitVolume
-        )
 
         assertEquals(1, clientsEventsQueue.size)
         assertEquals(0, trustedClientsEventsQueue.size)
@@ -165,6 +127,7 @@ class ClientMultiLimitOrderTest : AbstractTest() {
             assertEquals(OutgoingOrderStatus.PLACED, it.status)
             assertEquals(0, it.trades?.size)
         }
+
         assertEquals("-0.1", event.orders.single { it.externalId == "1" }.remainingVolume)
     }
 
@@ -183,20 +146,8 @@ class ClientMultiLimitOrderTest : AbstractTest() {
         assertOrderBookSize("BTCUSD", false, 2)
         assertOrderBookSize("BTCUSD", true, 0)
 
-        assertEquals(1, testOrderBookListener.getCount())
-        assertEquals(1, testRabbitOrderBookListener.getCount())
-        assertEquals(1, tradesInfoListener.getCount())
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
-
-        assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
-
         assertBalance("Client1", "BTC", 1.0, 0.3)
         assertBalance("Client1", "USD", 3000.0, 0.0)
-
-        val report = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(2, report.orders.size)
 
         assertEquals(1, clientsEventsQueue.size)
         assertEquals(0, trustedClientsEventsQueue.size)
@@ -295,34 +246,18 @@ class ClientMultiLimitOrderTest : AbstractTest() {
         assertOrderBookSize("BTCUSD", false, 4)
         assertOrderBookSize("BTCUSD", true, 2)
 
-        assertEquals(2, testOrderBookListener.getCount())
-        assertEquals(2, testRabbitOrderBookListener.getCount())
         assertEquals(2, tradesInfoListener.getCount())
 
-        val buyOrderBook = testOrderBookListener.getQueue().first { it.isBuy }
-        val sellOrderBook = testOrderBookListener.getQueue().first { !it.isBuy }
-        assertEquals(2, buyOrderBook.prices.size)
-        assertEquals(BigDecimal.valueOf(9500.0), buyOrderBook.prices.first().price)
-        assertEquals(4, sellOrderBook.prices.size)
-        assertEquals(BigDecimal.valueOf(10000.0), sellOrderBook.prices.first().price)
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
-
-        assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
+        val buyOrderBook = genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(true)
+        val sellOrderBook = genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false)
+        assertEquals(2, buyOrderBook.size)
+        assertEquals(BigDecimal.valueOf(9500.0), buyOrderBook.first().price)
+        assertEquals(4, sellOrderBook.size)
+        assertEquals(BigDecimal.valueOf(10000.0), sellOrderBook.first().price)
 
         assertBalance("Client1", "BTC", 1.0, 0.60000001)
         assertBalance("Client1", "USD", 3000.0, 2750.0)
         assertBalance("Client2", "BTC", 0.2, 0.2)
-
-        val report = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(10, report.orders.size)
-
-        val cancelledIds =
-            report.orders.filter { it.order.status == OrderStatus.Cancelled.name }.map { it.order.externalId }
-                .toMutableList()
-        cancelledIds.sort()
-        assertEquals(listOf("ForCancel-1", "ForCancel-2", "ForCancel-3", "ForCancel-4", "ForCancel-5"), cancelledIds)
 
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
@@ -410,24 +345,13 @@ class ClientMultiLimitOrderTest : AbstractTest() {
         assertOrderBookSize("BTCUSD", false, 3)
         assertOrderBookSize("BTCUSD", true, 3)
 
-        assertEquals(1, testOrderBookListener.getCount())
-        assertEquals(1, testRabbitOrderBookListener.getCount())
         assertEquals(1, tradesInfoListener.getCount())
 
-        val sellOrderBook = testOrderBookListener.getQueue().first { !it.isBuy }
-        assertEquals(3, sellOrderBook.prices.size)
-        assertEquals(BigDecimal.valueOf(10000.0), sellOrderBook.prices.first().price)
+        val sellOrderBook = genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false)
+        assertEquals(3, sellOrderBook.size)
+        assertEquals(BigDecimal.valueOf(10000.0), sellOrderBook.first().price)
 
         assertBalance("Client1", "BTC", 1.0, 0.60000001)
-
-        val report = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(5, report.orders.size)
-
-        val cancelledIds =
-            report.orders.filter { it.order.status == OrderStatus.Cancelled.name }.map { it.order.externalId }
-                .toMutableList()
-        cancelledIds.sort()
-        assertEquals(listOf("ForCancel-1", "ForCancel-2"), cancelledIds)
 
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
@@ -458,28 +382,11 @@ class ClientMultiLimitOrderTest : AbstractTest() {
         assertOrderBookSize("BTCUSD", false, 3)
         assertOrderBookSize("BTCUSD", true, 2)
 
-        assertEquals(2, testOrderBookListener.getCount())
-        assertEquals(2, testRabbitOrderBookListener.getCount())
         assertEquals(2, tradesInfoListener.getCount())
 
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
-
-        assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
 
         assertBalance("Client1", "BTC", 1.0, 0.60000001)
         assertBalance("Client1", "USD", 3000.0, 2750.0)
-
-        val report = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(7, report.orders.size)
-        assertEquals(
-            OrderStatus.NotEnoughFunds.name,
-            report.orders.first { it.order.externalId == "ToReject-1" }.order.status
-        )
-        assertEquals(
-            OrderStatus.NotEnoughFunds.name,
-            report.orders.first { it.order.externalId == "ToReject-2" }.order.status
-        )
 
         val event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(MessageType.ORDER, event.header.messageType)
@@ -571,41 +478,6 @@ class ClientMultiLimitOrderTest : AbstractTest() {
 
         assertOrderBookSize("BTCUSD", false, 4)
         assertOrderBookSize("BTCUSD", true, 5)
-
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
-        assertEquals(1, testClientLimitOrderListener.getCount())
-
-        val report = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(7, report.orders.size)
-
-        val orderIds = report.orders.map { it.order.externalId }.toMutableList()
-        orderIds.sort()
-        assertEquals(listOf("11", "12", "13", "14", "3", "5", "ToCancelDueToNoFundsForFee"), orderIds)
-
-        val matchedIds =
-            report.orders.filter { it.order.status == OrderStatus.Matched.name }.map { it.order.externalId }
-                .toMutableList()
-        matchedIds.sort()
-        assertEquals(listOf("12", "13", "5"), matchedIds)
-
-        val cancelledIds =
-            report.orders.filter { it.order.status == OrderStatus.Cancelled.name }.map { it.order.externalId }
-                .toMutableList()
-        cancelledIds.sort()
-        assertEquals(listOf("ToCancelDueToNoFundsForFee"), cancelledIds)
-
-        val addedIds =
-            report.orders.filter { it.order.status == OrderStatus.InOrderBook.name }.map { it.order.externalId }
-                .toMutableList()
-        addedIds.sort()
-        assertEquals(listOf("11", "14"), addedIds)
-
-        val partiallyMatchedIds =
-            report.orders.filter { it.order.status == OrderStatus.Processing.name }.map { it.order.externalId }
-                .toMutableList()
-        partiallyMatchedIds.sort()
-        assertEquals(listOf("3"), partiallyMatchedIds)
-
 
         assertBalance("Client1", "BTC", 1.25, 0.1)
         assertBalance("Client1", "USD", 7380.0, 990.0)
@@ -721,9 +593,6 @@ class ClientMultiLimitOrderTest : AbstractTest() {
         assertBalance("Client1", "USD", 1355.0, 900.0)
         assertBalance("Client1", "BTC", 0.11, 0.0)
 
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        assertEquals(8, (testClientLimitOrderListener.getQueue().first() as LimitOrdersReport).orders.size)
-
         assertEquals(1, clientsEventsQueue.size)
         assertEquals(8, (clientsEventsQueue.first() as ExecutionEvent).orders.size)
     }
@@ -756,11 +625,6 @@ class ClientMultiLimitOrderTest : AbstractTest() {
 
         assertOrderBookSize("BTCUSD", true, 0)
         assertOrderBookSize("BTCUSD", false, 0)
-        val report = testClientLimitOrderListener.getQueue().first() as LimitOrdersReport
-        assertEquals(5, report.orders.size)
-        report.orders.forEach {
-            assertEquals(OrderStatus.Cancelled.name, it.order.status)
-        }
 
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
@@ -787,8 +651,6 @@ class ClientMultiLimitOrderTest : AbstractTest() {
 
         assertOrderBookSize("BTCUSD", true, 0)
         assertOrderBookSize("BTCUSD", false, 2)
-        val report = testClientLimitOrderListener.getQueue().first() as LimitOrdersReport
-        assertEquals(7, report.orders.size)
 
         assertTrue(genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false).map { it.externalId }
             .containsAll(listOf("1", "2")))
@@ -815,8 +677,6 @@ class ClientMultiLimitOrderTest : AbstractTest() {
 
         assertOrderBookSize("BTCUSD", true, 1)
         assertOrderBookSize("BTCUSD", false, 5)
-        val report = testClientLimitOrderListener.getQueue().first() as LimitOrdersReport
-        assertEquals(5, report.orders.size)
 
         assertEquals(
             genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(true).map { it.externalId },
@@ -879,68 +739,15 @@ class ClientMultiLimitOrderTest : AbstractTest() {
         assertBalance("Client1", "BTC", 1.1, 0.7)
         assertBalance("Client1", "USD", 2200.0, 1255.0)
 
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        val report = testClientLimitOrderListener.getQueue().first() as LimitOrdersReport
-
-        assertEquals(17, report.orders.size)
-
-        val replacedOrders = report.orders.filter { it.order.status == OrderStatus.Replaced.name }
-        assertEquals(4, replacedOrders.size)
-        assertTrue(listOf("Ask-ToReplace-1", "Ask-ToReplace-2", "Bid-ToReplace-1", "Bid-ToReplace-2")
-            .containsAll(replacedOrders.map { it.order.externalId })
-        )
-
-        val notFoundPreviousOrders = report.orders.filter { it.order.status == OrderStatus.NotFoundPrevious.name }
-        assertEquals(2, notFoundPreviousOrders.size)
-        assertTrue(
-            listOf(
-                "NotFoundPrevious-1",
-                "NotFoundPrevious-2"
-            ).containsAll(notFoundPreviousOrders.map { it.order.externalId })
-        )
-
-        val notEnoughFundsOrders = report.orders.filter { it.order.status == OrderStatus.NotEnoughFunds.name }
-        assertEquals(1, notEnoughFundsOrders.size)
-        assertTrue(listOf("NotEnoughFunds").containsAll(notEnoughFundsOrders.map { it.order.externalId }))
-
-        val matchedOrders = report.orders.filter { it.order.status == OrderStatus.Matched.name }
-        assertEquals(1, matchedOrders.size)
-        assertTrue(listOf("ClientOrder").containsAll(matchedOrders.map { it.order.externalId }))
-
-        val processedOrders = report.orders.filter { it.order.status == OrderStatus.Processing.name }
-        assertEquals(1, processedOrders.size)
-        assertTrue(listOf("bid1").containsAll(processedOrders.map { it.order.externalId }))
-
-        val inOrderBookOrders = report.orders.filter { it.order.status == OrderStatus.InOrderBook.name }
-        assertEquals(5, inOrderBookOrders.size)
-        assertTrue(
-            listOf(
-                "ask2",
-                "ask3",
-                "ask4",
-                "bid2",
-                "bid4"
-            ).containsAll(inOrderBookOrders.map { it.order.externalId })
-        )
-
-        val cancelledOrders = report.orders.filter { it.order.status == OrderStatus.Cancelled.name }
-        assertEquals(3, cancelledOrders.size)
-        assertTrue(
-            listOf(
-                "Ask-ToCancel-1",
-                "Ask-ToCancel-2",
-                "Bid-ToCancel-1"
-            ).containsAll(cancelledOrders.map { it.order.externalId })
-        )
-
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(17, event.orders.size)
 
         val eventReplacedOrders = event.orders.filter { it.status == OutgoingOrderStatus.REPLACED }
         assertEquals(4, eventReplacedOrders.size)
-        assertTrue(listOf("Ask-ToReplace-1", "Ask-ToReplace-2", "Bid-ToReplace-1", "Bid-ToReplace-2")
-            .containsAll(eventReplacedOrders.map { it.externalId })
+        assertTrue(
+            listOf("Ask-ToReplace-1", "Ask-ToReplace-2", "Bid-ToReplace-1", "Bid-ToReplace-2")
+                .containsAll(eventReplacedOrders.map { it.externalId })
         )
 
         val eventNotFoundPreviousOrders =
@@ -1005,13 +812,6 @@ class ClientMultiLimitOrderTest : AbstractTest() {
         assertEquals(BigDecimal.valueOf(1000.0), testWalletDatabaseAccessor.getBalance("Client2", "USD"))
         assertEquals(BigDecimal.valueOf(250.0), testWalletDatabaseAccessor.getReservedBalance("Client2", "USD"))
 
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        var limitOrders = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(2, limitOrders.orders.size)
-        assertEquals(BigDecimal.valueOf(1.2), limitOrders.orders[0].order.price)
-        assertEquals(BigDecimal.valueOf(1.3), limitOrders.orders[1].order.price)
-        assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
-
         assertEquals(1, clientsEventsQueue.size)
         var event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(2, event.orders.size)
@@ -1028,13 +828,6 @@ class ClientMultiLimitOrderTest : AbstractTest() {
                 )
             )
         )
-
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        limitOrders = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(4, limitOrders.orders.size)
-        assertEquals(BigDecimal.valueOf(1.2), limitOrders.orders[2].order.price)
-        assertEquals(BigDecimal.valueOf(1.3), limitOrders.orders[3].order.price)
-        assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
 
         assertEquals(1, clientsEventsQueue.size)
         event = clientsEventsQueue.poll() as ExecutionEvent

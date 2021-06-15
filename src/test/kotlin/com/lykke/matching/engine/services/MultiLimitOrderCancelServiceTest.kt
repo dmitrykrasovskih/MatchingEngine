@@ -6,7 +6,6 @@ import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
-import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderCancelWrapper
@@ -103,15 +102,6 @@ class MultiLimitOrderCancelServiceTest : AbstractTest() {
 
         assertOrderBookSize("BTCUSD", false, 2)
         assertBalance("TrustedClient", "BTC", 1.0, 0.0)
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        assertEquals(1, (testClientLimitOrderListener.getQueue().first() as LimitOrdersReport).orders.size)
-        assertEquals(1, testTrustedClientsLimitOrderListener.getCount())
-        assertEquals(1, (testTrustedClientsLimitOrderListener.getQueue().first() as LimitOrdersReport).orders.size)
-
-        assertEquals(0, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
-        assertEquals(1, tradesInfoListener.getCount())
-        assertEquals(1, testOrderBookListener.getCount())
-        assertEquals(1, testRabbitOrderBookListener.getCount())
 
         assertEquals(1, clientsEventsQueue.size)
         assertEquals(1, (clientsEventsQueue.first() as ExecutionEvent).orders.size)
@@ -133,14 +123,6 @@ class MultiLimitOrderCancelServiceTest : AbstractTest() {
 
         assertOrderBookSize("BTCUSD", false, 2)
         assertBalance("Client1", "BTC", 1.0, 0.0)
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        assertEquals(2, (testClientLimitOrderListener.getQueue().first() as LimitOrdersReport).orders.size)
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
-
-        assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
-        assertEquals(1, tradesInfoListener.getCount())
-        assertEquals(1, testOrderBookListener.getCount())
-        assertEquals(1, testRabbitOrderBookListener.getCount())
 
         assertEquals(0, trustedClientsEventsQueue.size)
         assertEquals(1, clientsEventsQueue.size)

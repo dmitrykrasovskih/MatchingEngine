@@ -10,7 +10,6 @@ import com.lykke.matching.engine.fee.FeeProcessor
 import com.lykke.matching.engine.holders.*
 import com.lykke.matching.engine.incoming.parsers.impl.*
 import com.lykke.matching.engine.matching.MatchingEngine
-import com.lykke.matching.engine.notification.BalanceUpdateHandlerTest
 import com.lykke.matching.engine.order.ExecutionDataApplyService
 import com.lykke.matching.engine.order.ExecutionEventSender
 import com.lykke.matching.engine.order.ExecutionPersistenceService
@@ -20,7 +19,6 @@ import com.lykke.matching.engine.order.process.common.LimitOrdersCancellerImpl
 import com.lykke.matching.engine.order.process.common.MatchingResultHandlingHelper
 import com.lykke.matching.engine.order.transaction.ExecutionContextFactory
 import com.lykke.matching.engine.order.transaction.ExecutionEventsSequenceNumbersGenerator
-import com.lykke.matching.engine.outgoing.messages.BalanceUpdate
 import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
 import com.lykke.matching.engine.outgoing.messages.MarketOrderWithTrades
 import com.lykke.matching.engine.outgoing.messages.OrderBook
@@ -92,8 +90,6 @@ abstract class AbstractPerformanceTest {
 
     protected lateinit var messageBuilder: MessageBuilder
 
-    val balanceUpdateQueue = LinkedBlockingQueue<BalanceUpdate>()
-
     private val clientLimitOrdersQueue = LinkedBlockingQueue<LimitOrdersReport>()
 
     private val orderBookQueue = LinkedBlockingQueue<OrderBook>()
@@ -109,7 +105,6 @@ abstract class AbstractPerformanceTest {
     private fun clearMessageQueues() {
         rabbitEventsQueue.clear()
         rabbitTrustedClientsEventsQueue.clear()
-        balanceUpdateQueue.clear()
         clientLimitOrdersQueue.clear()
         orderBookQueue.clear()
         rabbitOrderBookQueue.clear()
@@ -141,7 +136,7 @@ abstract class AbstractPerformanceTest {
         )
 
         testBalanceHolderWrapper =
-            TestBalanceHolderWrapper(BalanceUpdateHandlerTest(balanceUpdateQueue), balancesHolder)
+            TestBalanceHolderWrapper(balancesHolder)
         assetPairsCache = AssetPairsCache(testDictionariesDatabaseAccessor)
         assetsPairsHolder = AssetsPairsHolder(assetPairsCache)
 

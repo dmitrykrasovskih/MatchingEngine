@@ -11,13 +11,6 @@ import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.order.OrderStatus
-import com.lykke.matching.engine.order.OrderStatus.Matched
-import com.lykke.matching.engine.order.OrderStatus.NoLiquidity
-import com.lykke.matching.engine.order.OrderStatus.NotEnoughFunds
-import com.lykke.matching.engine.order.OrderStatus.TooSmallVolume
-import com.lykke.matching.engine.outgoing.messages.BalanceUpdate
-import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
-import com.lykke.matching.engine.outgoing.messages.MarketOrderWithTrades
 import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderRejectReason
 import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderType
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
@@ -25,7 +18,6 @@ import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrderWrapper
-import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.assertEquals
 import com.lykke.matching.engine.utils.createAssetPair
 import org.junit.Before
@@ -123,9 +115,6 @@ class MarketOrderServiceTest : AbstractTest() {
                 )
             )
         )
-        val marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-
-        assertEquals(Matched.name, marketOrderReport.order.status)
 
         val event = clientsEventsQueue.poll() as ExecutionEvent
         val order = event.orders.single { it.walletId == "Client3" }
@@ -139,10 +128,6 @@ class MarketOrderServiceTest : AbstractTest() {
         initServices()
 
         marketOrderService.processMessage(buildMarketOrderWrapper(buildMarketOrder()))
-
-        assertEquals(1, rabbitSwapListener.getCount())
-        val marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(NoLiquidity.name, marketOrderReport.order.status)
 
         val event = clientsEventsQueue.poll() as ExecutionEvent
         val marketOrder = event.orders.single { it.orderType == OrderType.MARKET }
@@ -171,12 +156,6 @@ class MarketOrderServiceTest : AbstractTest() {
                 )
             )
         )
-        val result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        assertEquals(2, result.orders.size)
-        assertEquals(
-            OrderStatus.Cancelled.name,
-            result.orders.find { NumberUtils.equalsIgnoreScale(it.order.price, BigDecimal.valueOf(1.6)) }?.order?.status
-        )
 
         val event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(3, event.orders.size)
@@ -201,10 +180,6 @@ class MarketOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, rabbitSwapListener.getCount())
-        val marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(NoLiquidity.name, marketOrderReport.order.status)
-
         val event = clientsEventsQueue.poll() as ExecutionEvent
         val marketOrder = event.orders.single { it.orderType == OrderType.MARKET }
         assertEquals(OutgoingOrderStatus.REJECTED, marketOrder.status)
@@ -227,9 +202,6 @@ class MarketOrderServiceTest : AbstractTest() {
                 )
             )
         )
-        assertEquals(1, rabbitSwapListener.getCount())
-        val marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(NoLiquidity.name, marketOrderReport.order.status)
 
         val event = clientsEventsQueue.poll() as ExecutionEvent
         val marketOrder = event.orders.single { it.orderType == OrderType.MARKET }
@@ -253,10 +225,6 @@ class MarketOrderServiceTest : AbstractTest() {
                 )
             )
         )
-        assertEquals(1, rabbitSwapListener.getCount())
-        val marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(NotEnoughFunds.name, marketOrderReport.order.status)
-
         val event = clientsEventsQueue.poll() as ExecutionEvent
         val marketOrder = event.orders.single { it.orderType == OrderType.MARKET }
         assertEquals(OutgoingOrderStatus.REJECTED, marketOrder.status)
@@ -268,7 +236,8 @@ class MarketOrderServiceTest : AbstractTest() {
         testDictionariesDatabaseAccessor.addAsset(Asset("", "USD", 2))
         testDictionariesDatabaseAccessor.addAsset(Asset("", "EUR", 2))
         testDictionariesDatabaseAccessor.addAssetPair(
-            createAssetPair( "",
+            createAssetPair(
+                "",
                 "EURUSD",
                 "EUR",
                 "USD",
@@ -280,29 +249,20 @@ class MarketOrderServiceTest : AbstractTest() {
         initServices()
 
         marketOrderService.processMessage(buildMarketOrderWrapper(buildMarketOrder(volume = 0.09)))
-        assertEquals(1, rabbitSwapListener.getCount())
-        var marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(TooSmallVolume.name, marketOrderReport.order.status)
 
         var event = clientsEventsQueue.poll() as ExecutionEvent
         var marketOrder = event.orders.single { it.orderType == OrderType.MARKET }
         assertEquals(OutgoingOrderStatus.REJECTED, marketOrder.status)
         assertEquals(OrderRejectReason.TOO_SMALL_VOLUME, marketOrder.rejectReason)
 
-//        marketOrderService.processMessage(buildMarketOrderWrapper(buildMarketOrder(volume = -0.19, straight = false)))
-//        assertEquals(1, rabbitSwapListener.getCount())
-//        marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-//        assertEquals(TooSmallVolume.name, marketOrderReport.order.status)
-//
-//        event = clientsEventsQueue.poll() as ExecutionEvent
-//        marketOrder = event.orders.single { it.orderType == OrderType.MARKET }
-//        assertEquals(OutgoingOrderStatus.REJECTED, marketOrder.status)
-//        assertEquals(OrderRejectReason.TOO_SMALL_VOLUME, marketOrder.rejectReason)
+        marketOrderService.processMessage(buildMarketOrderWrapper(buildMarketOrder(volume = -0.19, straight = false)))
+
+        event = clientsEventsQueue.poll() as ExecutionEvent
+        marketOrder = event.orders.single { it.orderType == OrderType.MARKET }
+        assertEquals(OutgoingOrderStatus.REJECTED, marketOrder.status)
+        assertEquals(OrderRejectReason.NO_LIQUIDITY, marketOrder.rejectReason)
 
         marketOrderService.processMessage(buildMarketOrderWrapper(buildMarketOrder(volume = 0.2, straight = false)))
-        assertEquals(1, rabbitSwapListener.getCount())
-        marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertTrue(TooSmallVolume.name != marketOrderReport.order.status)
 
         event = clientsEventsQueue.poll() as ExecutionEvent
         marketOrder = event.orders.single { it.orderType == OrderType.MARKET }
@@ -328,19 +288,6 @@ class MarketOrderServiceTest : AbstractTest() {
                 )
             )
         )
-
-        assertEquals(1, rabbitSwapListener.getCount())
-        val marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(Matched.name, marketOrderReport.order.status)
-        assertEquals(BigDecimal.valueOf(1.5), marketOrderReport.order.price!!)
-        assertEquals(1, marketOrderReport.trades.size)
-
-        assertEquals("1000.00", marketOrderReport.trades.first().marketVolume)
-        assertEquals("EUR", marketOrderReport.trades.first().marketAsset)
-        assertEquals("Client4", marketOrderReport.trades.first().marketClientId)
-        assertEquals("1500.0000", marketOrderReport.trades.first().limitVolume)
-        assertEquals("USD", marketOrderReport.trades.first().limitAsset)
-        assertEquals("Client3", marketOrderReport.trades.first().limitClientId)
 
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
@@ -403,19 +350,6 @@ class MarketOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, rabbitSwapListener.getCount())
-        val marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(Matched.name, marketOrderReport.order.status)
-        assertEquals(BigDecimal.valueOf(122.512), marketOrderReport.order.price!!)
-        assertEquals(1, marketOrderReport.trades.size)
-
-        assertEquals("0.09", marketOrderReport.trades.first().marketVolume)
-        assertEquals("EUR", marketOrderReport.trades.first().marketAsset)
-        assertEquals("Client4", marketOrderReport.trades.first().marketClientId)
-        assertEquals("10.00", marketOrderReport.trades.first().limitVolume)
-        assertEquals("JPY", marketOrderReport.trades.first().limitAsset)
-        assertEquals("Client3", marketOrderReport.trades.first().limitClientId)
-
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
         val eventMarketOrder = event.orders.single { it.orderType == OrderType.MARKET }
@@ -452,11 +386,6 @@ class MarketOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, rabbitSwapListener.getCount())
-        var marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(NotEnoughFunds.name, marketOrderReport.order.status)
-        assertEquals(0, marketOrderReport.trades.size)
-
         assertEquals(1, clientsEventsQueue.size)
         var event = clientsEventsQueue.poll() as ExecutionEvent
         var eventMarketOrder = event.orders.single { it.orderType == OrderType.MARKET }
@@ -482,12 +411,6 @@ class MarketOrderServiceTest : AbstractTest() {
                 )
             )
         )
-
-        assertEquals(1, rabbitSwapListener.getCount())
-        marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(Matched.name, marketOrderReport.order.status)
-        assertEquals(BigDecimal.valueOf(1.5), marketOrderReport.order.price!!)
-        assertEquals(1, marketOrderReport.trades.size)
 
         assertEquals(1, clientsEventsQueue.size)
         event = clientsEventsQueue.poll() as ExecutionEvent
@@ -521,12 +444,6 @@ class MarketOrderServiceTest : AbstractTest() {
                 )
             )
         )
-
-        assertEquals(1, rabbitSwapListener.getCount())
-        val marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(Matched.name, marketOrderReport.order.status)
-        assertEquals(BigDecimal.valueOf(1.41), marketOrderReport.order.price!!)
-        assertEquals(2, marketOrderReport.trades.size)
 
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
@@ -592,12 +509,6 @@ class MarketOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, rabbitSwapListener.getCount())
-        val marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(Matched.name, marketOrderReport.order.status)
-        assertEquals(BigDecimal.valueOf(0.0442), marketOrderReport.order.price!!)
-        assertEquals(3, marketOrderReport.trades.size)
-
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
         val eventMarketOrder = event.orders.single { it.orderType == OrderType.MARKET }
@@ -652,12 +563,6 @@ class MarketOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, rabbitSwapListener.getCount())
-        val marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(Matched.name, marketOrderReport.order.status)
-        assertEquals(BigDecimal.valueOf(13591.031869), marketOrderReport.order.price!!)
-        assertEquals(3, marketOrderReport.trades.size)
-
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
         val eventMarketOrder = event.orders.single { it.orderType == OrderType.MARKET }
@@ -703,12 +608,6 @@ class MarketOrderServiceTest : AbstractTest() {
                 )
             )
         )
-
-        assertEquals(1, rabbitSwapListener.getCount())
-        val marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(Matched.name, marketOrderReport.order.status)
-        assertEquals(BigDecimal.valueOf(0.03851), marketOrderReport.order.price!!)
-        assertEquals(2, marketOrderReport.trades.size)
 
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
@@ -858,12 +757,6 @@ class MarketOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, rabbitSwapListener.getCount())
-        val marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(Matched.name, marketOrderReport.order.status)
-        assertEquals(BigDecimal.valueOf(1.5), marketOrderReport.order.price!!)
-        assertEquals(1, marketOrderReport.trades.size)
-
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
         val eventMarketOrder = event.orders.single { it.orderType == OrderType.MARKET }
@@ -896,12 +789,6 @@ class MarketOrderServiceTest : AbstractTest() {
                 )
             )
         )
-
-        assertEquals(1, rabbitSwapListener.getCount())
-        val marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(Matched.name, marketOrderReport.order.status)
-        assertEquals(BigDecimal.valueOf(1.49), marketOrderReport.order.price!!)
-        assertEquals(2, marketOrderReport.trades.size)
 
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
@@ -1016,12 +903,6 @@ class MarketOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, rabbitSwapListener.getCount())
-        val marketOrderReport = rabbitSwapListener.getQueue().poll() as MarketOrderWithTrades
-        assertEquals(Matched.name, marketOrderReport.order.status)
-        assertEquals(BigDecimal.valueOf(4111.117), marketOrderReport.order.price!!)
-        assertEquals(10, marketOrderReport.trades.size)
-
         assertEquals(1, clientsEventsQueue.size)
         val event = clientsEventsQueue.poll() as ExecutionEvent
         val eventMarketOrder = event.orders.single { it.orderType == OrderType.MARKET }
@@ -1068,21 +949,6 @@ class MarketOrderServiceTest : AbstractTest() {
 
         assertEquals(BigDecimal.valueOf(1000.0), testWalletDatabaseAccessor.getBalance("Client1", "USD"))
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
-
-        assertEquals(0, testTrustedClientsLimitOrderListener.getCount())
-        assertEquals(1, testClientLimitOrderListener.getCount())
-        val result = testClientLimitOrderListener.getQueue().poll() as LimitOrdersReport
-        val cancelledOrder = result.orders.filter { it.order.status == OrderStatus.Cancelled.name }
-        assertEquals(1, cancelledOrder.size)
-        assertEquals("Client1", cancelledOrder.first().order.clientId)
-
-        assertEquals(1, balanceUpdateHandlerTest.getCountOfBalanceUpdate())
-        val balanceUpdate = balanceUpdateHandlerTest.balanceUpdateQueue.poll() as BalanceUpdate
-
-        val filteredBalances = balanceUpdate.balances.filter { it.walletId == "Client1" }
-        assertEquals(1, filteredBalances.size)
-        val refund = filteredBalances.first()
-        assertEquals(BigDecimal.ZERO, refund.newReserved)
 
         assertEquals(0, trustedClientsEventsQueue.size)
         assertEquals(1, clientsEventsQueue.size)
@@ -1170,12 +1036,6 @@ class MarketOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, balanceUpdateHandlerTest.balanceUpdateQueue.size)
-        assertEquals(
-            0,
-            (balanceUpdateHandlerTest.balanceUpdateQueue.poll() as BalanceUpdate).balances.filter { it.walletId == "Client1" }.size
-        )
-
         val balanceUpdates = (clientsEventsQueue.poll() as ExecutionEvent).balanceUpdates
         assertEquals(0, balanceUpdates!!.filter { it.walletId == "Client1" }.size)
     }
@@ -1236,7 +1096,8 @@ class MarketOrderServiceTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client1", "BTC", 1.0)
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 10001.0)
         testDictionariesDatabaseAccessor.addAssetPair(
-            createAssetPair( "",
+            createAssetPair(
+                "",
                 "BTCUSD", "BTC", "USD", 8,
                 maxValue = BigDecimal.valueOf(10000)
             )
@@ -1275,7 +1136,8 @@ class MarketOrderServiceTest : AbstractTest() {
     @Test
     fun testNotStraightOrderMaxValue() {
         testDictionariesDatabaseAccessor.addAssetPair(
-            createAssetPair("",
+            createAssetPair(
+                "",
                 "BTCUSD", "BTC", "USD", 8,
                 maxValue = BigDecimal.valueOf(10000)
             )
@@ -1305,7 +1167,8 @@ class MarketOrderServiceTest : AbstractTest() {
     fun testStraightOrderMaxVolume() {
         testBalanceHolderWrapper.updateBalance("Client1", "BTC", 1.1)
         testDictionariesDatabaseAccessor.addAssetPair(
-            createAssetPair("",
+            createAssetPair(
+                "",
                 "BTCUSD", "BTC", "USD", 8,
                 maxVolume = BigDecimal.valueOf(1.0)
             )
@@ -1335,7 +1198,8 @@ class MarketOrderServiceTest : AbstractTest() {
         testBalanceHolderWrapper.updateBalance("Client1", "BTC", 1.1)
         testBalanceHolderWrapper.updateBalance("Client2", "USD", 11000.0)
         testDictionariesDatabaseAccessor.addAssetPair(
-            createAssetPair("",
+            createAssetPair(
+                "",
                 "BTCUSD", "BTC", "USD", 8,
                 maxVolume = BigDecimal.valueOf(1.0)
             )
@@ -1394,7 +1258,8 @@ class MarketOrderServiceTest : AbstractTest() {
         )
 
         testDictionariesDatabaseAccessor.addAssetPair(
-            createAssetPair("",
+            createAssetPair(
+                "",
                 "EURUSD", "EUR", "USD", 5,
                 marketOrderPriceDeviationThreshold = BigDecimal.ZERO
             )
@@ -1450,7 +1315,8 @@ class MarketOrderServiceTest : AbstractTest() {
             true
         )
         testDictionariesDatabaseAccessor.addAssetPair(
-            createAssetPair("",
+            createAssetPair(
+                "",
                 "EURUSD", "EUR", "USD", 5,
                 marketOrderPriceDeviationThreshold = BigDecimal.valueOf(0.04)
             )
@@ -1473,7 +1339,8 @@ class MarketOrderServiceTest : AbstractTest() {
 
         // default threshold from app settings to match order
         testDictionariesDatabaseAccessor.addAssetPair(
-            createAssetPair("",
+            createAssetPair(
+                "",
                 "EURUSD", "EUR", "USD", 5
             )
         )
@@ -1521,7 +1388,8 @@ class MarketOrderServiceTest : AbstractTest() {
             true
         )
         testDictionariesDatabaseAccessor.addAssetPair(
-            createAssetPair("",
+            createAssetPair(
+                "",
                 "EURUSD", "EUR", "USD", 5,
                 marketOrderPriceDeviationThreshold = BigDecimal.ZERO
             )
@@ -1569,7 +1437,8 @@ class MarketOrderServiceTest : AbstractTest() {
         )
 
         testDictionariesDatabaseAccessor.addAssetPair(
-            createAssetPair("",
+            createAssetPair(
+                "",
                 "EURUSD", "EUR", "USD", 5,
                 marketOrderPriceDeviationThreshold = BigDecimal.valueOf(100)
             )

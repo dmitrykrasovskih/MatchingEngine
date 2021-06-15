@@ -29,7 +29,7 @@ jobs:
         uses: eskatos/gradle-command-action@v1
         with:
           gradle-version: 6.6.1
-          arguments: clean build -x test printProperties
+          arguments: clean build printProperties
 
       - name: Check dir
         run: ls build/distributions
