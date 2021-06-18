@@ -160,6 +160,9 @@ class MultiLimitOrderService(
             if (currentOrder.price == null) {
                 LOGGER.info("Null price: ${getIncomingOrderInfo(currentOrder)}")
             }
+            if (price <= BigDecimal.ZERO) {
+                LOGGER.info("Invalid price: ${getIncomingOrderInfo(currentOrder)}")
+            }
             val lowerLimitPrice = null
             val lowerPrice = null
             val upperLimitPrice = null
