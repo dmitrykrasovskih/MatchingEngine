@@ -157,6 +157,9 @@ class MultiLimitOrderService(
             val type = LimitOrderType.LIMIT
             val status = OrderStatus.InOrderBook
             val price = if (currentOrder.price != null) BigDecimal(currentOrder.price) else BigDecimal.ZERO
+            if (currentOrder.price == null) {
+                LOGGER.info("Null price: ${getIncomingOrderInfo(currentOrder)}")
+            }
             val lowerLimitPrice = null
             val lowerPrice = null
             val upperLimitPrice = null
