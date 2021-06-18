@@ -110,7 +110,7 @@ class LimitOrderInputValidatorImpl(val applicationSettingsHolder: ApplicationSet
 
     private fun validatePrice(limitOrder: LimitOrder) {
         if (limitOrder.price <= BigDecimal.ZERO) {
-            throw OrderValidationException(OrderStatus.InvalidPrice, "price is invalid")
+            throw OrderValidationException(OrderStatus.InvalidPrice, "price ${limitOrder.price} is invalid")
         }
     }
 
