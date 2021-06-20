@@ -6,7 +6,6 @@ import com.lykke.matching.engine.outgoing.publishers.events.PublisherFailureEven
 import com.lykke.matching.engine.outgoing.publishers.events.PublisherReadyEvent
 import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.PrintUtils
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import com.myjetwallet.messages.outgoing.grpc.GrpcOutgoingEventsServiceGrpc
 import com.myjetwallet.messages.outgoing.grpc.OutgoingMessages
@@ -29,16 +28,16 @@ class GrpcEventPublisher(
     companion object {
         private val LOGGER = ThrottlingLogger.getLogger(GrpcEventPublisher::class.java.name)
         private val MESSAGES_LOGGER = LoggerFactory.getLogger("${GrpcEventPublisher::class.java.name}.message")
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
         private val STATS_LOGGER = LoggerFactory.getLogger("${GrpcEventPublisher::class.java.name}.stats")
 
-        private const val LOG_COUNT = 1000
+        private const val LOG_COUNT = 10000L
         private const val RECONNECTION_INTERVAL = 1000L
 
         private const val BATCH_SIZE = 100L
     }
 
     private var messagesCount: Long = 0
+    private var eventsCount: Long = 0
     private var totalPersistTime: Double = 0.0
     private var totalTime: Double = 0.0
 
@@ -55,7 +54,6 @@ class GrpcEventPublisher(
                 val startTime = System.nanoTime()
 
                 if (!isLogged) {
-                    LOGGER.info("Publishing ${messages.size} events in batch")
                     messages.forEach {
                         logMessage(it)
                     }
@@ -72,7 +70,7 @@ class GrpcEventPublisher(
                 if (result.published) {
                     val endPersistTime = System.nanoTime()
                     val endTime = System.nanoTime()
-                    fixTime(startTime, endTime, startPersistTime, endPersistTime)
+                    fixTime(messages.size, startTime, endTime, startPersistTime, endPersistTime)
 
                     return
                 }
@@ -80,7 +78,6 @@ class GrpcEventPublisher(
                 publishFailureEvent(messages)
                 val logMessage = "Exception during GRPC publishing ($grpcConnectionString): ${exception.message}"
                 LOGGER.error(logMessage, exception)
-                METRICS_LOGGER.logError(logMessage, exception)
                 tryConnectUntilSuccess()
             }
         }
@@ -121,16 +118,23 @@ class GrpcEventPublisher(
         }
     }
 
-    private fun fixTime(startTime: Long, endTime: Long, startPersistTime: Long, endPersistTime: Long) {
+    private fun fixTime(events: Int, startTime: Long, endTime: Long, startPersistTime: Long, endPersistTime: Long) {
         messagesCount++
+        eventsCount += events
         totalPersistTime += (endPersistTime - startPersistTime).toDouble() / LOG_COUNT
         totalTime += (endTime - startTime).toDouble() / LOG_COUNT
 
-        if (messagesCount % LOG_COUNT == 0L) {
+        if (messagesCount == LOG_COUNT) {
             STATS_LOGGER.info(
-                "gRPC: $grpcConnectionString. Messages: $LOG_COUNT. Total: ${PrintUtils.convertToString(totalTime)}. " +
+                "gRPC: $grpcConnectionString. Messages: $LOG_COUNT. Events per message: ${eventsCount / LOG_COUNT} Total: ${
+                    PrintUtils.convertToString(
+                        totalTime
+                    )
+                }. " +
                         " Persist: ${PrintUtils.convertToString(totalPersistTime)}, ${NumberUtils.roundForPrint2(100 * totalPersistTime / totalTime)} %"
             )
+            messagesCount = 0
+            eventsCount = 0
             totalPersistTime = 0.0
             totalTime = 0.0
         }

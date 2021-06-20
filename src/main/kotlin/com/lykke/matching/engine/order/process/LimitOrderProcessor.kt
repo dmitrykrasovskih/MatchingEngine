@@ -383,7 +383,7 @@ class LimitOrderProcessor(
         addOrderToReport(orderContext.order.copy(), orderContext.executionContext)
 
         if (!applicationSettingsHolder.isTrustedClient(order.clientId)) {
-            orderContext.executionContext.info("${getOrderInfo(order)} added to order book")
+            orderContext.executionContext.debug("${getOrderInfo(order)} added to order book")
         }
         return ProcessedOrder(order, true)
     }
