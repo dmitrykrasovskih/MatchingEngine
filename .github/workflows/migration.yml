@@ -56,6 +56,7 @@ jobs:
       - name: Publish image ST
         uses: docker/build-push-action@v1
         with:
+          dockerfile: docker/dockerfile
           username: ${{ secrets.ST_DOCKER_USER }}
           password: ${{ secrets.ST_DOCKER_PASSWORD }}
           path: ./build/distributions
