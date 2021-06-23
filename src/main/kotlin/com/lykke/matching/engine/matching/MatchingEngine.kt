@@ -70,7 +70,6 @@ class MatchingEngine(
         val availableBalances =
             HashMap<String, MutableMap<String, BigDecimal>>() // clientId -> assetId -> balance; available balances for market balance control and fee funds control
         val isBuy = order.isBuySide()
-        val lkkTrades = LinkedList<LkkTrade>()
         val completedLimitOrders = LinkedList<CopyWrapper<LimitOrder>>()
         var matchedUncompletedLimitOrderWrapper: CopyWrapper<LimitOrder>? = null
         var uncompletedLimitOrderWrapper: CopyWrapper<LimitOrder>? = null
@@ -323,24 +322,6 @@ class MatchingEngine(
                     if (newRemainingVolume.signum() * limitOrderCopy.remainingVolume.signum() < 0) {
                         executionContext.info("Matched volume is overflowed (previous: ${limitOrderCopy.remainingVolume}, current: $newRemainingVolume)")
                     }
-                    lkkTrades.add(
-                        LkkTrade(
-                            limitOrder.assetPairId,
-                            limitOrder.clientId,
-                            limitOrder.price,
-                            limitOrderCopy.remainingVolume,
-                            now
-                        )
-                    )
-                    lkkTrades.add(
-                        LkkTrade(
-                            limitOrder.assetPairId,
-                            order.clientId,
-                            limitOrder.price,
-                            -limitOrderCopy.remainingVolume,
-                            now
-                        )
-                    )
                     limitOrderCopy.remainingVolume = BigDecimal.ZERO
                     limitOrderCopy.updateStatus(OrderStatus.Matched, now)
                     completedLimitOrders.add(limitOrderCopyWrapper)
@@ -358,24 +339,6 @@ class MatchingEngine(
                         limitOrderCopy.reservedLimitVolume = BigDecimal.ZERO
                     }
                 } else {
-                    lkkTrades.add(
-                        LkkTrade(
-                            limitOrder.assetPairId,
-                            limitOrder.clientId,
-                            limitOrder.price,
-                            -marketRoundedVolume,
-                            now
-                        )
-                    )
-                    lkkTrades.add(
-                        LkkTrade(
-                            limitOrder.assetPairId,
-                            order.clientId,
-                            limitOrder.price,
-                            marketRoundedVolume,
-                            now
-                        )
-                    )
                     limitOrderCopy.remainingVolume = newRemainingVolume
                     limitOrderCopy.updateStatus(OrderStatus.Processing, now)
                     matchedUncompletedLimitOrderWrapper = matchedLimitOrderCopyWrapper
@@ -606,7 +569,7 @@ class MatchingEngine(
         }
         order.updateMatchTime(now)
         order.updatePrice(executionPrice)
-        order.oppositeVolume = calculateOppositeVolume(order, totalLimitVolume, totalVolume)
+        order.oppositeVolume = calculateOppositeVolume(order, totalLimitPrice, totalVolume)
 
         return MatchingResult(
             orderWrapper,
@@ -616,7 +579,6 @@ class MatchingEngine(
             completedLimitOrders,
             matchedUncompletedLimitOrderWrapper,
             uncompletedLimitOrderWrapper,
-            lkkTrades,
             allOwnCashMovements,
             allOppositeCashMovements,
             marketOrderTrades,

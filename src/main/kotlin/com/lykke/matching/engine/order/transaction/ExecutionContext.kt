@@ -3,7 +3,6 @@ package com.lykke.matching.engine.order.transaction
 import com.lykke.matching.engine.balance.WalletOperationsProcessor
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.daos.AssetPair
-import com.lykke.matching.engine.daos.LkkTrade
 import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.outgoing.messages.LimitOrderWithTrades
@@ -11,7 +10,6 @@ import com.lykke.matching.engine.outgoing.messages.MarketOrderWithTrades
 import com.lykke.matching.engine.services.validators.impl.OrderValidationResult
 import org.apache.log4j.Logger
 import java.util.*
-import kotlin.collections.LinkedHashMap
 import kotlin.collections.set
 
 class ExecutionContext(
@@ -34,8 +32,6 @@ class ExecutionContext(
     private val clientLimitOrdersWithTradesByInternalId = LinkedHashMap<String, LimitOrderWithTrades>()
     private val trustedClientLimitOrdersWithTradesByInternalId = LinkedHashMap<String, LimitOrderWithTrades>()
     var marketOrderWithTrades: MarketOrderWithTrades? = null
-
-    val lkkTrades = mutableListOf<LkkTrade>()
 
     fun addClientLimitOrderWithTrades(limitOrderWithTrades: LimitOrderWithTrades) {
         addToReport(clientLimitOrdersWithTradesByInternalId, limitOrderWithTrades)

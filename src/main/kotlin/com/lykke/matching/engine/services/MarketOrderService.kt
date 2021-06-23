@@ -218,7 +218,6 @@ class MarketOrderService @Autowired constructor(
                     marketOrderExecutionContext.executionContext.orderBooksHolder
                         .getChangedOrderBookCopy(order.brokerId, order.assetPairId)
                         .setOrderBook(!order.isBuySide(), matchingResult.orderBook)
-                    marketOrderExecutionContext.executionContext.lkkTrades.addAll(matchingResult.lkkTrades)
 
                     marketOrderExecutionContext.executionContext.marketOrderWithTrades =
                         MarketOrderWithTrades(messageWrapper.messageId, order, matchingResult.marketOrderTrades)

@@ -139,12 +139,6 @@ class DatabaseAccessorConfig {
     //</editor-fold>
 
     @Bean
-    fun azureMarketOrderDatabaseAccessor(@Value("\${azure.market.order.table}") tableName: String)
-            : MarketOrderDatabaseAccessor {
-        return AzureMarketOrderDatabaseAccessor(config.matchingEngine.db.hTradesConnString, tableName)
-    }
-
-    @Bean
     fun azureReservedVolumesDatabaseAccessor(@Value("\${azure.reserved.volumes.table}") tableName: String)
             : ReservedVolumesDatabaseAccessor {
         return AzureReservedVolumesDatabaseAccessor(config.matchingEngine.db.reservedVolumesConnString, tableName)

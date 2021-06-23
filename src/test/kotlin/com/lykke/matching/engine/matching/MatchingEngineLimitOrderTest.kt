@@ -3,7 +3,6 @@ package com.lykke.matching.engine.matching
 import com.lykke.matching.engine.config.TestApplicationContext
 import com.lykke.matching.engine.daos.Asset
 import com.lykke.matching.engine.daos.FeeType
-import com.lykke.matching.engine.daos.LkkTrade
 import com.lykke.matching.engine.daos.WalletOperation
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
@@ -266,7 +265,6 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
             remainingVolume = BigDecimal.ZERO,
             skipSize = 0,
             cancelledSize = 0,
-            lkkTradesSize = 2,
             cashMovementsSize = 4,
             marketOrderTradesSize = 1,
             completedLimitOrdersSize = 0,
@@ -301,7 +299,6 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
             remainingVolume = BigDecimal.ZERO,
             skipSize = 0,
             cancelledSize = 0,
-            lkkTradesSize = 2,
             cashMovementsSize = 4,
             marketOrderTradesSize = 1,
             completedLimitOrdersSize = 0,
@@ -339,7 +336,6 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
             remainingVolume = BigDecimal.valueOf(2.0),
             skipSize = 0,
             cancelledSize = 0,
-            lkkTradesSize = 2,
             cashMovementsSize = 4,
             marketOrderTradesSize = 1,
             completedLimitOrdersSize = 1,
@@ -387,7 +383,6 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
             remainingVolume = BigDecimal.valueOf(-1.1),
             skipSize = 0,
             cancelledSize = 0,
-            lkkTradesSize = 2,
             cashMovementsSize = 5,
             marketOrderTradesSize = 1,
             completedLimitOrdersSize = 1,
@@ -436,7 +431,6 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
             remainingVolume = BigDecimal.ZERO,
             skipSize = 0,
             cancelledSize = 0,
-            lkkTradesSize = 2,
             cashMovementsSize = 4,
             marketOrderTradesSize = 1,
             completedLimitOrdersSize = 1,
@@ -468,7 +462,6 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
             remainingVolume = BigDecimal.ZERO,
             skipSize = 0,
             cancelledSize = 0,
-            lkkTradesSize = 2,
             cashMovementsSize = 4,
             marketOrderTradesSize = 1,
             completedLimitOrdersSize = 1,
@@ -508,7 +501,6 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
             remainingVolume = BigDecimal.ZERO,
             skipSize = 0,
             cancelledSize = 0,
-            lkkTradesSize = 4,
             cashMovementsSize = 8,
             marketOrderTradesSize = 2,
             completedLimitOrdersSize = 2,
@@ -533,7 +525,6 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
             remainingVolume = BigDecimal.ZERO,
             skipSize = 0,
             cancelledSize = 0,
-            lkkTradesSize = 4,
             cashMovementsSize = 8,
             marketOrderTradesSize = 2,
             completedLimitOrdersSize = 2,
@@ -590,7 +581,6 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
             remainingVolume = BigDecimal.valueOf(20.0),
             skipSize = 1,
             cancelledSize = 0,
-            lkkTradesSize = 4,
             cashMovementsSize = 8,
             marketOrderTradesSize = 2,
             completedLimitOrdersSize = 2,
@@ -649,7 +639,6 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
             remainingVolume = BigDecimal.valueOf(-20.0),
             skipSize = 1,
             cancelledSize = 0,
-            lkkTradesSize = 4,
             cashMovementsSize = 8,
             marketOrderTradesSize = 2,
             completedLimitOrdersSize = 2,
@@ -699,7 +688,6 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
             remainingVolume = BigDecimal.ZERO,
             skipSize = 0,
             cancelledSize = 0,
-            lkkTradesSize = 6,
             cashMovementsSize = 12,
             marketOrderTradesSize = 3,
             completedLimitOrdersSize = 2,
@@ -754,7 +742,6 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
             remainingVolume = BigDecimal.ZERO,
             skipSize = 0,
             cancelledSize = 1,
-            lkkTradesSize = 4,
             cashMovementsSize = 8,
             marketOrderTradesSize = 2,
             completedLimitOrdersSize = 1,
@@ -796,22 +783,13 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
             remainingVolume = BigDecimal.ZERO,
             skipSize = 0,
             cancelledSize = 0,
-            lkkTradesSize = 4,
             cashMovementsSize = 8,
             marketOrderTradesSize = 2,
             completedLimitOrdersSize = 1,
             limitOrdersReportSize = 2
         )
 
-        val expectedLkkTrades = listOf(
-            LkkTrade("EURUSD", "Client1", BigDecimal.valueOf(1.25677), BigDecimal.valueOf(51.21), now),
-            LkkTrade("EURUSD", "Client2", BigDecimal.valueOf(1.25677), BigDecimal.valueOf(-51.21), now),
-            LkkTrade("EURUSD", "Client1", BigDecimal.valueOf(1.30001), BigDecimal.valueOf(48.79), now),
-            LkkTrade("EURUSD", "Client3", BigDecimal.valueOf(1.30001), BigDecimal.valueOf(-48.79), now)
-        )
-
         assertNotNull(matchingResult.uncompletedLimitOrder)
-        assertLkkTradesEquals(expectedLkkTrades, matchingResult.lkkTrades)
     }
 
     @Test
@@ -859,7 +837,6 @@ class MatchingEngineLimitOrderTest : MatchingEngineTest() {
             remainingVolume = BigDecimal.ZERO,
             skipSize = 0,
             cancelledSize = 0,
-            lkkTradesSize = 4,
             cashMovementsSize = 10,
             marketOrderTradesSize = 2,
             completedLimitOrdersSize = 1,

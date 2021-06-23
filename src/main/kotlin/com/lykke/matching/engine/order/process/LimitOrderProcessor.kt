@@ -254,7 +254,7 @@ class LimitOrderProcessor(
         val orderCopy = matchingResult.orderCopy as LimitOrder
         val assetPair = orderContext.executionContext.assetPairsById[orderCopy.assetPairId]!!
         when {
-            assetPair.minVolume != null && orderCopy.getAbsRemainingVolume() < assetPair.minVolume -> {
+            orderCopy.getAbsRemainingVolume() < assetPair.minVolume -> {
                 orderContext.executionContext.info(
                     "${getOrderInfo(orderCopy)}: cancelled due to min remaining volume (${
                         NumberUtils.roundForPrint(
@@ -322,7 +322,6 @@ class LimitOrderProcessor(
 
     private fun addMatchedResultToEventData(orderContext: LimitOrderExecutionContext) {
         val matchingResult = orderContext.matchingResult!!
-        orderContext.executionContext.lkkTrades.addAll(matchingResult.lkkTrades)
 
         val orderCopy = matchingResult.orderCopy as LimitOrder
         val limitOrderWithTrades = LimitOrderWithTrades(

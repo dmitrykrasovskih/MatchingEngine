@@ -378,7 +378,6 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
             marketPrice = BigDecimal.valueOf(1.19),
             skipSize = 0,
             cancelledSize = 0,
-            lkkTradesSize = 2,
             cashMovementsSize = 4,
             marketOrderTradesSize = 1,
             completedLimitOrdersSize = 0,
@@ -429,7 +428,6 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
             marketPrice = BigDecimal.valueOf(1.21),
             skipSize = 0,
             cancelledSize = 0,
-            lkkTradesSize = 2,
             cashMovementsSize = 4,
             marketOrderTradesSize = 1,
             completedLimitOrdersSize = 0,
@@ -465,7 +463,6 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
             marketPrice = BigDecimal.valueOf(1.19),
             skipSize = 0,
             cancelledSize = 0,
-            lkkTradesSize = 2,
             cashMovementsSize = 4,
             marketOrderTradesSize = 1,
             completedLimitOrdersSize = 0,
@@ -500,7 +497,6 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
             marketPrice = BigDecimal.valueOf(1.21),
             skipSize = 0,
             cancelledSize = 0,
-            lkkTradesSize = 2,
             cashMovementsSize = 4,
             marketOrderTradesSize = 1,
             completedLimitOrdersSize = 0,
@@ -533,7 +529,7 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
         assertMarketOrderMatchingResult(
             matchingResult, status = OrderStatus.Matched,
             marketBalance = BigDecimal.valueOf(880.0), marketPrice = BigDecimal.valueOf(1.2),
-            lkkTradesSize = 2, cashMovementsSize = 4, marketOrderTradesSize = 1, completedLimitOrdersSize = 1,
+            cashMovementsSize = 4, marketOrderTradesSize = 1, completedLimitOrdersSize = 1,
             limitOrdersReportSize = 1
         )
 
@@ -561,7 +557,6 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
             status = OrderStatus.Matched,
             marketBalance = BigDecimal.valueOf(880.0),
             marketPrice = BigDecimal.valueOf(1.2),
-            lkkTradesSize = 2,
             cashMovementsSize = 4,
             marketOrderTradesSize = 1,
             completedLimitOrdersSize = 1,
@@ -591,7 +586,6 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
             status = OrderStatus.Matched,
             marketBalance = BigDecimal.valueOf(900.0),
             marketPrice = BigDecimal.valueOf(1.2),
-            lkkTradesSize = 2,
             cashMovementsSize = 4,
             marketOrderTradesSize = 1,
             completedLimitOrdersSize = 1,
@@ -620,7 +614,6 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
             status = OrderStatus.Matched,
             marketBalance = BigDecimal.valueOf(900.0),
             marketPrice = BigDecimal.valueOf(1.2),
-            lkkTradesSize = 2,
             cashMovementsSize = 4,
             marketOrderTradesSize = 1,
             completedLimitOrdersSize = 1,
@@ -654,7 +647,7 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
 
         assertMarketOrderMatchingResult(
             matchingResult, status = OrderStatus.Matched, marketBalance = BigDecimal.valueOf(880.0),
-            marketPrice = BigDecimal.valueOf(1.2), skipSize = 0, cancelledSize = 0, lkkTradesSize = 4,
+            marketPrice = BigDecimal.valueOf(1.2), skipSize = 0, cancelledSize = 0,
             cashMovementsSize = 8, marketOrderTradesSize = 2, completedLimitOrdersSize = 2,
             limitOrdersReportSize = 2
         )
@@ -711,7 +704,6 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
             marketPrice = BigDecimal.valueOf(1.18),
             skipSize = 1,
             cancelledSize = 0,
-            lkkTradesSize = 6,
             cashMovementsSize = 12,
             marketOrderTradesSize = 3,
             completedLimitOrdersSize = 2,
@@ -775,7 +767,6 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
             marketPrice = BigDecimal.valueOf(1.22546),
             skipSize = 1,
             cancelledSize = 0,
-            lkkTradesSize = 6,
             cashMovementsSize = 13,
             marketOrderTradesSize = 3,
             completedLimitOrdersSize = 2,

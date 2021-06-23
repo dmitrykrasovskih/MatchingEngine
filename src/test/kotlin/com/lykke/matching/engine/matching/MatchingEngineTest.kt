@@ -138,7 +138,6 @@ abstract class MatchingEngineTest {
         status: OrderStatus = OrderStatus.NoLiquidity,
         skipSize: Int = 0,
         cancelledSize: Int = 0,
-        lkkTradesSize: Int = 0,
         cashMovementsSize: Int = 0,
         marketOrderTradesSize: Int = 0,
         completedLimitOrdersSize: Int = 0,
@@ -155,7 +154,6 @@ abstract class MatchingEngineTest {
             status,
             skipSize,
             cancelledSize,
-            lkkTradesSize,
             cashMovementsSize,
             marketOrderTradesSize,
             completedLimitOrdersSize,
@@ -171,7 +169,6 @@ abstract class MatchingEngineTest {
         status: OrderStatus = OrderStatus.Processing,
         skipSize: Int = 0,
         cancelledSize: Int = 0,
-        lkkTradesSize: Int = 0,
         cashMovementsSize: Int = 0,
         marketOrderTradesSize: Int = 0,
         completedLimitOrdersSize: Int = 0,
@@ -190,7 +187,6 @@ abstract class MatchingEngineTest {
             status,
             skipSize,
             cancelledSize,
-            lkkTradesSize,
             cashMovementsSize,
             marketOrderTradesSize,
             completedLimitOrdersSize,
@@ -206,7 +202,6 @@ abstract class MatchingEngineTest {
         status: OrderStatus = OrderStatus.Processing,
         skipSize: Int = 0,
         cancelledSize: Int = 0,
-        lkkTradesSize: Int = 0,
         cashMovementsSize: Int = 0,
         marketOrderTradesSize: Int = 0,
         completedLimitOrdersSize: Int = 0,
@@ -221,7 +216,6 @@ abstract class MatchingEngineTest {
             assertNotNull(matchingResult.marketBalance)
             assertEquals(marketBalance, matchingResult.marketBalance!!)
         }
-        assertEquals(lkkTradesSize, matchingResult.lkkTrades.size)
         assertEquals(cancelledSize, matchingResult.cancelledLimitOrders.size)
         assertEquals(
             cashMovementsSize,
@@ -252,16 +246,6 @@ abstract class MatchingEngineTest {
         assertEquals(expectedMovements.size, actualMovements.size)
         val expected = expectedMovements.map(this::walletOperationTransform)
         val actual = actualMovements.map(this::walletOperationTransform)
-        assertTrue { expected.containsAll(actual) }
-    }
-
-    private fun lkkTradeTransform(trade: LkkTrade): LkkTrade =
-        LkkTrade(trade.assetPair, trade.clientId, trade.price, trade.volume, now)
-
-    protected fun assertLkkTradesEquals(expectedTrades: List<LkkTrade>, actualTrades: List<LkkTrade>) {
-        assertEquals(expectedTrades.size, actualTrades.size)
-        val expected = expectedTrades.map(this::lkkTradeTransform)
-        val actual = actualTrades.map(this::lkkTradeTransform)
         assertTrue { expected.containsAll(actual) }
     }
 
