@@ -52,3 +52,15 @@ jobs:
           tags: latest
           add_git_labels: true
           build_args: app_version=myjetwallet.service.matchingengine-test:latest,app_compilation_date=${{ steps.current-time.outputs.formattedTime }}
+
+      - name: Publish image ST
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.ST_DOCKER_USER }}
+          password: ${{ secrets.ST_DOCKER_PASSWORD }}
+          path: ./build/distributions
+          registry: simpletrading.azurecr.io
+          repository: spot/myjetwallet.matchingengine-test
+          tags: latest
+          add_git_labels: true
+          build_args: app_version=myjetwallet.matchingengine-test:latest,app_compilation_date=${{ steps.current-time.outputs.formattedTime }}
