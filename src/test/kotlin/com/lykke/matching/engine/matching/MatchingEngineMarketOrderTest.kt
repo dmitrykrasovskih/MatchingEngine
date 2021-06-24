@@ -375,7 +375,7 @@ class MatchingEngineMarketOrderTest : MatchingEngineTest() {
         assertMarketOrderMatchingResult(
             matchingResult, status = OrderStatus.Matched,
             marketBalance = BigDecimal.valueOf(891.59),
-            marketPrice = BigDecimal.valueOf(1.19),
+            marketPrice = BigDecimal.valueOf(1.19002),
             skipSize = 0,
             cancelledSize = 0,
             cashMovementsSize = 4,

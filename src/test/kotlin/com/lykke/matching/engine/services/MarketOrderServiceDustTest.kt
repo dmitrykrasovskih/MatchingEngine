@@ -231,7 +231,7 @@ class MarketOrderServiceDustTest : AbstractTest() {
         val eventMarketOrder = event.orders.single { it.orderType == OrderType.MARKET }
         assertEquals(OutgoingOrderStatus.MATCHED, eventMarketOrder.status)
         assertEquals("Client4", eventMarketOrder.walletId)
-        assertEquals("593.644", eventMarketOrder.price)
+        assertEquals("593.642", eventMarketOrder.price)
         assertEquals("0.54", eventMarketOrder.volume)
         assertFalse(eventMarketOrder.straight!!)
         assertEquals(1, eventMarketOrder.trades?.size)

@@ -115,7 +115,7 @@ class RoundingTest : AbstractTest() {
         val marketOrderReport =
             (clientsEventsQueue.poll() as ExecutionEvent).orders.first { it.orderType == OrderType.MARKET }
         assertEquals(MATCHED, marketOrderReport.status)
-        assertEquals("1.11548", marketOrderReport.price!!)
+        assertEquals("1.11", marketOrderReport.price!!)
         assertEquals(1, marketOrderReport.trades!!.size)
 
         assertEquals("-1", marketOrderReport.trades!!.first().baseVolume)
@@ -188,7 +188,7 @@ class RoundingTest : AbstractTest() {
         val marketOrderReport =
             (clientsEventsQueue.poll() as ExecutionEvent).orders.first { it.orderType == OrderType.MARKET }
         assertEquals(MATCHED, marketOrderReport.status)
-        assertEquals("1.11548", marketOrderReport.price!!)
+        assertEquals("1.12359", marketOrderReport.price!!)
         assertEquals(1, marketOrderReport.trades!!.size)
 
         assertEquals("-1", marketOrderReport.trades!!.first().quotingVolume)
@@ -232,7 +232,7 @@ class RoundingTest : AbstractTest() {
         val marketOrderReport =
             (clientsEventsQueue.poll() as ExecutionEvent).orders.first { it.orderType == OrderType.MARKET }
         assertEquals(MATCHED, marketOrderReport.status)
-        assertEquals("909.727", marketOrderReport.price!!)
+        assertEquals("909.743", marketOrderReport.price!!)
         assertEquals(1, marketOrderReport.trades!!.size)
 
         assertEquals("-0.38", marketOrderReport.trades!!.first().quotingVolume)
@@ -275,7 +275,7 @@ class RoundingTest : AbstractTest() {
         val marketOrderReport =
             (clientsEventsQueue.poll() as ExecutionEvent).orders.first { it.orderType == OrderType.MARKET }
         assertEquals(MATCHED, marketOrderReport.status)
-        assertEquals("678.229", marketOrderReport.price!!)
+        assertEquals("678.23", marketOrderReport.price!!)
         assertEquals(1, marketOrderReport.trades!!.size)
 
         assertEquals("-678.23", marketOrderReport.trades!!.first().quotingVolume)
@@ -526,7 +526,7 @@ class RoundingTest : AbstractTest() {
         val marketOrderReport =
             (clientsEventsQueue.poll() as ExecutionEvent).orders.first { it.orderType == OrderType.MARKET }
         assertEquals(MATCHED, marketOrderReport.status)
-        assertEquals("597.169", marketOrderReport.price!!)
+        assertEquals("500", marketOrderReport.price!!)
         assertEquals(1, marketOrderReport.trades!!.size)
 
         assertEquals("-0.0001", marketOrderReport.trades!!.first().baseVolume)

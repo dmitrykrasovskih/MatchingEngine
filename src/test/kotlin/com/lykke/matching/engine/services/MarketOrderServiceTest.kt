@@ -316,6 +316,60 @@ class MarketOrderServiceTest : AbstractTest() {
     }
 
     @Test
+    fun testOppositeVolumeRounding() {
+        testOrderBookWrapper.addLimitOrder(
+            buildLimitOrder(
+                assetId = "BTCUSD",
+                price = 9000.0,
+                volume = 0.00011112,
+                clientId = "Client3"
+            )
+        )
+        testBalanceHolderWrapper.updateBalance("Client3", "USD", 1500.0)
+        testBalanceHolderWrapper.updateReservedBalance("Client3", "USD", 1500.0)
+        testBalanceHolderWrapper.updateBalance("Client4", "BTC", 1000.0)
+        initServices()
+
+        assertEquals(BigDecimal.valueOf(1500.0), testWalletDatabaseAccessor.getReservedBalance("Client3", "USD"))
+        val messageWrapper = buildMarketOrderWrapper(
+            buildMarketOrder(
+                clientId = "Client4",
+                assetId = "BTCUSD",
+                volume = 1.0,
+                straight = false
+            )
+        )
+        marketOrderService.processMessage(
+            messageWrapper
+        )
+
+        assertEquals(1, clientsEventsQueue.size)
+        val event = clientsEventsQueue.poll() as ExecutionEvent
+        val eventMarketOrder = event.orders.single { it.orderType == OrderType.MARKET }
+        assertEquals(OutgoingOrderStatus.MATCHED, eventMarketOrder.status)
+        assertEquals("Client4", eventMarketOrder.walletId)
+        assertEquals("8999.2800576", eventMarketOrder.price)
+        assertFalse(eventMarketOrder.straight!!)
+        assertEquals(1, eventMarketOrder.trades?.size)
+        assertEquals("-0.00011112", eventMarketOrder.trades!!.first().baseVolume)
+        assertEquals("BTC", eventMarketOrder.trades!!.first().baseAssetId)
+        assertEquals("1", eventMarketOrder.trades!!.first().quotingVolume)
+        assertEquals("USD", eventMarketOrder.trades!!.first().quotingAssetId)
+        assertEquals("Client3", eventMarketOrder.trades!!.first().oppositeWalletId)
+
+        assertEquals(BigDecimal.valueOf(0.00011112), testWalletDatabaseAccessor.getBalance("Client3", "BTC"))
+        assertEquals(BigDecimal.valueOf(1499.0000), testWalletDatabaseAccessor.getBalance("Client3", "USD"))
+        assertEquals(BigDecimal.valueOf(999.99988888), testWalletDatabaseAccessor.getBalance("Client4", "BTC"))
+        assertEquals(BigDecimal.valueOf(1), testWalletDatabaseAccessor.getBalance("Client4", "USD"))
+
+        assertEquals(BigDecimal.valueOf(1499.0000), testWalletDatabaseAccessor.getReservedBalance("Client3", "USD"))
+
+        assertEquals(1, tradesInfoListener.getCount())
+        val tradeInfo = tradesInfoListener.getProcessingQueue().poll()
+        assertEquals(BigDecimal.ZERO, tradeInfo.price)
+    }
+
+    @Test
     fun testMatchOneToOneEURJPY() {
         testOrderBookWrapper.addLimitOrder(
             buildLimitOrder(
@@ -355,7 +409,7 @@ class MarketOrderServiceTest : AbstractTest() {
         val eventMarketOrder = event.orders.single { it.orderType == OrderType.MARKET }
         assertEquals(OutgoingOrderStatus.MATCHED, eventMarketOrder.status)
         assertEquals("Client4", eventMarketOrder.walletId)
-        assertEquals("122.512", eventMarketOrder.price)
+        assertEquals("111.112", eventMarketOrder.price)
         assertFalse(eventMarketOrder.straight!!)
         assertEquals(1, eventMarketOrder.trades?.size)
         assertEquals("-0.09", eventMarketOrder.trades!!.first().baseVolume)
@@ -567,7 +621,7 @@ class MarketOrderServiceTest : AbstractTest() {
         val event = clientsEventsQueue.poll() as ExecutionEvent
         val eventMarketOrder = event.orders.single { it.orderType == OrderType.MARKET }
         assertEquals(OutgoingOrderStatus.MATCHED, eventMarketOrder.status)
-        assertEquals("13591.031869", eventMarketOrder.price)
+        assertEquals("13591.031837", eventMarketOrder.price)
         assertEquals(3, eventMarketOrder.trades?.size)
 
         assertEquals(BigDecimal.valueOf(3.67889654), testWalletDatabaseAccessor.getBalance("Client1", "BTC"))
@@ -613,7 +667,7 @@ class MarketOrderServiceTest : AbstractTest() {
         val event = clientsEventsQueue.poll() as ExecutionEvent
         val eventMarketOrder = event.orders.single { it.orderType == OrderType.MARKET }
         assertEquals(OutgoingOrderStatus.MATCHED, eventMarketOrder.status)
-        assertEquals("0.03851", eventMarketOrder.price)
+        assertEquals("0.03852", eventMarketOrder.price)
         assertEquals(2, eventMarketOrder.trades?.size)
 
         assertEquals(BigDecimal.valueOf(982.78), testWalletDatabaseAccessor.getBalance("Client1", "GBP"))
@@ -907,7 +961,7 @@ class MarketOrderServiceTest : AbstractTest() {
         val event = clientsEventsQueue.poll() as ExecutionEvent
         val eventMarketOrder = event.orders.single { it.orderType == OrderType.MARKET }
         assertEquals(OutgoingOrderStatus.MATCHED, eventMarketOrder.status)
-        assertEquals("4111.117", eventMarketOrder.price)
+        assertEquals("4111.267", eventMarketOrder.price)
         assertEquals(10, eventMarketOrder.trades?.size)
 
         assertEquals(BigDecimal.valueOf(4136.9), genericLimitOrderService.getOrderBook("", "BTCCHF").getAskPrice())

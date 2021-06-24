@@ -467,8 +467,8 @@ class MatchingEngine(
                 )
                 executionContext.tradeIndex++
 
-                totalVolume += volume
-                totalLimitPrice += volume * limitOrder.price
+                totalVolume += marketRoundedVolume.abs()
+                totalLimitPrice += oppositeRoundedVolume.abs()
                 totalLimitVolume += (if (order.isStraight()) marketRoundedVolume else oppositeRoundedVolume).abs()
                 matchedOrders.add(matchedLimitOrderCopyWrapper)
             }
