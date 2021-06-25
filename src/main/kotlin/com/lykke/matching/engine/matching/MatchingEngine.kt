@@ -645,10 +645,14 @@ class MatchingEngine(
         totalLimitVolume: BigDecimal,
         totalVolume: BigDecimal
     ): BigDecimal {
-        return if (order.isStraight())
+        val volume = if (order.isStraight())
             totalLimitVolume
         else
             totalVolume
+        return if (order.volume.signum() > 0)
+            -volume
+        else
+            volume
     }
 
     private fun checkMaxVolume(
