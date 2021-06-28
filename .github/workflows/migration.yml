@@ -27,9 +27,11 @@ jobs:
 
       - name: Build
         uses: eskatos/gradle-command-action@v1
+        env:
+          CI: true
         with:
           gradle-version: 6.6.1
-          arguments: clean build printProperties
+          arguments: clean build -x test printProperties
 
       - name: Check dir
         run: ls build/distributions
