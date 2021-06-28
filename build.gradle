@@ -138,7 +138,7 @@ bootJar {
 }
 
 task printProperties doLast {
-    println "Revision-number": revision, "BuildVersion": buildVersion, "Version": version, "BuildNumber": ${github.run_number}, "BuildNumber1": github.run_number
+    println "Revision-number": revision, "BuildVersion": buildVersion, "Version": version, "BuildNumber": github.run_number
 }
 
 bootDistZip {
