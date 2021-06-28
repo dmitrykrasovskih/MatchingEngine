@@ -130,6 +130,8 @@ protobuf {
 ext.revision = 'git rev-list --count HEAD'.execute().text.trim()
 ext.hash = 'git rev-parse --short HEAD'.execute().text.trim()
 ext.buildVersion = "${revision}.${hash}"
+ext.buildNumber = System.getenv('BuildNumber')
+ext.buildNumberGithub = System.getenv('github.run_number')
 
 bootJar {
     manifest {
@@ -138,7 +140,7 @@ bootJar {
 }
 
 task printProperties doLast {
-    println "Revision-number": revision, "BuildVersion": buildVersion, "Version": version, "BuildNumber": github.run_number
+    println "Revision-number": revision, "BuildVersion": buildVersion, "Version": version, "BuildNumber": buildNumber, "BuildNumberGithub": buildNumberGithub
 }
 
 bootDistZip {
