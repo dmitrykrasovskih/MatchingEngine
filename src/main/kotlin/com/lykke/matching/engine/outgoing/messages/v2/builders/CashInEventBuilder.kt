@@ -20,7 +20,7 @@ class CashInEventBuilder : EventBuilder<CashInEventData, CashInEvent>() {
             eventData.cashInOperation.accountId,
             eventData.cashInOperation.clientId,
             eventData.cashInOperation.assetId,
-            bigDecimalToString(eventData.cashInOperation.amount)!!,
+            bigDecimalToString(eventData.cashInOperation.amount),
             convertFees(eventData.internalFees)
         )
         return this

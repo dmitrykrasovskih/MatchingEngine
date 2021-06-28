@@ -27,7 +27,8 @@ class TrustedClientsEventsListener {
         config.matchingEngine.grpcEndpoints.outgoingTrustedClientsEventsConnections.forEachIndexed { index, grpcConnectionString ->
             val trustedClientsEventConsumerQueue =
                 GrpcEventUtils.getTrustedClientsEventConsumerQueueName(grpcConnectionString, index)
-            val queue = applicationContext.getBean(trustedClientsEventConsumerQueue) as BlockingQueue<Event<*>>
+            @Suppress("UNCHECKED_CAST") val queue =
+                applicationContext.getBean(trustedClientsEventConsumerQueue) as BlockingQueue<Event<*>>
             Thread(
                 GrpcEventPublisher(
                     "TrustedClientsEventPublisher_$trustedClientsEventConsumerQueue", queue,

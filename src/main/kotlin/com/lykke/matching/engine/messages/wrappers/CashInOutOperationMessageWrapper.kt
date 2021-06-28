@@ -19,6 +19,7 @@ class CashInOutOperationMessageWrapper(
     if (parsedMessage.hasMessageId()) parsedMessage.messageId.value else parsedMessage.id
 ) {
 
+    @Suppress("DuplicatedCode")
     fun writeResponse(operationId: String?, status: MessageStatus, errorMessage: String? = null) {
         val responseBuilder = GrpcIncomingMessages.CashInOutOperationResponse.newBuilder()
         responseBuilder.id = id
@@ -45,7 +46,6 @@ class CashInOutOperationMessageWrapper(
             }
         } catch (exception: IOException) {
             LOGGER.error("Unable to write for message with id $messageId response: ${exception.message}", exception)
-            METRICS_LOGGER.logError("Unable to write response", exception)
         }
     }
 }

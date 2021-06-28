@@ -21,10 +21,6 @@ class BalancesHolder(
     private val applicationSettingsHolder: ApplicationSettingsHolder
 ) : BalancesGetter {
 
-    companion object {
-        private val LOGGER = Logger.getLogger(BalancesHolder::class.java.name)
-    }
-
     lateinit var wallets: MutableMap<String, Wallet>
     var initialClientsCount = 0
     var initialBalancesCount = 0
@@ -48,6 +44,7 @@ class BalancesHolder(
         return wallet?.balances ?: emptyMap()
     }
 
+    @Suppress("unused")
     fun getAssetBalance(clientId: String, assetId: String): AssetBalance? {
         return getBalances(clientId)[assetId]
     }
@@ -196,7 +193,6 @@ class BalancesHolder(
 
     fun createWalletProcessor(logger: Logger?): WalletOperationsProcessor {
         return WalletOperationsProcessor(
-            this,
             createCurrentTransactionBalancesHolder(),
             applicationSettingsHolder,
             persistenceManager,

@@ -71,11 +71,11 @@ class MarketOrderValidatorImpl
         }
 
         val assetPair = getAssetPair(order)
-        if (order.isStraight() && assetPair.maxVolume != null && order.getAbsVolume() > assetPair.maxVolume) {
+        if (order.isStraight() && order.getAbsVolume() > assetPair.maxVolume) {
             LOGGER.info("Too large volume for $order")
             throw OrderValidationException(OrderStatus.InvalidVolume)
         }
-        if (!order.isStraight() && assetPair.maxValue != null && order.getAbsVolume() > assetPair.maxValue) {
+        if (!order.isStraight() && order.getAbsVolume() > assetPair.maxValue) {
             LOGGER.info("Too large value for $order")
             throw OrderValidationException(OrderStatus.InvalidValue)
         }

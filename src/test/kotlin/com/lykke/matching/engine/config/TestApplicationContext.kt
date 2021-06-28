@@ -182,15 +182,14 @@ class TestApplicationContext {
 
     @Bean
     fun balancesDatabaseAccessorsHolder(): BalancesDatabaseAccessorsHolder {
-        return BalancesDatabaseAccessorsHolder(TestWalletDatabaseAccessor(), null)
+        return BalancesDatabaseAccessorsHolder(TestWalletDatabaseAccessor())
     }
 
     @Bean
     fun ordersDatabaseAccessorsHolder(
-        testOrderBookDatabaseAccessor: TestOrderBookDatabaseAccessor,
-        testFileOrderDatabaseAccessor: TestFileOrderDatabaseAccessor
+        testOrderBookDatabaseAccessor: TestOrderBookDatabaseAccessor
     ): OrdersDatabaseAccessorsHolder {
-        return OrdersDatabaseAccessorsHolder(testOrderBookDatabaseAccessor, testFileOrderDatabaseAccessor)
+        return OrdersDatabaseAccessorsHolder(testOrderBookDatabaseAccessor)
     }
 
     @Bean
@@ -200,10 +199,9 @@ class TestApplicationContext {
 
     @Bean
     fun stopOrdersDatabaseAccessorsHolder(
-        testStopOrderBookDatabaseAccessor: TestStopOrderBookDatabaseAccessor,
-        testFileStopOrderDatabaseAccessor: TestFileStopOrderDatabaseAccessor
+        testStopOrderBookDatabaseAccessor: TestStopOrderBookDatabaseAccessor
     ): StopOrdersDatabaseAccessorsHolder {
-        return StopOrdersDatabaseAccessorsHolder(testStopOrderBookDatabaseAccessor, testFileStopOrderDatabaseAccessor)
+        return StopOrdersDatabaseAccessorsHolder(testStopOrderBookDatabaseAccessor)
     }
 
     @Bean

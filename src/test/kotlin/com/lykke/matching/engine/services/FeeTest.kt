@@ -330,8 +330,6 @@ class FeeTest : AbstractTest() {
             Thread.sleep(10)
         }
 
-        assertEquals(5, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
-
         clientsEventsQueue.clear()
 
         singleLimitOrderService.processMessage(
@@ -350,8 +348,6 @@ class FeeTest : AbstractTest() {
         assertEquals(CANCELLED, result.orders.first { it.externalId == "order4" }.status)
         assertEquals(CANCELLED, result.orders.first { it.externalId == "order5" }.status)
         assertEquals(BigDecimal.valueOf(0.02), balancesHolder.getBalance("Client2", "BTC"))
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
     }
 
     @Test
@@ -421,8 +417,6 @@ class FeeTest : AbstractTest() {
             )
         )
 
-        assertEquals(4, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
-
         clientsEventsQueue.clear()
 
         singleLimitOrderService.processMessage(
@@ -441,8 +435,6 @@ class FeeTest : AbstractTest() {
         assertEquals(MATCHED, result.orders.first { it.externalId == "order4" }.status)
 
         assertEquals(BigDecimal.valueOf(0.01), balancesHolder.getBalance("Client2", "BTC"))
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
     }
 
     @Test
@@ -483,8 +475,6 @@ class FeeTest : AbstractTest() {
 
         val result = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(REJECTED, result.orders.first { it.externalId == "order" }.status)
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
-        assertEquals(5, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
     }
 
     @Test
@@ -525,8 +515,6 @@ class FeeTest : AbstractTest() {
 
         val result = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(REJECTED, result.orders.first().status)
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
-        assertEquals(5, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
     }
 
     @Test
@@ -567,8 +555,6 @@ class FeeTest : AbstractTest() {
 
         val result = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(REJECTED, result.orders.first().status)
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
-        assertEquals(5, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
     }
 
     @Test

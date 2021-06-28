@@ -3,8 +3,6 @@ package com.lykke.matching.engine.database.file
 import com.lykke.matching.engine.daos.LimitOrder
 import com.lykke.matching.engine.daos.NewLimitOrder
 import com.lykke.matching.engine.daos.fee.v2.NewLimitOrderFeeInstruction
-import com.lykke.matching.engine.daos.v2.LimitOrderFeeInstruction
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import org.nustaq.serialization.FSTConfiguration
 import java.math.BigDecimal
@@ -19,7 +17,6 @@ open class AbstractFileOrderBookDatabaseAccessor(
 
     companion object {
         private val LOGGER = ThrottlingLogger.getLogger(AbstractFileOrderBookDatabaseAccessor::class.java.name)
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
         private const val PREV_ORDER_BOOK_FILE_PREFIX = "_prev_"
     }
 
@@ -54,7 +51,6 @@ open class AbstractFileOrderBookDatabaseAccessor(
         } catch (e: Exception) {
             val message = "Unable to load ${logPrefix}limit orders"
             LOGGER.error(message, e)
-            METRICS_LOGGER.logError(message, e)
         }
 
         LOGGER.info("Loaded ${result.size} active ${logPrefix}limit orders")
@@ -103,7 +99,6 @@ open class AbstractFileOrderBookDatabaseAccessor(
         } catch (e: Exception) {
             val message = "Unable to save ${logPrefix}order book, size: ${orders.size}"
             LOGGER.error(message, e)
-            METRICS_LOGGER.logError(message, e)
         }
     }
 
@@ -171,17 +166,6 @@ open class AbstractFileOrderBookDatabaseAccessor(
         )
     }
 
-    private fun convertLimitOrderFeeInstruction(fee: com.lykke.matching.engine.daos.LimitOrderFeeInstruction?): LimitOrderFeeInstruction? {
-        if (fee == null) {
-            return null
-        }
-        return LimitOrderFeeInstruction(
-            fee.type, fee.sizeType,
-            fee.size, fee.makerSizeType,
-            fee.makerSize, fee.sourceWalletId, fee.targetWalletId
-        )
-    }
-
     private fun convertLimitOrderFeeInstructions(fees: List<com.lykke.matching.engine.daos.fee.NewLimitOrderFeeInstruction>?): List<NewLimitOrderFeeInstruction>? {
         if (fees == null) {
             return null
@@ -206,7 +190,6 @@ open class AbstractFileOrderBookDatabaseAccessor(
         } catch (e: Exception) {
             val message = "Unable to save order book file, name: $fileName"
             LOGGER.error(message, e)
-            METRICS_LOGGER.logError(message, e)
             throw e
         }
     }
@@ -221,7 +204,6 @@ open class AbstractFileOrderBookDatabaseAccessor(
         } catch (e: Exception) {
             val message = "Unable to archive and delete, name: $fileName"
             LOGGER.error(message, e)
-            METRICS_LOGGER.logError(message, e)
         }
     }
 }

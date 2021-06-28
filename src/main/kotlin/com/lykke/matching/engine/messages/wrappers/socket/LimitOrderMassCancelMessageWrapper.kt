@@ -20,6 +20,7 @@ class LimitOrderMassCancelMessageWrapper(
     if (parsedMessage.hasMessageId()) parsedMessage.messageId.value else parsedMessage.id
 ) {
 
+    @Suppress("DuplicatedCode")
     fun writeResponse(
         status: MessageStatus,
         errorMessage: String? = null
@@ -34,6 +35,7 @@ class LimitOrderMassCancelMessageWrapper(
         writeClientResponse(responseBuilder.build())
     }
 
+    @Suppress("DuplicatedCode")
     private fun writeClientResponse(response: SocketIncomingMessages.Response) {
         try {
             val start = System.nanoTime()
@@ -44,7 +46,6 @@ class LimitOrderMassCancelMessageWrapper(
             }
         } catch (exception: IOException) {
             LOGGER.error("Unable to write for message with id $messageId response: ${exception.message}", exception)
-            METRICS_LOGGER.logError("Unable to write response", exception)
         }
     }
 }

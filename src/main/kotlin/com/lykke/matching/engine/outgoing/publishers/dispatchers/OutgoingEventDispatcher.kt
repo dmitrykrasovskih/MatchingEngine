@@ -4,8 +4,7 @@ import com.lykke.matching.engine.outgoing.publishers.events.PublisherFailureEven
 import com.lykke.matching.engine.outgoing.publishers.events.PublisherReadyEvent
 import com.lykke.matching.engine.utils.monitoring.HealthMonitorEvent
 import com.lykke.matching.engine.utils.monitoring.MonitoredComponent
-import com.lykke.utils.logging.MetricsLogger
-import org.slf4j.LoggerFactory
+import com.lykke.utils.logging.ThrottlingLogger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.event.EventListener
@@ -21,8 +20,7 @@ class OutgoingEventDispatcher<E>(
 ) : Thread(dispatcherName) {
 
     companion object {
-        val METRICS_LOGGER = MetricsLogger.getLogger()
-        val LOGGER = LoggerFactory.getLogger(OutgoingEventDispatcher::class.java)
+        val LOGGER = ThrottlingLogger.getLogger(OutgoingEventDispatcher::class.java.name)
     }
 
     private var failedEventConsumers = HashSet<String>()
@@ -150,17 +148,14 @@ class OutgoingEventDispatcher<E>(
     }
 
     private fun logException(message: String, e: Exception) {
-        METRICS_LOGGER.logError(message, e)
         LOGGER.error(message, e)
     }
 
     private fun logError(message: String) {
-        METRICS_LOGGER.logError(message)
         LOGGER.error(message)
     }
 
     private fun log(message: String) {
-        METRICS_LOGGER.logWarning(message)
         LOGGER.info(message)
     }
 }

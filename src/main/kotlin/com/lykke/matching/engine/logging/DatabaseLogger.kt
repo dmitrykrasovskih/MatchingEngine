@@ -1,7 +1,6 @@
 package com.lykke.matching.engine.logging
 
 import com.lykke.matching.engine.database.MessageLogDatabaseAccessor
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingQueue
@@ -11,7 +10,6 @@ class DatabaseLogger<in T>(private val dbAccessor: MessageLogDatabaseAccessor) {
 
     companion object {
         private val LOGGER = ThrottlingLogger.getLogger(DatabaseLogger::class.java.name)
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
     }
 
     private val queue: BlockingQueue<MessageWrapper> = LinkedBlockingQueue()
@@ -27,7 +25,6 @@ class DatabaseLogger<in T>(private val dbAccessor: MessageLogDatabaseAccessor) {
         } catch (e: Exception) {
             val errorMessage = "Unable to write log to DB: ${e.message}"
             LOGGER.error(errorMessage, e)
-            METRICS_LOGGER.logError(errorMessage, e)
         }
     }
 

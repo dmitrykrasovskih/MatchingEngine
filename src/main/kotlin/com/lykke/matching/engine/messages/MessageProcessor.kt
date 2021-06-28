@@ -9,7 +9,6 @@ import com.lykke.matching.engine.holders.MessageSequenceNumberHolder
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.performance.PerformanceStatsHolder
 import com.lykke.matching.engine.services.*
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -22,7 +21,6 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
     companion object {
         val LOGGER = ThrottlingLogger.getLogger(MessageProcessor::class.java.name)
         val MONITORING_LOGGER = ThrottlingLogger.getLogger("${MessageProcessor::class.java.name}.monitoring")
-        val METRICS_LOGGER = MetricsLogger.getLogger()
     }
 
     @Autowired
@@ -95,7 +93,6 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
             val messageType = MessageType.valueOf(message.type.type)
             if (messageType == null) {
                 LOGGER.error("Unknown message type: ${message.type}")
-                METRICS_LOGGER.logError("Unknown message type: ${message.type}")
                 return
             }
 
@@ -105,7 +102,6 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
 
             if (service == null) {
                 LOGGER.error("Unknown message type: ${message.type}")
-                METRICS_LOGGER.logError("Unknown message type: ${message.type}")
                 return
             }
 
@@ -118,7 +114,6 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
                 service.writeResponse(message, MessageStatus.RUNTIME)
                 val errorMessage = "Message processing is disabled"
                 LOGGER.error(errorMessage)
-                METRICS_LOGGER.logError(errorMessage)
                 return
             }
 
@@ -130,7 +125,6 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
             ) {
                 service.writeResponse(message, MessageStatus.DUPLICATE)
                 LOGGER.error("Message already processed: ${message.type}: ${message.messageId}")
-                METRICS_LOGGER.logError("Message already processed: ${message.type}: ${message.messageId}")
                 return
             }
 
@@ -152,7 +146,6 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
                 val errorMessage =
                     "There was no write response to socket time recorded, response to socket is not written, messageId: ${message.messageId}"
                 LOGGER.error(errorMessage)
-                METRICS_LOGGER.logError(errorMessage)
             }
 
             performanceStatsHolder.addMessage(
@@ -166,7 +159,6 @@ class MessageProcessor : Thread(MessageProcessor::class.java.name) {
             )
         } catch (exception: Exception) {
             LOGGER.error("Got error during message processing: ${exception.message}", exception)
-            METRICS_LOGGER.logError("Got error during message processing", exception)
         }
     }
 

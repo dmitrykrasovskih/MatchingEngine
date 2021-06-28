@@ -42,7 +42,7 @@ class ReservedCashInOutOperationValidatorImpl @Autowired constructor(
 
     private fun isVolumesAccuracyValid(operation: ReservedCashInOutOperation) {
         isVolumeAccuracyValid(operation.reservedAmount, operation.asset!!)
-        isVolumeAccuracyValid(operation.reservedSwapAmount, operation.asset!!)
+        isVolumeAccuracyValid(operation.reservedSwapAmount, operation.asset)
     }
 
     private fun isVolumeAccuracyValid(volume: BigDecimal, asset: Asset) {

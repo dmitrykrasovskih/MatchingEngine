@@ -891,7 +891,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
         assertEquals(BigDecimal.valueOf(1.1), genericLimitOrderService.getOrderBook("", "EURUSD").getBidPrice())
 
         assertEquals(1, clientsEventsQueue.size)
@@ -925,12 +924,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
             )
         )
 
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", false).size)
-
-        val orderSell = testOrderDatabaseAccessor.getOrders("EURUSD", false).first()
-        assertEquals(BigDecimal.valueOf(-2.0), orderSell.remainingVolume)
-
         assertEquals(BigDecimal.valueOf(1000.0), testWalletDatabaseAccessor.getBalance(client, "USD"))
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance(client, "USD"))
 
@@ -961,10 +954,6 @@ class MultiLimitOrderServiceTest : AbstractTest() {
                 cancel = true
             )
         )
-
-
-        assertEquals(BigDecimal.valueOf(-10.0), testOrderDatabaseAccessor.getOrders("EURUSD", false).first().volume)
-        assertEquals(OrderStatus.InOrderBook.name, testOrderDatabaseAccessor.getOrders("EURUSD", false).first().status)
 
         assertEquals(1, trustedClientsEventsQueue.size)
         val event = trustedClientsEventsQueue.poll() as ExecutionEvent

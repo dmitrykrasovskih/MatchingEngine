@@ -142,7 +142,6 @@ class LimitOrderServiceTest : AbstractTest() {
                 )
             )
         )
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", false).size)
 
         singleLimitOrderService.processMessage(
             messageBuilder.buildLimitOrderWrapper(
@@ -155,9 +154,6 @@ class LimitOrderServiceTest : AbstractTest() {
         )
         val event = clientsEventsQueue.poll() as ExecutionEvent
         assertEquals(OutgoingOrderStatus.PLACED, event.orders.first().status)
-
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("EURUSD", false).size)
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
     }
 
     @Test
@@ -175,7 +171,6 @@ class LimitOrderServiceTest : AbstractTest() {
                 )
             )
         )
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", false).size)
 
         singleLimitOrderService.processMessage(
             messageBuilder.buildLimitOrderWrapper(
@@ -191,8 +186,6 @@ class LimitOrderServiceTest : AbstractTest() {
         assertEquals(OutgoingOrderStatus.MATCHED, event.orders[0].status)
         assertEquals(OutgoingOrderStatus.PARTIALLY_MATCHED, event.orders[1].status)
         assertEquals("-900", event.orders[1].remainingVolume)
-
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", false).size)
     }
 
     @Test
@@ -222,8 +215,6 @@ class LimitOrderServiceTest : AbstractTest() {
         )
         assertEquals(1, event.balanceUpdates?.size)
         assertEventBalanceUpdate("Client1", "EUR", "1000", "1000", "500", "0", event.balanceUpdates!!)
-
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("EURUSD", false).size)
     }
 
     @Test
@@ -259,7 +250,7 @@ class LimitOrderServiceTest : AbstractTest() {
             )
         )
 
-        val order = testOrderDatabaseAccessor.loadLimitOrders()
+        val order = ordersDatabaseAccessorsHolder.primaryAccessor.loadLimitOrders()
             .find { NumberUtils.equalsIgnoreScale(it.price, BigDecimal.valueOf(999.9)) }
         assertNotNull(order)
 
@@ -283,7 +274,7 @@ class LimitOrderServiceTest : AbstractTest() {
             )
         )
 
-        val order = testOrderDatabaseAccessor.loadLimitOrders()
+        val order = ordersDatabaseAccessorsHolder.primaryAccessor.loadLimitOrders()
             .find { NumberUtils.equalsIgnoreScale(it.price, BigDecimal.valueOf(999.9)) }
         assertNotNull(order)
 
@@ -318,7 +309,6 @@ class LimitOrderServiceTest : AbstractTest() {
             )
         )
         assertEquals(BigDecimal.valueOf(300.0), testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
-        assertEquals(2, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
 
         singleLimitOrderService.processMessage(
             messageBuilder.buildLimitOrderWrapper(
@@ -330,8 +320,7 @@ class LimitOrderServiceTest : AbstractTest() {
             )
         )
         assertEquals(BigDecimal.valueOf(600.0), testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
-        var order = testOrderDatabaseAccessor.loadLimitOrders()
+        var order = ordersDatabaseAccessorsHolder.primaryAccessor.loadLimitOrders()
             .find { NumberUtils.equalsIgnoreScale(it.price, BigDecimal.valueOf(300.0)) }
         assertNotNull(order)
 
@@ -345,8 +334,7 @@ class LimitOrderServiceTest : AbstractTest() {
             )
         )
         assertEquals(BigDecimal.valueOf(750.0), testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
-        order = testOrderDatabaseAccessor.loadLimitOrders()
+        order = ordersDatabaseAccessorsHolder.primaryAccessor.loadLimitOrders()
             .find { NumberUtils.equalsIgnoreScale(it.price, BigDecimal.valueOf(500.0)) }
         assertNotNull(order)
     }
@@ -373,7 +361,6 @@ class LimitOrderServiceTest : AbstractTest() {
             )
         )
         assertEquals(BigDecimal.valueOf(300.0), testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
-        assertEquals(2, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
 
         initServices()
 
@@ -399,7 +386,6 @@ class LimitOrderServiceTest : AbstractTest() {
                 )
             )
         )
-        assertEquals(2, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
 
         singleLimitOrderService.processMessage(
             messageBuilder.buildLimitOrderWrapper(
@@ -409,7 +395,6 @@ class LimitOrderServiceTest : AbstractTest() {
                 )
             )
         )
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", false).size)
         singleLimitOrderService.processMessage(
             messageBuilder.buildLimitOrderWrapper(
                 buildLimitOrder(
@@ -418,7 +403,6 @@ class LimitOrderServiceTest : AbstractTest() {
                 )
             )
         )
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", false).size)
     }
 
     @Test
@@ -1414,11 +1398,6 @@ class LimitOrderServiceTest : AbstractTest() {
         assertEquals(OutgoingOrderStatus.REJECTED, event.orders[0].status)
         assertEquals(OrderRejectReason.LEAD_TO_NEGATIVE_SPREAD, event.orders[0].rejectReason)
 
-        val dbAskOrders = testOrderDatabaseAccessor.getOrders("EURUSD", false)
-        assertEquals(1, dbAskOrders.size)
-        assertEquals(BigDecimal.valueOf(1.0), dbAskOrders.first().price)
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
-
         val cacheOrderBook = genericLimitOrderService.getOrderBook("", "EURUSD")
         assertEquals(1, cacheOrderBook.getOrderBook(false).size)
         assertEquals(BigDecimal.valueOf(1.0), cacheOrderBook.getAskPrice())
@@ -1435,8 +1414,6 @@ class LimitOrderServiceTest : AbstractTest() {
         )
 
         assertEquals(0, genericLimitOrderService.getOrderBook("", "EURUSD").getOrderBook(false).size)
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("EURUSD", false).size)
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
     }
 
     @Test
@@ -1482,10 +1459,6 @@ class LimitOrderServiceTest : AbstractTest() {
         assertEquals("1.1", eventMarketOrder.price)
         assertEquals(1, eventMarketOrder.trades?.size)
 
-        val dbAskOrders = testOrderDatabaseAccessor.getOrders("EURUSD", false)
-        assertEquals(1, dbAskOrders.size)
-        assertEquals(BigDecimal.valueOf(1.0), dbAskOrders.first().price)
-
         val cacheOrderBook = genericLimitOrderService.getOrderBook("", "EURUSD")
         assertEquals(1, cacheOrderBook.getOrderBook(false).size)
         assertEquals(BigDecimal.valueOf(1.0), cacheOrderBook.getAskPrice())
@@ -1526,7 +1499,6 @@ class LimitOrderServiceTest : AbstractTest() {
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
         assertEquals(BigDecimal.ZERO, balancesHolder.getReservedForOrdersBalance("", "", "Client1", "USD"))
         assertEquals(0, genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(true).size)
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
     }
 
     @Test
@@ -1606,13 +1578,6 @@ class LimitOrderServiceTest : AbstractTest() {
                 )
             )
         )
-
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", false).size)
-
-        val orderSell = testOrderDatabaseAccessor.getOrders("EURUSD", false).first()
-        assertEquals(BigDecimal.valueOf(-2.0), orderSell.remainingVolume)
-        assertEquals(BigDecimal.valueOf(2.0), orderSell.reservedLimitVolume)
 
         assertEquals(BigDecimal.valueOf(1000.0), testWalletDatabaseAccessor.getBalance("Client1", "USD"))
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
@@ -1722,8 +1687,6 @@ class LimitOrderServiceTest : AbstractTest() {
                 )
             )
         )
-
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
 
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client4", "USD"))
@@ -2179,8 +2142,6 @@ class LimitOrderServiceTest : AbstractTest() {
                 )
             )
         )
-
-        assertNotNull(testOrderDatabaseAccessor.getOrders("BTCUSD", false).firstOrNull { it.externalId == "order1" })
 
         marketOrderService.processMessage(
             buildMarketOrderWrapper(

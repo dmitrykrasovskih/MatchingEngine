@@ -111,9 +111,7 @@ class InvalidBalanceTest : AbstractTest() {
         assertEquals(0, tradesInfoListener.getCount())
 
         assertEquals(0, genericLimitOrderService.getOrderBook("", "ETHUSD").getOrderBook(true).size)
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("ETHUSD", true).size)
         assertEquals(2, genericLimitOrderService.getOrderBook("", "ETHUSD").getOrderBook(false).size)
-        assertEquals(2, testOrderDatabaseAccessor.getOrders("ETHUSD", false).size)
         genericLimitOrderService.getOrderBook("", "ETHUSD").getOrderBook(false).forEach {
             assertEquals("Client2", it.clientId)
             assertEquals(BigDecimal.valueOf(-0.000005), it.remainingVolume)
@@ -175,9 +173,7 @@ class InvalidBalanceTest : AbstractTest() {
         }
 
         assertEquals(0, genericLimitOrderService.getOrderBook("", "ETHUSD").getOrderBook(true).size)
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("ETHUSD", true).size)
         assertEquals(0, genericLimitOrderService.getOrderBook("", "ETHUSD").getOrderBook(false).size)
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("ETHUSD", false).size)
 
         assertBalance("Client1", "USD", 0.0, 0.0)
         assertEquals(BigDecimal.valueOf(0.00001), balancesHolder.getBalance("Client1", "ETH"))
@@ -303,7 +299,6 @@ class InvalidBalanceTest : AbstractTest() {
             )
         )
 
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("ETHUSD", true).size)
         assertEquals(BigDecimal.valueOf(0.2), balancesHolder.getBalance("Client1", "ETH"))
         assertEquals(BigDecimal.valueOf(0.04), balancesHolder.getReservedForOrdersBalance("", "", "Client1", "ETH"))
         assertEquals(BigDecimal.valueOf(0.05), balancesHolder.getBalance("Client2", "ETH"))
@@ -355,8 +350,6 @@ class InvalidBalanceTest : AbstractTest() {
             )
         )
 
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("ETHUSD", false).size)
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("ETHUSD", true).size)
         assertEquals(BigDecimal.valueOf(0.04), balancesHolder.getBalance("Client1", "ETH"))
         assertEquals(BigDecimal.valueOf(275.0), balancesHolder.getReservedForOrdersBalance("", "", "Client2", "USD"))
         assertEquals(BigDecimal.ZERO, balancesHolder.getReservedForOrdersBalance("", "", "Client1", "ETH"))

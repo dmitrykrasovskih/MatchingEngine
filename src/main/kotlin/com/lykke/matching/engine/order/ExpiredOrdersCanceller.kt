@@ -5,7 +5,6 @@ import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.messages.wrappers.LimitOrderCancelMessageWrapper
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
 import org.springframework.scheduling.annotation.Scheduled
@@ -21,7 +20,6 @@ class ExpiredOrdersCanceller(
 
     companion object {
         private val LOGGER = ThrottlingLogger.getLogger(ExpiredOrdersCanceller::class.java.name)
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
         private val MESSAGE_TYPE = MessageType.LIMIT_ORDER_CANCEL
     }
 
@@ -49,7 +47,6 @@ class ExpiredOrdersCanceller(
         } catch (e: Exception) {
             val message = "Unable to cancel expired orders"
             LOGGER.error(message, e)
-            METRICS_LOGGER.logError(message, e)
         }
     }
 

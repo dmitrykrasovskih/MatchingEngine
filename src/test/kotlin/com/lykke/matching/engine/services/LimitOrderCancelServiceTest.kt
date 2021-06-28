@@ -22,7 +22,6 @@ import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderStatus as OutgoingOrderStatus
 
 @RunWith(SpringRunner::class)
@@ -67,10 +66,6 @@ class LimitOrderCancelServiceTest : AbstractTest() {
         limitOrderCancelService.processMessage(messageBuilder.buildLimitOrderCancelWrapper("3"))
 
         assertEquals(BigDecimal.ZERO, balancesHolder.getReservedForOrdersBalance("", "", "Client1", "EUR"))
-
-        val order = testOrderDatabaseAccessor.loadLimitOrders().find { it.id == "3" }
-        assertNull(order)
-        assertEquals(4, testOrderDatabaseAccessor.loadLimitOrders().size)
 
         val previousOrders = genericLimitOrderService.searchOrders("Client1", "EURUSD", true)
         assertEquals(4, previousOrders.size)

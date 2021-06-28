@@ -2,7 +2,6 @@ package com.lykke.matching.engine.messages.wrappers
 
 import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.messages.MessageType
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 
 abstract class MessageWrapper(
@@ -12,7 +11,6 @@ abstract class MessageWrapper(
 ) {
     companion object {
         val LOGGER = ThrottlingLogger.getLogger(MessageWrapper::class.java.name)
-        val METRICS_LOGGER = MetricsLogger.getLogger()
     }
 
     var messagePreProcessorStartTimestamp: Long? = null

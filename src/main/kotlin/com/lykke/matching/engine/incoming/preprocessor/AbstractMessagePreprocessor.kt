@@ -5,19 +5,15 @@ import com.lykke.matching.engine.incoming.parsers.ContextParser
 import com.lykke.matching.engine.incoming.parsers.data.ParsedData
 import com.lykke.matching.engine.messages.MessageStatus
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import java.util.concurrent.BlockingQueue
 
-abstract class AbstractMessagePreprocessor<T : ParsedData, WrapperType : MessageWrapper>(private val contextParser: ContextParser<T, WrapperType>,
-                                                           private val messageProcessingStatusHolder: MessageProcessingStatusHolder,
-                                                           private val preProcessedMessageQueue: BlockingQueue<MessageWrapper>,
-                                                           private val logger: ThrottlingLogger) : MessagePreprocessor<WrapperType> {
-
-    companion object {
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
-    }
-
+abstract class AbstractMessagePreprocessor<T : ParsedData, WrapperType : MessageWrapper>(
+    private val contextParser: ContextParser<T, WrapperType>,
+    private val messageProcessingStatusHolder: MessageProcessingStatusHolder,
+    private val preProcessedMessageQueue: BlockingQueue<MessageWrapper>,
+    private val logger: ThrottlingLogger
+) : MessagePreprocessor<WrapperType> {
     override fun preProcess(messageWrapper: WrapperType) {
         try {
             parseAndPreProcess(messageWrapper)
@@ -33,14 +29,17 @@ abstract class AbstractMessagePreprocessor<T : ParsedData, WrapperType : Message
         val parsedMessageWrapper = parsedData.messageWrapper as WrapperType
         val preProcessSuccess = when {
             !messageProcessingStatusHolder.isMessageProcessingEnabled() -> {
-                writeResponse(parsedMessageWrapper, MessageStatus.MESSAGE_PROCESSING_DISABLED, "Message processing is disabled")
+                writeResponse(
+                    parsedMessageWrapper,
+                    MessageStatus.MESSAGE_PROCESSING_DISABLED,
+                    "Message processing is disabled"
+                )
                 false
             }
             !messageProcessingStatusHolder.isHealthStatusOk() -> {
                 val errorMessage = "Message processing is disabled"
                 writeResponse(parsedMessageWrapper, MessageStatus.RUNTIME, errorMessage)
                 logger.error(errorMessage)
-                METRICS_LOGGER.logError(errorMessage)
                 false
             }
             else -> preProcessParsedData(parsedData)
@@ -63,14 +62,12 @@ abstract class AbstractMessagePreprocessor<T : ParsedData, WrapperType : Message
         try {
             val errorMessage = "Got error during message preprocessing"
             logger.error("$errorMessage: ${exception.message}", exception)
-            METRICS_LOGGER.logError(errorMessage, exception)
 
             writeResponse(message, MessageStatus.RUNTIME, errorMessage)
         } catch (e: Exception) {
             val errorMessage = "Got error during message preprocessing failure handling"
             e.addSuppressed(exception)
             logger.error(errorMessage, e)
-            METRICS_LOGGER.logError(errorMessage, e)
         }
     }
 }

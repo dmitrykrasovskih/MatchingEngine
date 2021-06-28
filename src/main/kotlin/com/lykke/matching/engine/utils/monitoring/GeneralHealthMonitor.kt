@@ -1,17 +1,15 @@
 package com.lykke.matching.engine.utils.monitoring
 
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
 @Component
-class GeneralHealthMonitor: HealthMonitor {
+class GeneralHealthMonitor : HealthMonitor {
 
     companion object {
         private val LOGGER = ThrottlingLogger.getLogger(GeneralHealthMonitor::class.java.name)
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
     }
 
     private val monitoredComponentsToQualifiers = HashMap<MonitoredComponent, MutableSet<String>>()
@@ -39,7 +37,7 @@ class GeneralHealthMonitor: HealthMonitor {
     }
 
     @Scheduled(fixedRateString = "\${health.check.update.interval}")
-    open fun checkBrokenComponents() {
+    fun checkBrokenComponents() {
         if (!ok) {
             processMaintenanceModeOn()
         } else if (previousMaintenanceModeStatus) {
@@ -51,7 +49,6 @@ class GeneralHealthMonitor: HealthMonitor {
         previousMaintenanceModeStatus = true
         val message = "Maintenance mode is on, broken component are: ${monitoredComponentsToQualifiers.keys}"
         LOGGER.error(message)
-        METRICS_LOGGER.logError(message)
     }
 
 
@@ -59,10 +56,9 @@ class GeneralHealthMonitor: HealthMonitor {
         previousMaintenanceModeStatus = false
         val message = "Maintenance mode is off"
         LOGGER.info(message)
-        METRICS_LOGGER.logWarning(message)
     }
 
     private fun getQualifier(event: HealthMonitorEvent): String {
-        return "${event.component.name}  ${if(event.qualifier != null) "_" + event.qualifier else  ""}"
+        return "${event.component.name}  ${if (event.qualifier != null) "_" + event.qualifier else ""}"
     }
 }

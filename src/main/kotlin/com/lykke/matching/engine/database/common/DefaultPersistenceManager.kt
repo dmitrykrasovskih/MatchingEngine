@@ -3,7 +3,6 @@ package com.lykke.matching.engine.database.common
 import com.lykke.matching.engine.database.*
 import com.lykke.matching.engine.database.common.entity.PersistenceData
 import com.lykke.matching.engine.deduplication.ProcessedMessage
-import com.lykke.utils.logging.MetricsLogger
 import org.apache.log4j.Logger
 
 class DefaultPersistenceManager(
@@ -15,7 +14,6 @@ class DefaultPersistenceManager(
 
     companion object {
         private val LOGGER = Logger.getLogger(DefaultPersistenceManager::class.java.name)
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
     }
 
     override fun persist(data: PersistenceData): Boolean {
@@ -28,7 +26,6 @@ class DefaultPersistenceManager(
         } catch (e: Exception) {
             val retryMessage = "Unable to save data (${data.getSummary()}), retrying"
             LOGGER.error(retryMessage, e)
-            METRICS_LOGGER.logError(retryMessage, e)
 
             return try {
                 persistData(data)
@@ -36,7 +33,6 @@ class DefaultPersistenceManager(
             } catch (e: Exception) {
                 val message = "Unable to save data (${data.getSummary()})"
                 LOGGER.error(message, e)
-                METRICS_LOGGER.logError(message, e)
                 false
             }
         }

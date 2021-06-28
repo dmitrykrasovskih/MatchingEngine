@@ -24,7 +24,6 @@ import org.springframework.context.annotation.Primary
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
-import kotlin.test.assertEquals
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [(TestApplicationContext::class), (AllOrdersCancellerTest.Config::class)])
@@ -133,10 +132,6 @@ class AllOrdersCancellerTest : AbstractTest() {
         assertEquals(BigDecimal.valueOf(8375.0), testWalletDatabaseAccessor.getBalance("Client1", "USD"))
         assertEquals(BigDecimal.valueOf(1625.0), testWalletDatabaseAccessor.getBalance("Client2", "USD"))
         assertEquals(BigDecimal.valueOf(0.25), testWalletDatabaseAccessor.getBalance("Client2", "BTC"))
-
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", true).size)
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCUSD", false).size)
     }
 
     @Test
@@ -163,7 +158,6 @@ class AllOrdersCancellerTest : AbstractTest() {
         //then
         assertEquals(BigDecimal.valueOf(6000), testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
         assertEquals(BigDecimal.valueOf(10000), testWalletDatabaseAccessor.getBalance("Client1", "USD"))
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCEUR", false).size)
     }
 
     @Test

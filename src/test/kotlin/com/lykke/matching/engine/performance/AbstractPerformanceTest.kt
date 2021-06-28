@@ -60,14 +60,14 @@ abstract class AbstractPerformanceTest {
     private val secondaryOrdersDatabaseAccessor = TestFileOrderDatabaseAccessor()
     protected val primaryOrdersDatabaseAccessor = TestOrderBookDatabaseAccessor(secondaryOrdersDatabaseAccessor)
     private var ordersDatabaseAccessorsHolder =
-        OrdersDatabaseAccessorsHolder(primaryOrdersDatabaseAccessor, secondaryOrdersDatabaseAccessor)
+        OrdersDatabaseAccessorsHolder(primaryOrdersDatabaseAccessor)
 
     private val secondaryStopOrdersDatabaseAccessor = TestFileStopOrderDatabaseAccessor()
     private val primaryStopOrdersDatabaseAccessor =
         TestStopOrderBookDatabaseAccessor(secondaryStopOrdersDatabaseAccessor)
 
     private var stopOrdersDatabaseAccessorsHolder =
-        StopOrdersDatabaseAccessorsHolder(primaryStopOrdersDatabaseAccessor, secondaryStopOrdersDatabaseAccessor)
+        StopOrdersDatabaseAccessorsHolder(primaryStopOrdersDatabaseAccessor)
     private var messageProcessingStatusHolder = Mockito.mock(MessageProcessingStatusHolder::class.java)
 
     private lateinit var assetPairsCache: AssetPairsCache
@@ -122,7 +122,7 @@ abstract class AbstractPerformanceTest {
 
         assetCache = AssetsCache(testDictionariesDatabaseAccessor)
         assetsHolder = AssetsHolder(assetCache)
-        balancesDatabaseAccessorsHolder = BalancesDatabaseAccessorsHolder(TestWalletDatabaseAccessor(), null)
+        balancesDatabaseAccessorsHolder = BalancesDatabaseAccessorsHolder(TestWalletDatabaseAccessor())
         persistenceManager = TestPersistenceManager(
             balancesDatabaseAccessorsHolder.primaryAccessor,
             ordersDatabaseAccessorsHolder,

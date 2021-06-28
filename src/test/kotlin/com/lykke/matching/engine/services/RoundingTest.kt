@@ -23,7 +23,6 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 
 @RunWith(SpringRunner::class)
@@ -565,9 +564,5 @@ class RoundingTest : AbstractTest() {
                 )
             )
         )
-
-        val limitOrder = testOrderDatabaseAccessor.getOrders("BTCEUR", true).singleOrNull()
-        assertNotNull(limitOrder)
-        assertEquals(BigDecimal.valueOf(1000.0 - 0.00043722), limitOrder.remainingVolume)
     }
 }

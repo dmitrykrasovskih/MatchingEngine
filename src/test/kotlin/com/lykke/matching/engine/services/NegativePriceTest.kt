@@ -107,7 +107,5 @@ class NegativePriceTest : AbstractTest() {
 
         assertEquals(1, result.orders.size)
         assertEquals(OrderStatus.PLACED, result.orders.first { it.externalId == "order1" }.status)
-
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
     }
 }

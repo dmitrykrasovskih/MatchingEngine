@@ -100,7 +100,7 @@ class MinVolumeOrderCanceller @Autowired constructor(
     }
 
     private fun isOrderVolumeTooSmall(assetPair: AssetPair, order: LimitOrder) =
-        assetPair.minVolume != null && order.getAbsRemainingVolume() < assetPair.minVolume
+        order.getAbsRemainingVolume() < assetPair.minVolume
 
     private fun generateOperationId() = UUID.randomUUID().toString()
 }

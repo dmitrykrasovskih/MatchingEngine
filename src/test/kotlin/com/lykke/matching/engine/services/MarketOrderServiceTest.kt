@@ -10,7 +10,6 @@ import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.database.TestDictionariesDatabaseAccessor
 import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.messages.MessageType
-import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderRejectReason
 import com.lykke.matching.engine.outgoing.messages.v2.enums.OrderType
 import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
@@ -514,10 +513,6 @@ class MarketOrderServiceTest : AbstractTest() {
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getBalance("Client4", "EUR"))
         assertEquals(BigDecimal.valueOf(1410.0), testWalletDatabaseAccessor.getBalance("Client4", "USD"))
 
-        val dbBids = testOrderDatabaseAccessor.getOrders("EURUSD", true)
-        assertEquals(1, dbBids.size)
-        assertEquals(OrderStatus.Processing.name, dbBids.first().status)
-
         assertEquals(1, tradesInfoListener.getCount())
         val tradeInfo = tradesInfoListener.getProcessingQueue().poll()
         assertEquals(BigDecimal.valueOf(1.4), tradeInfo.price)
@@ -998,8 +993,6 @@ class MarketOrderServiceTest : AbstractTest() {
                 )
             )
         )
-
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", true).size)
 
         assertEquals(BigDecimal.valueOf(1000.0), testWalletDatabaseAccessor.getBalance("Client1", "USD"))
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))

@@ -9,7 +9,6 @@ import com.lykke.matching.engine.outgoing.messages.ClientBalanceUpdate
 import com.lykke.matching.engine.outgoing.messages.LimitOrderWithTrades
 import com.lykke.matching.engine.outgoing.messages.MarketOrderWithTrades
 import com.lykke.matching.engine.outgoing.messages.v2.events.*
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import java.math.BigDecimal
 import java.util.*
@@ -17,7 +16,6 @@ import java.util.*
 class EventFactory {
     companion object {
         private val LOGGER = ThrottlingLogger.getLogger(EventFactory::class.java.name)
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
 
         fun createExecutionEvent(
             sequenceNumber: Long,
@@ -209,7 +207,6 @@ class EventFactory {
             } catch (e: Exception) {
                 val errorMessage = "Unable to create and send outgoing message: ${e.message}"
                 LOGGER.error(errorMessage, e)
-                METRICS_LOGGER.logError(errorMessage, e)
                 throw e
             }
         }

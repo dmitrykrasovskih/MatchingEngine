@@ -17,7 +17,6 @@ import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.services.validators.input.ReservedCashInOutOperationValidator
 import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import org.apache.commons.lang3.StringUtils
 import org.springframework.beans.factory.annotation.Autowired
@@ -32,7 +31,7 @@ class ReservedCashInOutPreprocessor(
     private val cashOperationIdDatabaseAccessor: CashOperationIdDatabaseAccessor,
     private val cashInOutOperationPreprocessorPersistenceManager: PersistenceManager,
     private val processedMessagesCache: ProcessedMessagesCache,
-    private val messageProcessingStatusHolder: MessageProcessingStatusHolder,
+    messageProcessingStatusHolder: MessageProcessingStatusHolder,
     @Qualifier("reservedCashInOutPreProcessingLogger")
     private val logger: ThrottlingLogger
 ) :
@@ -43,10 +42,6 @@ class ReservedCashInOutPreprocessor(
         logger
     ) {
 
-    companion object {
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
-    }
-
     @Autowired
     private lateinit var reservedCashInOutOperationValidator: ReservedCashInOutOperationValidator
 
@@ -54,6 +49,7 @@ class ReservedCashInOutPreprocessor(
         val parsedMessageWrapper = parsedData.messageWrapper as ReservedCashInOutOperationMessageWrapper
         val context = parsedMessageWrapper.context as ReservedCashInOutContext
 
+        @Suppress("DuplicatedCode")
         if (!validateData(parsedData)) {
             return false
         }
@@ -62,7 +58,6 @@ class ReservedCashInOutPreprocessor(
             writeResponse(parsedMessageWrapper, DUPLICATE)
             val errorMessage = "Message already processed: ${parsedMessageWrapper.type}: ${context.messageId}"
             logger.info(errorMessage)
-            METRICS_LOGGER.logError(errorMessage)
             return false
         }
 
@@ -105,7 +100,6 @@ class ReservedCashInOutPreprocessor(
             )
         } catch (e: Exception) {
             logger.error("Error occurred during processing of invalid cash in/out data, context $context", e)
-            METRICS_LOGGER.logError("Error occurred during invalid data processing, ${messageWrapper.type} ${context.messageId}")
         }
     }
 

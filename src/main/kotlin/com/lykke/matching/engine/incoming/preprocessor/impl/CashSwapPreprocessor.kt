@@ -17,7 +17,6 @@ import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.services.validators.input.CashSwapOperationInputValidator
 import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import org.apache.commons.lang3.StringUtils
 import org.springframework.beans.factory.annotation.Autowired
@@ -43,10 +42,6 @@ class CashSwapPreprocessor(
         logger
     ) {
 
-    companion object {
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
-    }
-
     @Autowired
     private lateinit var cashSwapOperationInputValidator: CashSwapOperationInputValidator
 
@@ -70,7 +65,6 @@ class CashSwapPreprocessor(
             writeResponse(parsedMessageWrapper, DUPLICATE)
             val errorMessage = "Message already processed: ${parsedMessageWrapper.type}: ${context.messageId}"
             logger.info(errorMessage)
-            METRICS_LOGGER.logError(errorMessage)
             return false
         }
 
@@ -108,7 +102,6 @@ class CashSwapPreprocessor(
             writeErrorResponse(messageWrapper, context, MessageStatusUtils.toMessageStatus(validationType), message)
         } catch (e: Exception) {
             logger.error("Error occurred during processing of invalid cash swap data, context $context", e)
-            METRICS_LOGGER.logError("Error occurred during invalid data processing, ${messageWrapper.type} ${context.messageId}")
         }
     }
 

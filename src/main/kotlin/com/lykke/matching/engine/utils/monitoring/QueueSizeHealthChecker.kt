@@ -1,7 +1,6 @@
 package com.lykke.matching.engine.utils.monitoring
 
-import com.lykke.utils.logging.MetricsLogger
-import org.apache.log4j.Logger
+import com.lykke.utils.logging.ThrottlingLogger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.scheduling.annotation.Scheduled
@@ -16,8 +15,7 @@ class QueueSizeHealthChecker(
 ) {
 
     private companion object {
-        val METRICS_LOGGER = MetricsLogger.getLogger()
-        val LOGGER = Logger.getLogger(QueueSizeHealthChecker::class.java)!!
+        val LOGGER = ThrottlingLogger.getLogger(QueueSizeHealthChecker::class.java.name)
 
         const val QUEUE_REACHED_THRESHOLD_MESSAGE =
             "Queue: %s, has reached max size threshold, current queue size is %d"
@@ -36,6 +34,7 @@ class QueueSizeHealthChecker(
         LOGGER.info("Starting health monitoring for queues: $monitoredQueueNames")
     }
 
+    @Suppress("SpringElInspection")
     @Scheduled(
         fixedRateString = "#{Config.matchingEngine.queueConfig.queueSizeHealthCheckInterval}",
         initialDelayString = "#{Config.matchingEngine.queueConfig.queueSizeHealthCheckInterval}"
@@ -50,7 +49,7 @@ class QueueSizeHealthChecker(
         lastCheckLongQueuesSize = longQueues.size
     }
 
-    fun sendHealthEventIfNeeded() {
+    private fun sendHealthEventIfNeeded() {
         if (lastCheckLongQueuesSize == longQueues.size) {
             return
         }
@@ -62,19 +61,17 @@ class QueueSizeHealthChecker(
         }
     }
 
-    fun checkQueueRecovered(nameToQueue: Map.Entry<String, BlockingQueue<*>>) {
+    private fun checkQueueRecovered(nameToQueue: Map.Entry<String, BlockingQueue<*>>) {
         if (nameToQueue.value.size <= queueRecoverSize && longQueues.remove(nameToQueue.key)) {
             val logMessage = QUEUE_RECOVERED_MESSAGE.format(nameToQueue.key, nameToQueue.value.size)
-            METRICS_LOGGER.logWarning(logMessage)
             LOGGER.info(logMessage)
         }
     }
 
-    fun checkQueueReachedMaxLimit(nameToQueue: Map.Entry<String, BlockingQueue<*>>) {
+    private fun checkQueueReachedMaxLimit(nameToQueue: Map.Entry<String, BlockingQueue<*>>) {
         if (nameToQueue.value.size >= queueMaxSize && !longQueues.contains(nameToQueue.key)) {
             longQueues.add(nameToQueue.key)
             val logMessage = QUEUE_REACHED_THRESHOLD_MESSAGE.format(nameToQueue.key, nameToQueue.value.size)
-            METRICS_LOGGER.logError(logMessage)
             LOGGER.error(logMessage)
         }
     }

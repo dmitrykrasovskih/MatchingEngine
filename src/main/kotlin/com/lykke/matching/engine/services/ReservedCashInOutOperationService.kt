@@ -72,8 +72,6 @@ class ReservedCashInOutOperationService @Autowired constructor(
             return
         }
 
-        val accuracy = asset.accuracy
-
         val walletProcessor = balancesHolder.createWalletProcessor(LOGGER)
         try {
             walletProcessor.preProcess(listOf(walletOperation))
@@ -118,9 +116,5 @@ class ReservedCashInOutOperationService @Autowired constructor(
     override fun writeResponse(genericMessageWrapper: MessageWrapper, status: MessageStatus) {
         val messageWrapper = genericMessageWrapper as ReservedCashInOutOperationMessageWrapper
         messageWrapper.writeResponse(messageWrapper.id, status)
-    }
-
-    private fun isCashIn(amount: Double): Boolean {
-        return amount > 0
     }
 }

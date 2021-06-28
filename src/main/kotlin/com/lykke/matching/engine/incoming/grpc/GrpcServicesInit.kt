@@ -9,7 +9,6 @@ import com.lykke.matching.engine.messages.wrappers.*
 import com.lykke.matching.engine.services.GenericLimitOrderService
 import com.lykke.matching.engine.utils.config.Config
 import com.lykke.utils.AppVersion
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import io.grpc.ServerBuilder
 import io.micrometer.core.instrument.MeterRegistry
@@ -69,7 +68,7 @@ class GrpcServicesInit(
     override fun run() {
         messageProcessor.start()
 
-        MetricsLogger.getLogger().logWarning(
+        LOGGER.info(
             "Spot.${config.matchingEngine.name} ${AppVersion.VERSION} : " +
                     "Started : ${appInitialData.ordersCount} orders, ${appInitialData.stopOrdersCount} " +
                     "stop orders,${appInitialData.balancesCount} " +

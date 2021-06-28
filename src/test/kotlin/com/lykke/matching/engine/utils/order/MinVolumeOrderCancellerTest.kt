@@ -27,7 +27,6 @@ import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
 import java.util.*
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 @RunWith(SpringRunner::class)
@@ -269,37 +268,10 @@ class MinVolumeOrderCancellerTest : AbstractTest() {
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client2", "EUR"))
 
         // BTCUSD
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("BTCUSD", true).filter { it.clientId == "Client1" }.size)
         // check order is removed from clientOrdersMap
         assertEquals(1, genericLimitOrderService.searchOrders("Client1", "BTCUSD", true).size)
-
-        assertEquals(
-            "validVolume",
-            testOrderDatabaseAccessor.getOrders("BTCUSD", true).first { it.clientId == "Client1" }.externalId
-        )
-
-        assertFalse(testOrderDatabaseAccessor.getOrders("BTCUSD", true).any { it.clientId == "TrustedClient" })
-        assertFalse(testOrderDatabaseAccessor.getOrders("BTCUSD", false).any { it.clientId == "TrustedClient" })
-
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("BTCUSD", true).filter { it.clientId == "Client2" }.size)
         // check order is removed from clientOrdersMap
         assertEquals(1, genericLimitOrderService.searchOrders("Client2", "BTCUSD", true).size)
-
-        // EURUSD
-        assertEquals(1, testOrderDatabaseAccessor.getOrders("EURUSD", true).filter { it.clientId == "Client1" }.size)
-        assertFalse(testOrderDatabaseAccessor.getOrders("EURUSD", false).any { it.clientId == "Client1" })
-
-        assertEquals(
-            1,
-            testOrderDatabaseAccessor.getOrders("EURUSD", true).filter { it.clientId == "TrustedClient" }.size
-        )
-        assertEquals(
-            1,
-            testOrderDatabaseAccessor.getOrders("EURUSD", false).filter { it.clientId == "TrustedClient" }.size
-        )
-
-        assertFalse(testOrderDatabaseAccessor.getOrders("EURUSD", true).any { it.clientId == "Client2" })
-        assertFalse(testOrderDatabaseAccessor.getOrders("EURUSD", false).any { it.clientId == "Client2" })
 
         // check order is removed from ordersMap
         assertNull(genericLimitOrderService.cancelLimitOrder(Date(), "order1", false))
@@ -328,15 +300,11 @@ class MinVolumeOrderCancellerTest : AbstractTest() {
 
         assertEquals(BigDecimal.ZERO, balancesHolder.getReservedForOrdersBalance("", "", "TrustedClient", "BTC"))
         assertEquals(BigDecimal.valueOf(1.0), balancesHolder.getReservedForOrdersBalance("", "", "Client1", "BTC"))
-        assertEquals(2, testOrderDatabaseAccessor.getOrders("BTCEUR", false).size)
         assertEquals(2, genericLimitOrderService.getOrderBook("", "BTCEUR").getOrderBook(false).size)
 
         testDictionariesDatabaseAccessor.clear() // remove asset pair BTCEUR
         initServices()
         minVolumeOrderCanceller.cancel()
-
-        assertEquals(0, testOrderDatabaseAccessor.getOrders("BTCEUR", false).size)
-        assertEquals(0, genericLimitOrderService.getOrderBook("", "BTCEUR").getOrderBook(false).size)
 
         // check order is removed from ordersMap
         assertNull(genericLimitOrderService.cancelLimitOrder(Date(), "order1", false))

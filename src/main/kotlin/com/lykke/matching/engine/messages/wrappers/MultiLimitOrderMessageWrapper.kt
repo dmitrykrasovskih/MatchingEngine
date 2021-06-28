@@ -67,7 +67,6 @@ class MultiLimitOrderMessageWrapper(
             }
         } catch (exception: IOException) {
             LOGGER.error("Unable to write for message with id $messageId response: ${exception.message}", exception)
-            METRICS_LOGGER.logError("Unable to write response", exception)
         }
     }
 }

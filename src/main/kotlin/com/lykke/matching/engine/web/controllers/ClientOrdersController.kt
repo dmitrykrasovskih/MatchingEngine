@@ -35,14 +35,16 @@ class ClientOrdersController {
     @GetMapping("wallet/{walletId}/orders", produces = [MediaType.APPLICATION_JSON_VALUE])
     @ApiOperation("Endpoint to access orders from current order book for given wallet of the client")
     @ApiResponses(
-            ApiResponse(code = 200, message = "Success"),
-            ApiResponse(code = 400, message = "Supplied asset id is not supported"),
-            ApiResponse(code = 404, message = "Wallet not found"),
-            ApiResponse(code = 500, message = "Internal server error occurred")
+        ApiResponse(code = 200, message = "Success"),
+        ApiResponse(code = 400, message = "Supplied asset id is not supported"),
+        ApiResponse(code = 404, message = "Wallet not found"),
+        ApiResponse(code = 500, message = "Internal server error occurred")
     )
-    fun getOrders(@PathVariable("walletId") walletId: String,
-                  @RequestParam(required = false) assetPairId: String?,
-                  @RequestParam(required = false) isBuy: Boolean?): ResponseEntity<ClientOrdersDto> {
+    fun getOrders(
+        @PathVariable("walletId") walletId: String,
+        @RequestParam(required = false) assetPairId: String?,
+        @RequestParam(required = false) isBuy: Boolean?
+    ): ResponseEntity<ClientOrdersDto> {
 
         if (!balancesHolder.clientExists(walletId)) {
             throw WalletNotFoundException()
@@ -58,15 +60,23 @@ class ClientOrdersController {
         return ResponseEntity.ok(ClientOrdersDto(limitOrders, stopOrders))
     }
 
+    @Suppress("unused", "UNUSED_PARAMETER")
     @ExceptionHandler
-    private fun handleIllegalArgumentException(request: HttpServletRequest, exception: IllegalArgumentException): ResponseEntity<String> {
+    private fun handleIllegalArgumentException(
+        request: HttpServletRequest,
+        exception: IllegalArgumentException
+    ): ResponseEntity<String> {
         return ResponseEntity(exception.message ?: "", HttpStatus.BAD_REQUEST)
     }
 
+    @Suppress("unused", "UNUSED_PARAMETER")
     @ExceptionHandler
-    private fun handleWalletNotFoundException(request: HttpServletRequest, exception: WalletNotFoundException): ResponseEntity<String> {
+    private fun handleWalletNotFoundException(
+        request: HttpServletRequest,
+        exception: WalletNotFoundException
+    ): ResponseEntity<String> {
         return ResponseEntity("Wallet is not found - there is no balances data for given wallet", HttpStatus.NOT_FOUND)
     }
 
-    class WalletNotFoundException(): Exception()
+    class WalletNotFoundException : Exception()
 }

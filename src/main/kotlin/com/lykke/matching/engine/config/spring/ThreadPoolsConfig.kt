@@ -2,7 +2,6 @@ package com.lykke.matching.engine.config.spring
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.lykke.matching.engine.utils.config.Config
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -28,7 +27,6 @@ import java.util.concurrent.*
 class ThreadPoolsConfig : SchedulingConfigurer {
 
     private companion object {
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
         private val LOGGER = ThrottlingLogger.getLogger("ThreadsHandler")
     }
 
@@ -43,16 +41,19 @@ class ThreadPoolsConfig : SchedulingConfigurer {
     }
 
     @Bean
-    open fun taskScheduler(): TaskScheduler {
+    fun taskScheduler(): TaskScheduler {
         val threadPoolTaskScheduler = ThreadPoolTaskScheduler()
         threadPoolTaskScheduler.threadNamePrefix = "scheduled-task-"
         threadPoolTaskScheduler.poolSize = environment["concurrent.scheduler.pool.size"].toInt()
         return threadPoolTaskScheduler
     }
 
+    @Suppress("SpringElInspection")
     @Bean
-    open fun clientRequestThreadPool(@Value("\${concurrent.client.request.pool.core.pool.size}") corePoolSize: Int,
-                                     @Value("#{Config.matchingEngine.socket.maxConnections}") maxPoolSize: Int): ThreadPoolTaskExecutor {
+    fun clientRequestThreadPool(
+        @Value("\${concurrent.client.request.pool.core.pool.size}") corePoolSize: Int,
+        @Value("#{Config.matchingEngine.socket.maxConnections}") maxPoolSize: Int
+    ): ThreadPoolTaskExecutor {
         val threadPoolTaskExecutor = ThreadPoolTaskExecutor()
         threadPoolTaskExecutor.threadNamePrefix = "client-connection-"
         threadPoolTaskExecutor.setQueueCapacity(0)
@@ -63,15 +64,20 @@ class ThreadPoolsConfig : SchedulingConfigurer {
     }
 
     @Bean
-    open fun rabbitPublishersThreadPool(): TaskExecutor {
-        val logExceptionThreadPoolExecutor = ThreadPoolExecutorWithLogExceptionSupport(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
-                SynchronousQueue<Runnable>(), "rabbit-publisher-%d")
+    fun rabbitPublishersThreadPool(): TaskExecutor {
+        val logExceptionThreadPoolExecutor = ThreadPoolExecutorWithLogExceptionSupport(
+            0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+            SynchronousQueue<Runnable>(), "rabbit-publisher-%d"
+        )
         return ConcurrentTaskExecutor(logExceptionThreadPoolExecutor)
     }
 
+    @Suppress("SpringElInspection")
     @Bean
-    open fun orderBookSubscribersThreadPool(@Value("\${concurrent.orderbook.subscribers.pool.core.pool.size}") corePoolSize: Int,
-                                            @Value("#{Config.matchingEngine.serverOrderBookMaxConnections}") maxPoolSize: Int?): ThreadPoolTaskExecutor? {
+    fun orderBookSubscribersThreadPool(
+        @Value("\${concurrent.orderbook.subscribers.pool.core.pool.size}") corePoolSize: Int,
+        @Value("#{Config.matchingEngine.serverOrderBookMaxConnections}") maxPoolSize: Int?
+    ): ThreadPoolTaskExecutor? {
         if (config.matchingEngine.serverOrderBookPort == null) {
             return null
         }
@@ -84,16 +90,20 @@ class ThreadPoolsConfig : SchedulingConfigurer {
         return threadPoolTaskExecutor
     }
 
-    private class ThreadPoolExecutorWithLogExceptionSupport(corePoolSize: Int,
-                                                            maxPoolSize: Int,
-                                                            keepAliveTime: Long,
-                                                            unit: TimeUnit,
-                                                            workQueue: BlockingQueue<Runnable>,
-                                                            defaultThreadNameFormat: String) : ThreadPoolExecutor(corePoolSize, maxPoolSize,
-            keepAliveTime,
-            unit,
-            workQueue,
-            ThreadFactoryBuilder().setNameFormat(defaultThreadNameFormat).build()) {
+    private class ThreadPoolExecutorWithLogExceptionSupport(
+        corePoolSize: Int,
+        maxPoolSize: Int,
+        keepAliveTime: Long,
+        unit: TimeUnit,
+        workQueue: BlockingQueue<Runnable>,
+        defaultThreadNameFormat: String
+    ) : ThreadPoolExecutor(
+        corePoolSize, maxPoolSize,
+        keepAliveTime,
+        unit,
+        workQueue,
+        ThreadFactoryBuilder().setNameFormat(defaultThreadNameFormat).build()
+    ) {
 
         override fun afterExecute(r: Runnable?, t: Throwable?) {
             super.afterExecute(r, t)
@@ -112,7 +122,6 @@ class ThreadPoolsConfig : SchedulingConfigurer {
 
             if (exception != null) {
                 val message = "Unhandled exception occurred in thread: ${Thread.currentThread().name}"
-                METRICS_LOGGER.logError(message)
                 LOGGER.error(message, exception)
             }
         }

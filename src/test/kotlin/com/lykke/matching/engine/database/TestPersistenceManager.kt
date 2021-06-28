@@ -24,24 +24,12 @@ class TestPersistenceManager(
                 orderBooksPersistenceData.ordersToSave,
                 orderBooksPersistenceData.ordersToRemove
             )
-
-            orderBooksPersistenceData.orderBooks.forEach {
-                orderBookDatabaseAccessorHolder.secondaryAccessor!!.updateOrderBook(it.assetPairId, it.isBuy, it.orders)
-            }
         }
         data.stopOrderBooksData?.let { stopOrderBooksPersistenceData ->
             (stopOrdersDatabaseAccessorsHolder.primaryAccessor as TestStopOrderBookDatabaseAccessor).updateOrders(
                 stopOrderBooksPersistenceData.ordersToSave,
                 stopOrderBooksPersistenceData.ordersToRemove
             )
-
-            stopOrderBooksPersistenceData.orderBooks.forEach {
-                stopOrdersDatabaseAccessorsHolder.secondaryAccessor!!.updateStopOrderBook(
-                    it.assetPairId,
-                    it.isBuy,
-                    it.orders
-                )
-            }
         }
         return true
     }

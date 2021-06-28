@@ -1,8 +1,7 @@
 package com.lykke.matching.engine.utils
 
 import com.lykke.matching.engine.utils.config.Config
-import com.lykke.utils.logging.MetricsLogger
-import org.apache.log4j.Logger
+import com.lykke.utils.logging.ThrottlingLogger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.DependsOn
 import org.springframework.context.annotation.Profile
@@ -19,14 +18,14 @@ class QueueSizeLogger @Autowired constructor(
     private val config: Config
 ) {
     companion object {
-        val LOGGER = Logger.getLogger(QueueSizeLogger::class.java.name)
-        val METRICS_LOGGER = MetricsLogger.getLogger()
+        val LOGGER = ThrottlingLogger.getLogger(QueueSizeLogger::class.java.name)
 
         const val ENTRY_FORMAT = "%s: %d; "
         const val ENTRY_SIZE_LIMIT_FORMAT = "%s queue is higher than limit"
         const val LOG_THREAD_NAME = "QueueSizeLogger"
     }
 
+    @Suppress("SpringElInspection")
     @Scheduled(
         fixedRateString = "#{Config.matchingEngine.queueConfig.queueSizeLoggerInterval}",
         initialDelayString = "#{Config.matchingEngine.queueConfig.queueSizeLoggerInterval}"
@@ -41,7 +40,6 @@ class QueueSizeLogger @Autowired constructor(
         } catch (e: Exception) {
             val message = "Unable to check queue sizes"
             LOGGER.error(message, e)
-            METRICS_LOGGER.logError(message)
         }
     }
 
@@ -49,7 +47,7 @@ class QueueSizeLogger @Autowired constructor(
         val logString = nameToQueueSize
             .entries
             .stream()
-            .map({ entry -> ENTRY_FORMAT.format(entry.key, entry.value) })
+            .map { entry -> ENTRY_FORMAT.format(entry.key, entry.value) }
             .collect(Collectors.joining(""))
 
         LOGGER.info(logString)
@@ -60,7 +58,6 @@ class QueueSizeLogger @Autowired constructor(
             .forEach { entry ->
                 if (entry.value > config.matchingEngine.queueConfig.queueSizeLimit) {
                     val message = ENTRY_SIZE_LIMIT_FORMAT.format(entry.key)
-                    METRICS_LOGGER.logError(message)
                     LOGGER.warn(message)
                 }
             }

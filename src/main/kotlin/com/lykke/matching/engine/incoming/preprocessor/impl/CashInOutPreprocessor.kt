@@ -17,7 +17,6 @@ import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.services.validators.input.CashInOutOperationInputValidator
 import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import org.apache.commons.lang3.StringUtils
 import org.springframework.beans.factory.annotation.Autowired
@@ -44,10 +43,6 @@ class CashInOutPreprocessor(
         logger
     ) {
 
-    companion object {
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
-    }
-
     @Autowired
     private lateinit var cashInOutOperationInputValidator: CashInOutOperationInputValidator
 
@@ -69,7 +64,6 @@ class CashInOutPreprocessor(
             writeResponse(parsedMessageWrapper, DUPLICATE)
             val errorMessage = "Message already processed: ${parsedMessageWrapper.type}: ${context.messageId}"
             logger.info(errorMessage)
-            METRICS_LOGGER.logError(errorMessage)
             return false
         }
 
@@ -112,7 +106,6 @@ class CashInOutPreprocessor(
             )
         } catch (e: Exception) {
             logger.error("Error occurred during processing of invalid cash in/out data, context $context", e)
-            METRICS_LOGGER.logError("Error occurred during invalid data processing, ${messageWrapper.type} ${context.messageId}")
         }
     }
 

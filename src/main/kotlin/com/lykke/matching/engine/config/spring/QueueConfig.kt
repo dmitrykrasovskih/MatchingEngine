@@ -1,9 +1,6 @@
 package com.lykke.matching.engine.config.spring
 
 import com.lykke.matching.engine.daos.TransferOperation
-import com.lykke.matching.engine.database.reconciliation.events.AccountPersistEvent
-import com.lykke.matching.engine.database.reconciliation.events.OrderBookPersistEvent
-import com.lykke.matching.engine.database.reconciliation.events.StopOrderBookPersistEvent
 import com.lykke.matching.engine.messages.wrappers.*
 import com.lykke.matching.engine.messages.wrappers.socket.LimitOrderMassCancelMessageWrapper
 import com.lykke.matching.engine.outgoing.messages.OrderBook
@@ -94,21 +91,6 @@ class QueueConfig {
     @Bean
     fun dbTransferOperationQueue(): BlockingQueue<TransferOperation> {
         return LinkedBlockingQueue<TransferOperation>()
-    }
-
-    @Bean
-    fun updatedOrderBooksQueue(): BlockingQueue<OrderBookPersistEvent>? {
-        return LinkedBlockingQueue<OrderBookPersistEvent>()
-    }
-
-    @Bean
-    fun updatedStopOrderBooksQueue(): BlockingQueue<StopOrderBookPersistEvent>? {
-        return LinkedBlockingQueue<StopOrderBookPersistEvent>()
-    }
-
-    @Bean
-    fun updatedWalletsQueue(): BlockingQueue<AccountPersistEvent>? {
-        return LinkedBlockingQueue<AccountPersistEvent>()
     }
     //</editor-fold>
 }

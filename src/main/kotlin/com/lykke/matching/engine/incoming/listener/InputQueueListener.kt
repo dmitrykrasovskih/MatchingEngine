@@ -2,18 +2,18 @@ package com.lykke.matching.engine.incoming.listener
 
 import com.lykke.matching.engine.incoming.preprocessor.MessagePreprocessor
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import java.util.concurrent.BlockingQueue
 import javax.annotation.PostConstruct
 
-class InputQueueListener<T: MessageWrapper>(private val inputQueue: BlockingQueue<T>,
-                            private val preProcessor: MessagePreprocessor<T>,
-                            private val logger: ThrottlingLogger,
-                            threadName: String) : Thread(threadName) {
+class InputQueueListener<T : MessageWrapper>(
+    private val inputQueue: BlockingQueue<T>,
+    private val preProcessor: MessagePreprocessor<T>,
+    private val logger: ThrottlingLogger,
+    threadName: String
+) : Thread(threadName) {
 
     companion object {
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
         private const val ERROR_MESSAGE = "Unable to pre process message"
     }
 
@@ -26,7 +26,6 @@ class InputQueueListener<T: MessageWrapper>(private val inputQueue: BlockingQueu
                 preProcessor.preProcess(inputQueue.take())
             } catch (e: Exception) {
                 logger.error(ERROR_MESSAGE, e)
-                METRICS_LOGGER.logError(ERROR_MESSAGE, e)
             }
         }
     }

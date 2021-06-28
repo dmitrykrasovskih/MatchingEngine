@@ -1,12 +1,9 @@
 package com.lykke.matching.engine.database.redis
 
-import com.lykke.matching.engine.common.SimpleApplicationEventPublisher
 import com.lykke.matching.engine.daos.wallet.AssetBalance
 import com.lykke.matching.engine.database.PersistenceManager
 import com.lykke.matching.engine.database.common.entity.PersistenceData
-import com.lykke.matching.engine.database.common.strategy.OrdersPersistInSecondaryDbStrategy
 import com.lykke.matching.engine.database.common.strategy.PersistOrdersDuringRedisTransactionStrategy
-import com.lykke.matching.engine.database.reconciliation.events.AccountPersistEvent
 import com.lykke.matching.engine.database.redis.accessor.impl.RedisCashOperationIdDatabaseAccessor
 import com.lykke.matching.engine.database.redis.accessor.impl.RedisMessageSequenceNumberDatabaseAccessor
 import com.lykke.matching.engine.database.redis.accessor.impl.RedisProcessedMessagesDatabaseAccessor
@@ -18,7 +15,6 @@ import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.performance.PerformanceStatsHolder
 import com.lykke.matching.engine.utils.PrintUtils
 import com.lykke.matching.engine.utils.config.Config
-import com.lykke.utils.logging.MetricsLogger
 import org.apache.log4j.Logger
 import org.springframework.util.CollectionUtils
 import redis.clients.jedis.Transaction
@@ -29,9 +25,7 @@ class RedisPersistenceManager(
     private val redisProcessedMessagesDatabaseAccessor: RedisProcessedMessagesDatabaseAccessor,
     private val redisProcessedCashOperationIdDatabaseAccessor: RedisCashOperationIdDatabaseAccessor,
     private val persistOrdersStrategy: PersistOrdersDuringRedisTransactionStrategy,
-    private val ordersPersistInSecondaryDbStrategy: OrdersPersistInSecondaryDbStrategy?,
     private val redisMessageSequenceNumberDatabaseAccessor: RedisMessageSequenceNumberDatabaseAccessor,
-    private val persistedWalletsApplicationEventPublisher: SimpleApplicationEventPublisher<AccountPersistEvent>,
     private val redisConnection: RedisConnection,
     private val config: Config,
     private val currentTransactionDataHolder: CurrentTransactionDataHolder,
@@ -41,7 +35,6 @@ class RedisPersistenceManager(
     companion object {
         private val LOGGER = Logger.getLogger(RedisPersistenceManager::class.java.name)
         private val REDIS_PERFORMANCE_LOGGER = Logger.getLogger("${RedisPersistenceManager::class.java.name}.redis")
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
     }
 
     override fun persist(data: PersistenceData): Boolean {
@@ -54,7 +47,6 @@ class RedisPersistenceManager(
         } catch (e: Exception) {
             val message = "Unable to save data (${data.getSummary()})"
             LOGGER.error(message, e)
-            METRICS_LOGGER.logError(message, e)
             false
         }
     }
@@ -100,12 +92,6 @@ class RedisPersistenceManager(
             currentTransactionDataHolder.getMessageType()?.let {
                 performanceStatsHolder.addPersistTime(it.type, commitTime - startTime)
             }
-
-            if (!CollectionUtils.isEmpty(data.balancesData?.wallets)) {
-                persistedWalletsApplicationEventPublisher.publishEvent(AccountPersistEvent(data.balancesData!!.wallets))
-            }
-
-            ordersPersistInSecondaryDbStrategy?.persistOrders(data.orderBooksData, data.stopOrderBooksData)
         }
     }
 

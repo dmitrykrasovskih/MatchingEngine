@@ -6,7 +6,6 @@ import com.lykke.matching.engine.daos.setting.InvalidSettingGroupException
 import com.lykke.matching.engine.daos.setting.Setting
 import com.lykke.matching.engine.daos.setting.SettingsGroup
 import com.lykke.matching.engine.database.SettingsDatabaseAccessor
-import com.lykke.utils.logging.MetricsLogger
 import com.lykke.utils.logging.ThrottlingLogger
 import com.microsoft.azure.storage.table.CloudTable
 import com.microsoft.azure.storage.table.TableOperation
@@ -16,7 +15,6 @@ import org.springframework.util.CollectionUtils
 class AzureSettingsDatabaseAccessor(connectionString: String, configTableName: String) : SettingsDatabaseAccessor {
     companion object {
         private val LOGGER = ThrottlingLogger.getLogger(AzureSettingsDatabaseAccessor::class.java.name)
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
 
         private const val ROW_KEY = "RowKey"
         private const val PARTITION_KEY = "PartitionKey"
@@ -58,7 +56,10 @@ class AzureSettingsDatabaseAccessor(connectionString: String, configTableName: S
             val azureSetting = toAzureSetting(settingGroup, setting)
             settingsTable.execute(TableOperation.insertOrMerge(azureSetting))
         } catch (e: Exception) {
-            throw RuntimeException("Not able persist setting for group: ${settingGroup.settingGroupName}, name: ${setting.name}", e)
+            throw RuntimeException(
+                "Not able persist setting for group: ${settingGroup.settingGroupName}, name: ${setting.name}",
+                e
+            )
         }
     }
 
@@ -76,12 +77,14 @@ class AzureSettingsDatabaseAccessor(connectionString: String, configTableName: S
         } catch (e: Exception) {
             val message = "Unable to load all application setting groups"
             LOGGER.error(message, e)
-            METRICS_LOGGER.logError(message, e)
             throw e
         }
     }
 
-    private fun getAzureSettingsForGroup(settingGroup: AvailableSettingGroup, enabled: Boolean? = null): List<AzureAppSetting> {
+    private fun getAzureSettingsForGroup(
+        settingGroup: AvailableSettingGroup,
+        enabled: Boolean? = null
+    ): List<AzureAppSetting> {
         try {
             val partitionFilter = getGroupNameSetting(settingGroup)
             val combinedFiler = getCombinedFilterUseLogicalAnd(partitionFilter, getEnabledFlagFilter(enabled))
@@ -92,24 +95,28 @@ class AzureSettingsDatabaseAccessor(connectionString: String, configTableName: S
         } catch (e: Exception) {
             val message = "Unable to load application settings for group: ${settingGroup.settingGroupName}"
             LOGGER.error(message, e)
-            METRICS_LOGGER.logError(message, e)
             throw e
         }
     }
 
-    private fun getAzureSetting(settingGroup: AvailableSettingGroup, settingName: String, enabled: Boolean? = null): AzureAppSetting? {
+    private fun getAzureSetting(
+        settingGroup: AvailableSettingGroup,
+        settingName: String,
+        enabled: Boolean? = null
+    ): AzureAppSetting? {
         try {
             val partitionFilter = getGroupNameSetting(settingGroup)
             val rowFilter = TableQuery.generateFilterCondition(ROW_KEY, TableQuery.QueryComparisons.EQUAL, settingName)
             val enabledFiler = getEnabledFlagFilter(enabled)
 
-            val query = TableQuery.from(AzureAppSetting::class.java).where(getCombinedFilterUseLogicalAnd(partitionFilter, rowFilter, enabledFiler))
+            val query = TableQuery.from(AzureAppSetting::class.java)
+                .where(getCombinedFilterUseLogicalAnd(partitionFilter, rowFilter, enabledFiler))
 
             return settingsTable.execute(query)?.firstOrNull()
         } catch (e: Exception) {
-            val message = "Unable to load single application setting for group: ${settingGroup.settingGroupName}, setting: $settingName"
+            val message =
+                "Unable to load single application setting for group: ${settingGroup.settingGroupName}, setting: $settingName"
             LOGGER.error(message, e)
-            METRICS_LOGGER.logError(message, e)
             throw e
         }
     }
@@ -131,10 +138,10 @@ class AzureSettingsDatabaseAccessor(connectionString: String, configTableName: S
 
     private fun toSettingsGroup(groupToSettings: Map<String, List<AzureAppSetting>>): Set<SettingsGroup> {
         return groupToSettings
-                .map { entry -> toSettingsGroup(entry.value) }
-                .filter { it != null }
-                .map { it!! }
-                .toSet()
+            .map { entry -> toSettingsGroup(entry.value) }
+            .filter { it != null }
+            .map { it!! }
+            .toSet()
     }
 
     private fun toSetting(azureSetting: AzureAppSetting): Setting {
@@ -147,8 +154,8 @@ class AzureSettingsDatabaseAccessor(connectionString: String, configTableName: S
 
     private fun toSettings(azureSettings: List<AzureAppSetting>): Set<Setting> {
         return azureSettings
-                .map(::toSetting)
-                .toSet()
+            .map(::toSetting)
+            .toSet()
     }
 
     private fun getEnabledFlagFilter(enabled: Boolean?): String? {
@@ -158,6 +165,10 @@ class AzureSettingsDatabaseAccessor(connectionString: String, configTableName: S
     }
 
     private fun getGroupNameSetting(settingGroup: AvailableSettingGroup): String {
-        return TableQuery.generateFilterCondition(PARTITION_KEY, TableQuery.QueryComparisons.EQUAL, settingGroup.settingGroupName)
+        return TableQuery.generateFilterCondition(
+            PARTITION_KEY,
+            TableQuery.QueryComparisons.EQUAL,
+            settingGroup.settingGroupName
+        )
     }
 }

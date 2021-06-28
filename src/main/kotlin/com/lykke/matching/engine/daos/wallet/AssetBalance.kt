@@ -15,5 +15,5 @@ class AssetBalance(
     @Version(1) var accountId: String = "",
     @Version(1) var version: Long = 0
 ) : Serializable {
-    fun getTotalReserved(): BigDecimal = (reserved ?: ZERO) + (reservedForSwap ?: ZERO)
+    fun getTotalReserved(): BigDecimal = reserved + reservedForSwap
 }

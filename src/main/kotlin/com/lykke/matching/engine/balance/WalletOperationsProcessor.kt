@@ -10,17 +10,14 @@ import com.lykke.matching.engine.database.common.entity.PersistenceData
 import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.holders.ApplicationSettingsHolder
 import com.lykke.matching.engine.holders.AssetsHolder
-import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.order.transaction.CurrentTransactionBalancesHolder
 import com.lykke.matching.engine.order.transaction.WalletAssetBalance
 import com.lykke.matching.engine.outgoing.messages.ClientBalanceUpdate
 import com.lykke.matching.engine.utils.NumberUtils
-import com.lykke.utils.logging.MetricsLogger
 import org.apache.log4j.Logger
 import java.math.BigDecimal
 
 class WalletOperationsProcessor(
-    private val balancesHolder: BalancesHolder,
     private val currentTransactionBalancesHolder: CurrentTransactionBalancesHolder,
     private val applicationSettingsHolder: ApplicationSettingsHolder,
     private val persistenceManager: PersistenceManager,
@@ -30,7 +27,6 @@ class WalletOperationsProcessor(
 
     companion object {
         private val LOGGER = Logger.getLogger(WalletOperationsProcessor::class.java.name)
-        private val METRICS_LOGGER = MetricsLogger.getLogger()
     }
 
     private val clientBalanceUpdatesByClientIdAndAssetId = HashMap<String, ClientBalanceUpdate>()
@@ -72,7 +68,6 @@ class WalletOperationsProcessor(
             }
             val message = "Force applying of invalid balance: ${e.message}"
             (logger ?: LOGGER).error(message)
-            METRICS_LOGGER.logError(message, e)
         }
 
         changedAssetBalances.forEach { processChangedAssetBalance(it.value) }

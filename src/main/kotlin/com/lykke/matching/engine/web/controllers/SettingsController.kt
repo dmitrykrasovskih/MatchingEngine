@@ -34,15 +34,22 @@ class SettingsController {
     @Autowired
     private lateinit var applicationSettingsService: ApplicationSettingsService
 
+    @Suppress("unused")
     @ApiOperation("Get all settings of given group")
     @ApiResponses(
-            ApiResponse(code = 200, message = "Success"),
-            ApiResponse(code = 400, message = "Supplied group name is not supported"),
-            ApiResponse(code = 500, message = "Internal server error occurred")
+        ApiResponse(code = 200, message = "Success"),
+        ApiResponse(code = 400, message = "Supplied group name is not supported"),
+        ApiResponse(code = 500, message = "Internal server error occurred")
     )
     @GetMapping("/{settingGroupName}", produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun getSettingGroup(@PathVariable("settingGroupName") settingGroupName: String, @RequestParam("enabled", required = false) enabled: Boolean? = null): ResponseEntity<SettingsGroupDto> {
-        val settingsGroup = applicationSettingsService.getSettingsGroup(AvailableSettingGroup.getBySettingsGroupName(settingGroupName), enabled)
+    fun getSettingGroup(
+        @PathVariable("settingGroupName") settingGroupName: String,
+        @RequestParam("enabled", required = false) enabled: Boolean? = null
+    ): ResponseEntity<SettingsGroupDto> {
+        val settingsGroup = applicationSettingsService.getSettingsGroup(
+            AvailableSettingGroup.getBySettingsGroupName(settingGroupName),
+            enabled
+        )
 
         return if (settingsGroup != null) {
             ResponseEntity.ok(settingsGroup)
@@ -53,25 +60,35 @@ class SettingsController {
 
     @ApiOperation("Get all settings of all setting groups")
     @ApiResponses(
-            ApiResponse(code = 200, message = "Success"),
-            ApiResponse(code = 500, message = "Internal server error occurred")
+        ApiResponse(code = 200, message = "Success"),
+        ApiResponse(code = 500, message = "Internal server error occurred")
     )
     @GetMapping("/all", produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun getAllSettingGroups(@RequestParam("enabled", required = false) enabled: Boolean? = null): Set<SettingsGroupDto> {
+    fun getAllSettingGroups(
+        @RequestParam(
+            "enabled",
+            required = false
+        ) enabled: Boolean? = null
+    ): Set<SettingsGroupDto> {
         return applicationSettingsService.getAllSettingGroups(enabled)
     }
 
     @ApiOperation("Get setting for given setting group and setting name")
     @ApiResponses(
-            ApiResponse(code = 200, message = "Success"),
-            ApiResponse(code = 400, message = "Supplied group name is not supported"),
-            ApiResponse(code = 404, message = "Supplied setting was not found"),
-            ApiResponse(code = 500, message = "Internal server error occurred")
+        ApiResponse(code = 200, message = "Success"),
+        ApiResponse(code = 400, message = "Supplied group name is not supported"),
+        ApiResponse(code = 404, message = "Supplied setting was not found"),
+        ApiResponse(code = 500, message = "Internal server error occurred")
     )
     @GetMapping("/{settingGroupName}/setting/{settingName}", produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun getSetting(@PathVariable("settingGroupName") settingGroupName: String,
-                   @PathVariable("settingName") settingName: String): ResponseEntity<SettingDto> {
-        val setting = applicationSettingsService.getSetting(AvailableSettingGroup.getBySettingsGroupName(settingGroupName), settingName)
+    fun getSetting(
+        @PathVariable("settingGroupName") settingGroupName: String,
+        @PathVariable("settingName") settingName: String
+    ): ResponseEntity<SettingDto> {
+        val setting = applicationSettingsService.getSetting(
+            AvailableSettingGroup.getBySettingsGroupName(settingGroupName),
+            settingName
+        )
 
         return if (setting != null) {
             ResponseEntity.ok(setting)
@@ -80,10 +97,11 @@ class SettingsController {
         }
     }
 
+    @Suppress("unused")
     @ApiOperation("Get list of supported setting groups")
     @ApiResponses(
-            ApiResponse(code = 200, message = "Success"),
-            ApiResponse(code = 500, message = "Internal server error occurred")
+        ApiResponse(code = 200, message = "Success"),
+        ApiResponse(code = 500, message = "Internal server error occurred")
     )
     @GetMapping("/supported", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getSupportedSettings(): Set<String> {
@@ -92,84 +110,116 @@ class SettingsController {
 
     @ApiOperation("Get history records for given setting")
     @ApiResponses(
-            ApiResponse(code = 200, message = "Success"),
-            ApiResponse(code = 404, message = "Setting not found"),
-            ApiResponse(code = 500, message = "Internal server error occurred")
+        ApiResponse(code = 200, message = "Success"),
+        ApiResponse(code = 404, message = "Setting not found"),
+        ApiResponse(code = 500, message = "Internal server error occurred")
     )
     @GetMapping("/{settingGroupName}/setting/{settingName}/history", produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun getHistoryRecords(@PathVariable("settingGroupName") settingGroupName: String,
-                          @PathVariable("settingName") settingName: String): List<SettingDto> {
+    fun getHistoryRecords(
+        @PathVariable("settingGroupName") settingGroupName: String,
+        @PathVariable("settingName") settingName: String
+    ): List<SettingDto> {
         return applicationSettingsService
-                .getHistoryRecords(settingGroupName, settingName)
-                .sortedByDescending { it.timestamp }
+            .getHistoryRecords(settingGroupName, settingName)
+            .sortedByDescending { it.timestamp }
     }
 
+    @Suppress("unused")
     @ApiOperation("Create or update setting")
     @ApiResponses(
-            ApiResponse(code = 200, message = "Success"),
-            ApiResponse(code = 400, message = "Invalid setting was supplied"),
-            ApiResponse(code = 500, message = "Internal server error occurred")
+        ApiResponse(code = 200, message = "Success"),
+        ApiResponse(code = 400, message = "Invalid setting was supplied"),
+        ApiResponse(code = 500, message = "Internal server error occurred")
     )
     @PutMapping("/{settingGroupName}", consumes = [MediaType.APPLICATION_JSON_VALUE])
-    fun createOrUpdate(@PathVariable("settingGroupName") settingGroupName: String,
-                       @RequestBody
-                       @Valid
-                       settingDto: SettingDto) {
-        applicationSettingsService.createOrUpdateSetting(AvailableSettingGroup.getBySettingsGroupName(settingGroupName), settingDto)
+    fun createOrUpdate(
+        @PathVariable("settingGroupName") settingGroupName: String,
+        @RequestBody
+        @Valid
+        settingDto: SettingDto
+    ) {
+        applicationSettingsService.createOrUpdateSetting(
+            AvailableSettingGroup.getBySettingsGroupName(settingGroupName),
+            settingDto
+        )
     }
 
+    @Suppress("unused")
     @ApiOperation("Delete all settings for given setting group")
     @ApiResponses(
-            ApiResponse(code = 200, message = "Success"),
-            ApiResponse(code = 400, message = "Supplied setting group is not supported"),
-            ApiResponse(code = 500, message = "Internal server error occurred")
+        ApiResponse(code = 200, message = "Success"),
+        ApiResponse(code = 400, message = "Supplied setting group is not supported"),
+        ApiResponse(code = 500, message = "Internal server error occurred")
     )
     @DeleteMapping("/{settingGroupName}")
-    fun deleteSettingsGroup(@PathVariable("settingGroupName") settingGroupName: String,
-                            @RequestBody
-                            @Valid
-                            deleteRequest: DeleteSettingRequestDto) {
-        applicationSettingsService.deleteSettingsGroup(AvailableSettingGroup.getBySettingsGroupName(settingGroupName), deleteRequest)
+    fun deleteSettingsGroup(
+        @PathVariable("settingGroupName") settingGroupName: String,
+        @RequestBody
+        @Valid
+        deleteRequest: DeleteSettingRequestDto
+    ) {
+        applicationSettingsService.deleteSettingsGroup(
+            AvailableSettingGroup.getBySettingsGroupName(settingGroupName),
+            deleteRequest
+        )
     }
 
     @ApiOperation("Delete setting for given setting group and given setting name")
     @ApiResponses(
-            ApiResponse(code = 200, message = "Success"),
-            ApiResponse(code = 400, message = "Supplied setting group is not supported"),
-            ApiResponse(code = 404, message = "Setting not found"),
-            ApiResponse(code = 500, message = "Internal server error occurred")
+        ApiResponse(code = 200, message = "Success"),
+        ApiResponse(code = 400, message = "Supplied setting group is not supported"),
+        ApiResponse(code = 404, message = "Setting not found"),
+        ApiResponse(code = 500, message = "Internal server error occurred")
     )
     @DeleteMapping("/{settingGroupName}/setting/{settingName}")
-    fun deleteSetting(@PathVariable("settingGroupName") settingGroupName: String,
-                      @PathVariable("settingName") settingName: String,
-                      @RequestBody
-                      @Valid
-                      deleteRequest: DeleteSettingRequestDto) {
-        applicationSettingsService.deleteSetting(AvailableSettingGroup.getBySettingsGroupName(settingGroupName), settingName, deleteRequest)
+    fun deleteSetting(
+        @PathVariable("settingGroupName") settingGroupName: String,
+        @PathVariable("settingName") settingName: String,
+        @RequestBody
+        @Valid
+        deleteRequest: DeleteSettingRequestDto
+    ) {
+        applicationSettingsService.deleteSetting(
+            AvailableSettingGroup.getBySettingsGroupName(settingGroupName),
+            settingName,
+            deleteRequest
+        )
     }
 
     @ExceptionHandler
-    private fun handleApplicationValidationException(request: HttpServletRequest, exception: SettingNotFoundException): ResponseEntity<*> {
+    private fun handleApplicationValidationException(
+        request: HttpServletRequest,
+        exception: SettingNotFoundException
+    ): ResponseEntity<*> {
         return ResponseEntity(exception.message, HttpStatus.NOT_FOUND)
     }
 
     @ExceptionHandler
-    private fun handleApplicationValidationException(request: HttpServletRequest, exception: ValidationException): ResponseEntity<*> {
+    private fun handleApplicationValidationException(
+        request: HttpServletRequest,
+        exception: ValidationException
+    ): ResponseEntity<*> {
         return ResponseEntity(exception.message, HttpStatus.BAD_REQUEST)
     }
 
     @ExceptionHandler
-    private fun handleValidationException(request: HttpServletRequest, exception: MethodArgumentNotValidException): ResponseEntity<String> {
+    private fun handleValidationException(
+        request: HttpServletRequest,
+        exception: MethodArgumentNotValidException
+    ): ResponseEntity<String> {
         return ResponseEntity(exception
-                .bindingResult
-                .allErrors
-                .stream()
-                .map { it.defaultMessage }
-                .collect(Collectors.joining(ERRORS_SEPARATOR)), HttpStatus.BAD_REQUEST)
+            .bindingResult
+            .allErrors
+            .stream()
+            .map { it.defaultMessage }
+            .collect(Collectors.joining(ERRORS_SEPARATOR)), HttpStatus.BAD_REQUEST)
     }
 
     @ExceptionHandler
-    private fun handleInvalidSettingGroup(request: HttpServletRequest, exception: InvalidSettingGroupException): ResponseEntity<String> {
+    private fun handleInvalidSettingGroup(
+        request: HttpServletRequest,
+        exception: InvalidSettingGroupException
+    ): ResponseEntity<String> {
         return ResponseEntity(exception.message, HttpStatus.BAD_REQUEST)
     }
 }

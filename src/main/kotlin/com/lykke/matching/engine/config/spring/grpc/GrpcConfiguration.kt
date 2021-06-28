@@ -41,7 +41,7 @@ class GrpcConfiguration {
         config.matchingEngine.grpcEndpoints.outgoingTrustedClientsEventsConnections.forEachIndexed { index, grpcConnectionString ->
             val trustedClientsEventConsumerQueueName =
                 GrpcEventUtils.getTrustedClientsEventConsumerQueueName(grpcConnectionString, index)
-            val queue =
+            @Suppress("UNCHECKED_CAST") val queue =
                 applicationContext.getBean(trustedClientsEventConsumerQueueName) as BlockingQueue<ExecutionEvent>
 
             consumerNameToQueue[trustedClientsEventConsumerQueueName] = queue
@@ -57,7 +57,8 @@ class GrpcConfiguration {
             val clientsEventConsumerQueueName =
                 GrpcEventUtils.getClientEventConsumerQueueName(grpcConnectionString, index)
 
-            val queue = applicationContext.getBean(clientsEventConsumerQueueName) as BlockingQueue<Event<*>>
+            @Suppress("UNCHECKED_CAST") val queue =
+                applicationContext.getBean(clientsEventConsumerQueueName) as BlockingQueue<Event<*>>
             consumerNameToQueue[clientsEventConsumerQueueName] = queue
         }
 
