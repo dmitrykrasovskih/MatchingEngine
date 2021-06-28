@@ -131,16 +131,15 @@ ext.revision = 'git rev-list --count HEAD'.execute().text.trim()
 ext.hash = 'git rev-parse --short HEAD'.execute().text.trim()
 ext.buildVersion = "${revision}.${hash}"
 ext.buildNumber = System.getenv('BuildNumber')
-ext.buildNumberGithub = System.getenv('github.run_number')
 
 bootJar {
     manifest {
-        attributes "Revision-number": revision, "BuildVersion": buildVersion, "Version": version
+        attributes "Revision-number": revision, "BuildVersion": buildNumber, "Version": version
     }
 }
 
 task printProperties doLast {
-    println "Revision-number": revision, "BuildVersion": buildVersion, "Version": version, "BuildNumber": buildNumber, "BuildNumberGithub": buildNumberGithub
+    println "Revision-number": revision, "BuildVersion": buildNumber, "Version": version
 }
 
 bootDistZip {

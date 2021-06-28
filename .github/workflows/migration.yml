@@ -30,8 +30,8 @@ jobs:
         env:
           BuildNumber: ${{ github.run_number }}
         with:
-          gradle-version: 6.6.1
-          arguments: clean build -x test printProperties
+          gradle-version: 6.8.1
+          arguments: clean build printProperties
 
       - name: Check dir
         run: ls build/distributions
