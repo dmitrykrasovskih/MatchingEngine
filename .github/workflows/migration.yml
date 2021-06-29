@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - migration*
+      - master
 
 jobs:
   build:
