@@ -40,7 +40,7 @@ jobs:
       - name: Archive production artifacts
         uses: actions/upload-artifact@v1
         with:
-          name: MyJetWallet.MatchingEngine-1.0.zip
+          name: MyJetWallet.MatchingEngine-2.0.zip
           path: build/distributions
 
       - name: Publish image

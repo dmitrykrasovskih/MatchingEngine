@@ -5,9 +5,9 @@ RUN apt-get update && \
 	apt-get install unzip && \
     apt-get clean
 	
-ADD MyJetWallet.MatchingEngine-1.0.zip .
-RUN unzip -q MyJetWallet.MatchingEngine-1.0.zip && \
-    rm MyJetWallet.MatchingEngine-1.0.zip && \
+ADD MyJetWallet.MatchingEngine-2.0.zip .
+RUN unzip -q MyJetWallet.MatchingEngine-2.0.zip && \
+    rm MyJetWallet.MatchingEngine-2.0.zip && \
     mv MyJetWallet.MatchingEngine-* MyJetWallet.MatchingEngine && \
     chmod +x MyJetWallet.MatchingEngine/bin/start.sh && \
     chmod +x MyJetWallet.MatchingEngine/bin/stop.sh && \
