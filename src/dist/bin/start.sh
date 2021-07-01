@@ -29,7 +29,7 @@ EXECSTR="$JAVACMD \
     -Dapp.pid="$$" \
     -Dapp.home="$BASEDIR" \
     -Dbasedir="$BASEDIR" \
-    -jar $BASEDIR/lib/MyJetWallet.MatchingEngine-1.0.jar \
+    -jar $BASEDIR/lib/MyJetWallet.MatchingEngine-2.0.jar \
     $HTTP_CONFIG"
 
 
