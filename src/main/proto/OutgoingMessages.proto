@@ -12,6 +12,13 @@ option csharp_namespace = "ME.Contracts.OutgoingMessages";
 service GrpcOutgoingEventsService {
     rpc PublishEvents (MessageWrapper) returns (PublishRequestResult) {
     };
+    rpc PingPong (Ping) returns (Pong) {
+    };
+}
+
+message Ping {
+}
+message Pong {
 }
 
 message MessageWrapper {

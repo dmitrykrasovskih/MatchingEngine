@@ -34,6 +34,7 @@ class GrpcEventPublisher(
         private const val RECONNECTION_INTERVAL = 1000L
 
         private const val BATCH_SIZE = 100L
+        private const val PUBLISH_ATTEMPTS = 100
     }
 
     private var messagesCount: Long = 0
@@ -41,15 +42,14 @@ class GrpcEventPublisher(
     private var totalPersistTime: Double = 0.0
     private var totalTime: Double = 0.0
 
-    @Volatile
-    private var currentlyPublishedItem: List<Event<*>>? = null
 
     private var channel: ManagedChannel? = null
     private var grpcStub: GrpcOutgoingEventsServiceGrpc.GrpcOutgoingEventsServiceBlockingStub? = null
 
     private fun publish(messages: List<Event<*>>) {
         var isLogged = false
-        while (true) {
+        var attempts = 0
+        while (attempts < PUBLISH_ATTEMPTS) {
             try {
                 val startTime = System.nanoTime()
 
@@ -73,14 +73,19 @@ class GrpcEventPublisher(
                     fixTime(messages.size, startTime, endTime, startPersistTime, endPersistTime)
 
                     return
+                } else {
+                    attempts++
                 }
             } catch (exception: Exception) {
-                publishFailureEvent(messages)
-                val logMessage = "Exception during GRPC publishing ($grpcConnectionString): ${exception.message}"
-                LOGGER.error(logMessage, exception)
+                attempts++
+                LOGGER.error(
+                    "Exception during GRPC publishing ($grpcConnectionString): ${exception.message}",
+                    exception
+                )
                 tryConnectUntilSuccess()
             }
         }
+        publishFailureEvent(messages)
     }
 
     override fun run() {
@@ -94,7 +99,6 @@ class GrpcEventPublisher(
             while (messages.size < BATCH_SIZE && queue.size > 0) {
                 messages.add(queue.take())
             }
-            currentlyPublishedItem = messages
             publish(messages)
         }
     }
@@ -109,8 +113,12 @@ class GrpcEventPublisher(
         return try {
             channel = ManagedChannelBuilder.forTarget(grpcConnectionString).usePlaintext().build()
             grpcStub = GrpcOutgoingEventsServiceGrpc.newBlockingStub(channel)
-            publishReadyEvent()
-            true
+            val pong = grpcStub!!.pingPong(OutgoingMessages.Ping.getDefaultInstance())
+            if (pong != null) {
+                publishReadyEvent()
+                return true
+            }
+            false
         } catch (e: Exception) {
             LOGGER.error("GrpcPublisher $publisherName failed to connect", e)
             publishFailureEvent(null)
