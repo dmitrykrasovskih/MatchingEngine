@@ -8,5 +8,6 @@ data class GrpcEndpoints(
 
     val dictionariesConnection: String,
     val outgoingEventsConnections: Set<String>,
-    val outgoingTrustedClientsEventsConnections: Set<String>
+    val outgoingTrustedClientsEventsConnections: Set<String>,
+    val publishTimeout: Long,
 )

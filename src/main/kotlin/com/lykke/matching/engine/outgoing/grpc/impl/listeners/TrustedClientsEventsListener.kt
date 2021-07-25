@@ -33,6 +33,7 @@ class TrustedClientsEventsListener {
                 GrpcEventPublisher(
                     "TrustedClientsEventPublisher_$trustedClientsEventConsumerQueue", queue,
                     trustedClientsEventConsumerQueue, grpcConnectionString, applicationEventPublisher,
+                    config.matchingEngine.grpcEndpoints.publishTimeout,
                     null
                 )
             ).start()

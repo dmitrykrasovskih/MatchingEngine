@@ -11,6 +11,8 @@ import com.myjetwallet.messages.outgoing.grpc.GrpcOutgoingEventsServiceGrpc
 import com.myjetwallet.messages.outgoing.grpc.OutgoingMessages
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import java.util.concurrent.BlockingQueue
@@ -21,6 +23,7 @@ class GrpcEventPublisher(
     private val queueName: String,
     private val grpcConnectionString: String,
     private val applicationEventPublisher: ApplicationEventPublisher,
+    private val publishTimeout: Long,
     /** null if do not need to log */
     private val messageDatabaseLogger: DatabaseLogger<Event<*>>? = null
 ) : Runnable {
@@ -41,7 +44,6 @@ class GrpcEventPublisher(
     private var eventsCount: Long = 0
     private var totalPersistTime: Double = 0.0
     private var totalTime: Double = 0.0
-
 
     private var channel: ManagedChannel? = null
     private var grpcStub: GrpcOutgoingEventsServiceGrpc.GrpcOutgoingEventsServiceBlockingStub? = null
@@ -65,9 +67,12 @@ class GrpcEventPublisher(
                     request.addEvents(it.buildGeneratedMessage() as OutgoingMessages.OutgoingEvent)
                 }
                 val startPersistTime = System.nanoTime()
-//                runBlock
-                val result =
-                    grpcStub!!.publishEvents(request.build())
+                var result: OutgoingMessages.PublishRequestResult
+                runBlocking {
+                    withTimeout(publishTimeout) {
+                        result = grpcStub!!.publishEvents(request.build())
+                    }
+                }
                 if (result.published) {
                     val endPersistTime = System.nanoTime()
                     val endTime = System.nanoTime()
@@ -114,12 +119,13 @@ class GrpcEventPublisher(
         return try {
             channel = ManagedChannelBuilder.forTarget(grpcConnectionString).usePlaintext().build()
             grpcStub = GrpcOutgoingEventsServiceGrpc.newBlockingStub(channel)
-            val pong = grpcStub!!.pingPong(OutgoingMessages.Ping.getDefaultInstance())
-            if (pong != null) {
-                publishReadyEvent()
-                return true
+            runBlocking {
+                withTimeout(publishTimeout) {
+                    grpcStub!!.pingPong(OutgoingMessages.Ping.getDefaultInstance())
+                }
             }
-            false
+            publishReadyEvent()
+            return true
         } catch (e: Exception) {
             LOGGER.error("GrpcPublisher $publisherName failed to connect", e)
             publishFailureEvent(null)

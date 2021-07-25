@@ -42,6 +42,7 @@ class ClientsEventListener {
                 GrpcEventPublisher(
                     "EventPublisher_$clientsEventConsumerQueueName", queue,
                     clientsEventConsumerQueueName, grpcConnectionString, applicationEventPublisher,
+                    config.matchingEngine.grpcEndpoints.publishTimeout,
                     DatabaseLogger(
                         AzureMessageLogDatabaseAccessor(
                             config.matchingEngine.db.messageLogConnString,
