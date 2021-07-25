@@ -36,7 +36,7 @@ ext {
     gson_version = "2.8.7"
     module_kotlin_jackson_version = "2.12.4"
     http_client_version = "4.5.13"
-    fst_version = "3.0.3"
+    fst_version = "2.56"
     jedis_version = "3.3.0"
     big_math_version = "2.3.0"
     springfox_swagger2 = "3.0.0"
