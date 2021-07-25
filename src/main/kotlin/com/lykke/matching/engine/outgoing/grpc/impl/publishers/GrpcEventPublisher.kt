@@ -65,6 +65,7 @@ class GrpcEventPublisher(
                     request.addEvents(it.buildGeneratedMessage() as OutgoingMessages.OutgoingEvent)
                 }
                 val startPersistTime = System.nanoTime()
+//                runBlock
                 val result =
                     grpcStub!!.publishEvents(request.build())
                 if (result.published) {
