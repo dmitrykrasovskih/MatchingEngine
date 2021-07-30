@@ -1,10 +1,6 @@
 package com.lykke.matching.engine.config.spring
 
-import com.lykke.matching.engine.database.Storage
-import com.lykke.matching.engine.database.redis.accessor.impl.RedisCashOperationIdDatabaseAccessor
-import com.lykke.matching.engine.database.redis.accessor.impl.RedisMessageSequenceNumberDatabaseAccessor
-import com.lykke.matching.engine.database.redis.accessor.impl.RedisProcessedMessagesDatabaseAccessor
-import com.lykke.matching.engine.database.redis.accessor.impl.RedisWalletDatabaseAccessor
+import com.lykke.matching.engine.database.redis.accessor.impl.*
 import com.lykke.matching.engine.database.redis.connection.RedisConnection
 import com.lykke.matching.engine.database.redis.connection.RedisConnectionFactory
 import com.lykke.matching.engine.database.redis.connection.impl.RedisReconnectionManager
@@ -75,10 +71,6 @@ class RedisConfig {
     //<editor-fold desc="Redis database accessors">
     @Bean
     fun redisProcessedMessagesDatabaseAccessor(): RedisProcessedMessagesDatabaseAccessor? {
-        if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
-            return null
-        }
-
         return RedisProcessedMessagesDatabaseAccessor(
             initialLoadingRedisConnection()!!,
             config.matchingEngine.redis.processedMessageDatabase,
@@ -89,10 +81,6 @@ class RedisConfig {
 
     @Bean
     fun redisWalletDatabaseAccessor(): RedisWalletDatabaseAccessor? {
-        if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
-            return null
-        }
-
         return RedisWalletDatabaseAccessor(
             initialLoadingRedisConnection()!!,
             config.matchingEngine.redis.balanceDatabase
@@ -100,11 +88,16 @@ class RedisConfig {
     }
 
     @Bean
-    fun redisCashOperationIdDatabaseAccessor(): RedisCashOperationIdDatabaseAccessor? {
-        if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
-            return null
-        }
+    fun redisEventDatabaseAccessor(): RedisEventDatabaseAccessor {
+        return RedisEventDatabaseAccessor(
+            initialLoadingRedisConnection()!!,
+            config.matchingEngine.redis.outgoingEventsDatabase,
+            config.matchingEngine.redis.outgoingEventsTtl
+        )
+    }
 
+    @Bean
+    fun redisCashOperationIdDatabaseAccessor(): RedisCashOperationIdDatabaseAccessor? {
         return RedisCashOperationIdDatabaseAccessor(
             cashInOutOperationIdRedisConnection()!!,
             cashTransferOperationIdRedisConnection()!!,
@@ -114,11 +107,17 @@ class RedisConfig {
 
     @Bean
     fun redisMessageSequenceNumberDatabaseAccessor(): RedisMessageSequenceNumberDatabaseAccessor? {
-        if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
-            return null
-        }
-
         return RedisMessageSequenceNumberDatabaseAccessor(
+            "MessageSequenceNumber",
+            initialLoadingRedisConnection()!!,
+            config.matchingEngine.redis.sequenceNumberDatabase
+        )
+    }
+
+    @Bean
+    fun redisSentMessageSequenceNumberDatabaseAccessor(): RedisMessageSequenceNumberDatabaseAccessor? {
+        return RedisMessageSequenceNumberDatabaseAccessor(
+            "SentMessageSequenceNumber",
             initialLoadingRedisConnection()!!,
             config.matchingEngine.redis.sequenceNumberDatabase
         )
@@ -134,10 +133,6 @@ class RedisConfig {
         @Value("\${redis.health.check.interval}") updateInterval: Long,
         @Value("\${redis.health.check.reconnect.interval}") reconnectInterval: Long
     ): RedisReconnectionManager? {
-        if (config.matchingEngine.storage != Storage.Redis && config.matchingEngine.storage != Storage.RedisWithoutOrders) {
-            return null
-        }
-
         return RedisReconnectionManager(
             config.matchingEngine, allRedisConnections, pingRedisConnection()!!,
             taskScheduler, applicationEventPublisher, updateInterval, reconnectInterval

@@ -43,11 +43,6 @@ class ReservedVolumesRecalculator @Autowired constructor(
 
     companion object {
         private val LOGGER = Logger.getLogger(ReservedVolumesRecalculator::class.java.name)
-
-        fun teeLog(message: String) {
-            println(message)
-            LOGGER.info(message)
-        }
     }
 
     fun correctReservedVolumesIfNeed() {
@@ -55,7 +50,7 @@ class ReservedVolumesRecalculator @Autowired constructor(
             return
         }
 
-        teeLog("Starting order books analyze")
+        LOGGER.info("Starting order books analyze")
         recalculate()
     }
 
@@ -99,7 +94,7 @@ class ReservedVolumesRecalculator @Autowired constructor(
                     balance.orderIds.add(order.externalId)
                 } catch (e: Exception) {
                     val errorMessage = "Unable to handle order (id: ${order.externalId}): ${e.message}"
-                    teeLog(errorMessage)
+                    LOGGER.error(errorMessage)
                 }
             }
         }
@@ -134,7 +129,7 @@ class ReservedVolumesRecalculator @Autowired constructor(
                             newBalance.volume
                         )
                         corrections.add(correction)
-                        teeLog("1 $id, ${assetBalance.asset} : Old $oldBalance New $newBalance")
+                        LOGGER.info("1 $id, ${assetBalance.asset} : Old $oldBalance New $newBalance")
                         wallet.setReservedForOrdersBalance(assetBalance.asset, newBalance.volume)
                         updatedWallets.add(wallet)
                         val balanceUpdate = ClientBalanceUpdate(
@@ -158,7 +153,7 @@ class ReservedVolumesRecalculator @Autowired constructor(
                         newBalance?.volume ?: BigDecimal.ZERO
                     )
                     corrections.add(correction)
-                    teeLog("2 $id, ${assetBalance.asset} : Old $oldBalance New ${newBalance ?: 0.0}")
+                    LOGGER.info("2 $id, ${assetBalance.asset} : Old $oldBalance New ${newBalance ?: 0.0}")
                     wallet.setReservedForOrdersBalance(assetBalance.asset, BigDecimal.ZERO)
                     updatedWallets.add(wallet)
                     val balanceUpdate = ClientBalanceUpdate(
@@ -196,7 +191,7 @@ class ReservedVolumesRecalculator @Autowired constructor(
                         operationId,
                         operationId,
                         now,
-                        MessageType.LIMIT_ORDER,
+                        MessageType.RESERVED_CASH_IN_OUT_OPERATION,
                         listOf(clientBalanceUpdate),
                         walletOperation,
                         emptyList()
@@ -209,6 +204,6 @@ class ReservedVolumesRecalculator @Autowired constructor(
             cashInOutEvents.forEach { messageSender.sendMessage(it) }
 
         }
-        teeLog("Reserved volume recalculation finished")
+        LOGGER.info("Reserved volume recalculation finished")
     }
 }

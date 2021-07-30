@@ -132,8 +132,6 @@ class MarketOrderServiceTest : AbstractTest() {
         val marketOrder = event.orders.single { it.orderType == OrderType.MARKET }
         assertEquals(OutgoingOrderStatus.REJECTED, marketOrder.status)
         assertEquals(OrderRejectReason.NO_LIQUIDITY, marketOrder.rejectReason)
-
-        assertEquals(0, tradesInfoListener.getCount())
     }
 
     @Test
@@ -308,10 +306,6 @@ class MarketOrderServiceTest : AbstractTest() {
         assertEquals(BigDecimal.valueOf(1500.0), testWalletDatabaseAccessor.getBalance("Client4", "USD"))
 
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getReservedBalance("Client3", "USD"))
-
-        assertEquals(1, tradesInfoListener.getCount())
-        val tradeInfo = tradesInfoListener.getProcessingQueue().poll()
-        assertEquals(BigDecimal.ZERO, tradeInfo.price)
     }
 
     @Test
@@ -362,10 +356,6 @@ class MarketOrderServiceTest : AbstractTest() {
         assertEquals(BigDecimal.valueOf(1), testWalletDatabaseAccessor.getBalance("Client4", "USD"))
 
         assertEquals(BigDecimal.valueOf(1499.0000), testWalletDatabaseAccessor.getReservedBalance("Client3", "USD"))
-
-        assertEquals(1, tradesInfoListener.getCount())
-        val tradeInfo = tradesInfoListener.getProcessingQueue().poll()
-        assertEquals(BigDecimal.ZERO, tradeInfo.price)
     }
 
     @Test
@@ -512,10 +502,6 @@ class MarketOrderServiceTest : AbstractTest() {
         assertEquals(BigDecimal.valueOf(140.0), testWalletDatabaseAccessor.getReservedBalance("Client1", "USD"))
         assertEquals(BigDecimal.ZERO, testWalletDatabaseAccessor.getBalance("Client4", "EUR"))
         assertEquals(BigDecimal.valueOf(1410.0), testWalletDatabaseAccessor.getBalance("Client4", "USD"))
-
-        assertEquals(1, tradesInfoListener.getCount())
-        val tradeInfo = tradesInfoListener.getProcessingQueue().poll()
-        assertEquals(BigDecimal.valueOf(1.4), tradeInfo.price)
     }
 
     @Test

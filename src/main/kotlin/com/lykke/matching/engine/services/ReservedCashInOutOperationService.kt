@@ -82,7 +82,24 @@ class ReservedCashInOutOperationService @Autowired constructor(
         }
 
         val sequenceNumber = messageSequenceNumberHolder.getNewValue()
-        val updated = walletProcessor.persistBalances(messageWrapper.processedMessage, null, null, sequenceNumber)
+
+        val outgoingMessage = EventFactory.createReservedCashInOutEvent(
+            sequenceNumber,
+            reservedCashInOutContext.messageId,
+            reservedCashInOutOperation.externalId!!,
+            now,
+            MessageType.CASH_IN_OUT_OPERATION,
+            walletProcessor.getClientBalanceUpdates(),
+            walletOperation
+        )
+
+        val updated = walletProcessor.persistBalances(
+            messageWrapper.processedMessage,
+            null,
+            null,
+            sequenceNumber,
+            outgoingMessage
+        )
         messageWrapper.triedToPersist = true
         messageWrapper.persisted = updated
         if (!updated) {
@@ -94,15 +111,6 @@ class ReservedCashInOutOperationService @Autowired constructor(
             return
         }
         walletProcessor.apply()
-        val outgoingMessage = EventFactory.createReservedCashInOutEvent(
-            sequenceNumber,
-            reservedCashInOutContext.messageId,
-            reservedCashInOutOperation.externalId!!,
-            now,
-            MessageType.CASH_IN_OUT_OPERATION,
-            walletProcessor.getClientBalanceUpdates(),
-            walletOperation
-        )
 
         messageSender.sendMessage(outgoingMessage)
         messageWrapper.writeResponse(reservedCashInOutOperation.matchingEngineOperationId, MessageStatus.OK, null)

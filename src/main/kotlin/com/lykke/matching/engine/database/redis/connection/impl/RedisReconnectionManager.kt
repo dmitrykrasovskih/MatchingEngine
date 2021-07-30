@@ -1,6 +1,5 @@
 package com.lykke.matching.engine.database.redis.connection.impl
 
-import com.lykke.matching.engine.database.Storage
 import com.lykke.matching.engine.database.redis.connection.RedisConnection
 import com.lykke.matching.engine.database.redis.events.RedisFailureEvent
 import com.lykke.matching.engine.utils.config.MatchingEngineConfig
@@ -12,13 +11,15 @@ import org.springframework.context.event.EventListener
 import org.springframework.scheduling.TaskScheduler
 import javax.annotation.PostConstruct
 
-class RedisReconnectionManager(private val config: MatchingEngineConfig,
-                               private val allRedisConnections: List<RedisConnection>,
-                               private val pingRedisConnection: RedisConnection,
-                               private val taskScheduler: TaskScheduler,
-                               private val applicationEventPublisher: ApplicationEventPublisher,
-                               private val updateInterval: Long,
-                               private val reconnectInterval: Long) {
+class RedisReconnectionManager(
+    private val config: MatchingEngineConfig,
+    private val allRedisConnections: List<RedisConnection>,
+    private val pingRedisConnection: RedisConnection,
+    private val taskScheduler: TaskScheduler,
+    private val applicationEventPublisher: ApplicationEventPublisher,
+    private val updateInterval: Long,
+    private val reconnectInterval: Long
+) {
 
     companion object {
         private val LOGGER = ThrottlingLogger.getLogger(RedisReconnectionManager::class.java.name)
@@ -52,10 +53,6 @@ class RedisReconnectionManager(private val config: MatchingEngineConfig,
 
     @PostConstruct
     fun init() {
-        if (config.storage != Storage.Redis && config.storage != Storage.RedisWithoutOrders) {
-            return
-        }
-
         taskScheduler.scheduleWithFixedDelay(::checkConnection, updateInterval)
     }
 

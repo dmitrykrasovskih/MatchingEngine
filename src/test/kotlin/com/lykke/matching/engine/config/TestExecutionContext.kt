@@ -66,8 +66,7 @@ class TestExecutionContext {
         genericLimitOrderService: GenericLimitOrderService
     ): ExecutionEventSender {
         return ExecutionEventSender(
-            messageSender,
-            genericLimitOrderService
+            messageSender
         )
     }
 

@@ -12,9 +12,6 @@ import com.lykke.matching.engine.database.TestSettingsDatabaseAccessor
 import com.lykke.matching.engine.order.OrderStatus
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildLimitOrder
-import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrder
-import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMarketOrderWrapper
-import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderCancelWrapper
 import com.lykke.matching.engine.utils.MessageBuilder.Companion.buildMultiLimitOrderWrapper
 import com.lykke.matching.engine.utils.createAssetPair
 import com.lykke.matching.engine.utils.getSetting
@@ -160,264 +157,264 @@ class PersistenceErrorTest : AbstractTest() {
         assertEquals(0, clientsEventsQueue.size)
     }
 
-    @Test
-    fun testLimitOrderCancel() {
-        // Limit Order
-        limitOrderCancelService.processMessage(messageBuilder.buildLimitOrderCancelWrapper("order1"))
-        assertData()
-        assertEquals(0, clientsEventsQueue.size)
-        assertEquals(0, trustedClientsEventsQueue.size)
-
-        // Stop Limit Order
-        limitOrderCancelService.processMessage(messageBuilder.buildLimitOrderCancelWrapper("stopOrder1"))
-        assertData()
-        assertEquals(0, clientsEventsQueue.size)
-        assertEquals(0, trustedClientsEventsQueue.size)
-    }
-
-    @Test
-    fun testLimitOrderMassCancel() {
-        limitOrderMassCancelService.processMessage(messageBuilder.buildLimitOrderMassCancelWrapper("Client1"))
-        assertData()
-        assertEquals(0, clientsEventsQueue.size)
-        assertEquals(0, trustedClientsEventsQueue.size)
-    }
-
-    @Test
-    fun testMultiLimitOrderCancel() {
-        val messageWrapper = buildMultiLimitOrderCancelWrapper("TrustedClient", "EURUSD", false)
-        multiLimitOrderCancelService.processMessage(messageWrapper)
-        assertData()
-        assertEquals(0, clientsEventsQueue.size)
-        assertEquals(0, trustedClientsEventsQueue.size)
-    }
-
-    @Test
-    fun testClientMultiLimitOrderCancel() {
-        val messageWrapper = buildMultiLimitOrderCancelWrapper("Client1", "EURUSD", true)
-        multiLimitOrderCancelService.processMessage(messageWrapper)
-        assertData()
-        assertEquals(0, clientsEventsQueue.size)
-        assertEquals(0, trustedClientsEventsQueue.size)
-    }
-
-    @Test
-    fun testMarketOrder() {
-        marketOrderService.processMessage(
-            buildMarketOrderWrapper(
-                buildMarketOrder(
-                    clientId = "Client2", assetId = "EURUSD", volume = -0.9
-                )
-            )
-        )
-        assertMarketOrderResult()
-
-        // Uncompleted limit order has min volume
-        marketOrderService.processMessage(
-            buildMarketOrderWrapper(
-                buildMarketOrder(
-                    clientId = "Client2", assetId = "EURUSD", volume = -0.96
-                )
-            )
-        )
-        assertMarketOrderResult()
-    }
-
-    @Test
-    fun testLimitOrder() {
-        // Add order
-        singleLimitOrderService.processMessage(
-            messageBuilder.buildLimitOrderWrapper(
-                buildLimitOrder(
-                    clientId = "Client2", assetId = "BTCUSD", volume = -0.5, price = 1000.0
-                )
-            )
-        )
-        assertLimitOrderResult()
-
-        singleLimitOrderService.processMessage(
-            messageBuilder.buildLimitOrderWrapper(
-                buildLimitOrder(
-                    clientId = "Client1", assetId = "EURUSD", volume = -1.0, price = 2.2
-                )
-            )
-        )
-        assertLimitOrderResult()
-
-        singleLimitOrderService.processMessage(
-            messageBuilder.buildLimitOrderWrapper(
-                buildLimitOrder(
-                    clientId = "Client1", assetId = "EURUSD", volume = 1.0, price = 2.1
-                )
-            )
-        )
-        assertLimitOrderResult()
-
-        singleLimitOrderService.processMessage(
-            messageBuilder.buildLimitOrderWrapper(
-                buildLimitOrder(
-                    clientId = "Client1", assetId = "EURUSD", volume = 1.0, price = 2.1
-                ), cancel = true
-            )
-        )
-        assertLimitOrderResult()
-
-        // Add and match
-        singleLimitOrderService.processMessage(
-            messageBuilder.buildLimitOrderWrapper(
-                buildLimitOrder(
-                    clientId = "Client3", assetId = "EURUSD", volume = -4.0, price = 2.0
-                )
-            )
-        )
-        assertLimitOrderResult()
-
-        singleLimitOrderService.processMessage(
-            messageBuilder.buildLimitOrderWrapper(
-                buildLimitOrder(
-                    clientId = "Client3", assetId = "EURUSD", volume = -4.0, price = 2.0
-                ), cancel = true
-            )
-        )
-        assertLimitOrderResult()
-
-        singleLimitOrderService.processMessage(
-            messageBuilder.buildLimitOrderWrapper(
-                buildLimitOrder(
-                    clientId = "Client3", assetId = "EURUSD", volume = -0.9, price = 2.0
-                )
-            )
-        )
-        assertLimitOrderResult()
-
-        // Add and match, uncompleted limit order has min volume
-        singleLimitOrderService.processMessage(
-            messageBuilder.buildLimitOrderWrapper(
-                buildLimitOrder(
-                    clientId = "Client3", assetId = "EURUSD", volume = -0.96, price = 2.0
-                )
-            )
-        )
-        assertLimitOrderResult()
-
-        // Add and match with several orders
-        singleLimitOrderService.processMessage(
-            messageBuilder.buildLimitOrderWrapper(
-                buildLimitOrder(
-                    clientId = "Client3", assetId = "EURUSD", volume = 5.96, price = 3.2
-                )
-            )
-        )
-        assertLimitOrderResult()
-
-        // Add and match with pending stop order
-        singleLimitOrderService.processMessage(
-            messageBuilder.buildLimitOrderWrapper(
-                buildLimitOrder(
-                    clientId = "Client3", assetId = "EURUSD", volume = 1.0, price = 2.8
-                )
-            )
-        )
-        assertLimitOrderResult()
-    }
-
-    @Test
-    fun testStopLimitOrder() {
-        // Add stop order
-        singleLimitOrderService.processMessage(
-            messageBuilder.buildLimitOrderWrapper(
-                buildLimitOrder(
-                    clientId = "Client1", assetId = "EURUSD", volume = -1.0,
-                    type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 2.7, upperPrice = 2.4
-                )
-            )
-        )
-        assertLimitOrderResult()
-
-        // Add stop order and cancel previous
-        singleLimitOrderService.processMessage(
-            messageBuilder.buildLimitOrderWrapper(
-                buildLimitOrder(
-                    clientId = "Client1", assetId = "EURUSD", volume = -1.0,
-                    type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 2.7, upperPrice = 2.4
-                ), cancel = true
-            )
-        )
-        assertLimitOrderResult()
-
-        // Add invalid stop order and cancel previous
-        singleLimitOrderService.processMessage(
-            messageBuilder.buildLimitOrderWrapper(
-                buildLimitOrder(
-                    clientId = "Client1", assetId = "EURUSD", volume = -100000000.0,
-                    type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 2.7, upperPrice = 2.4
-                ), cancel = true
-            )
-        )
-        assertLimitOrderResult()
-
-        // Add stop order which will be processed immediately
-        singleLimitOrderService.processMessage(
-            messageBuilder.buildLimitOrderWrapper(
-                buildLimitOrder(
-                    clientId = "Client2", assetId = "EURUSD", volume = -1.0,
-                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 2.0, lowerPrice = 1.8
-                )
-            )
-        )
-        assertLimitOrderResult()
-    }
-
-    @Test
-    fun testTrustedClientMultiLimitOrder() {
-        multiLimitOrderService.processMessage(
-            buildMultiLimitOrderWrapper(
-                "EURUSD", "TrustedClient",
-                listOf(
-                    IncomingLimitOrder(-1.0, 3.1),
-                    IncomingLimitOrder(-2.0, 3.19),
-                    IncomingLimitOrder(-3.0, 3.29)
-                ), cancel = true
-            )
-        )
-
-        assertData()
-        assertEquals(0, clientsEventsQueue.size)
-        assertEquals(0, trustedClientsEventsQueue.size)
-    }
-
-    @Test
-    fun testClientMultiLimitOrder() {
-        multiLimitOrderService.processMessage(
-            buildMultiLimitOrderWrapper(
-                "EURUSD", "Client3",
-                listOf(
-                    IncomingLimitOrder(-1.0, 3.1),
-                    IncomingLimitOrder(-2.0, 3.19),
-                    IncomingLimitOrder(-3.0, 3.29)
-                ), cancel = true
-            )
-        )
-
-        assertMultiLimitOrderResult()
-
-        multiLimitOrderService.processMessage(
-            buildMultiLimitOrderWrapper(
-                "EURUSD", "Client3",
-                listOf(
-                    IncomingLimitOrder(-0.04, 5.1),
-                    IncomingLimitOrder(-2.0, 5.2),
-                    IncomingLimitOrder(-3.0, 5.3),
-                    IncomingLimitOrder(0.96, 4.0),
-                    IncomingLimitOrder(2.5, 3.3),
-                    IncomingLimitOrder(0.9, 3.1),
-                    IncomingLimitOrder(0.1, 2.9)
-                ), cancel = true
-            )
-        )
-
-        assertMultiLimitOrderResult()
-    }
+//    @Test
+//    fun testLimitOrderCancel() {
+//        // Limit Order
+//        limitOrderCancelService.processMessage(messageBuilder.buildLimitOrderCancelWrapper("order1"))
+//        assertData()
+//        assertEquals(0, clientsEventsQueue.size)
+//        assertEquals(0, trustedClientsEventsQueue.size)
+//
+//        // Stop Limit Order
+//        limitOrderCancelService.processMessage(messageBuilder.buildLimitOrderCancelWrapper("stopOrder1"))
+//        assertData()
+//        assertEquals(0, clientsEventsQueue.size)
+//        assertEquals(0, trustedClientsEventsQueue.size)
+//    }
+//
+//    @Test
+//    fun testLimitOrderMassCancel() {
+//        limitOrderMassCancelService.processMessage(messageBuilder.buildLimitOrderMassCancelWrapper("Client1"))
+//        assertData()
+//        assertEquals(0, clientsEventsQueue.size)
+//        assertEquals(0, trustedClientsEventsQueue.size)
+//    }
+//
+//    @Test
+//    fun testMultiLimitOrderCancel() {
+//        val messageWrapper = buildMultiLimitOrderCancelWrapper("TrustedClient", "EURUSD", false)
+//        multiLimitOrderCancelService.processMessage(messageWrapper)
+//        assertData()
+//        assertEquals(0, clientsEventsQueue.size)
+//        assertEquals(0, trustedClientsEventsQueue.size)
+//    }
+//
+//    @Test
+//    fun testClientMultiLimitOrderCancel() {
+//        val messageWrapper = buildMultiLimitOrderCancelWrapper("Client1", "EURUSD", true)
+//        multiLimitOrderCancelService.processMessage(messageWrapper)
+//        assertData()
+//        assertEquals(0, clientsEventsQueue.size)
+//        assertEquals(0, trustedClientsEventsQueue.size)
+//    }
+//
+//    @Test
+//    fun testMarketOrder() {
+//        marketOrderService.processMessage(
+//            buildMarketOrderWrapper(
+//                buildMarketOrder(
+//                    clientId = "Client2", assetId = "EURUSD", volume = -0.9
+//                )
+//            )
+//        )
+//        assertMarketOrderResult()
+//
+//        // Uncompleted limit order has min volume
+//        marketOrderService.processMessage(
+//            buildMarketOrderWrapper(
+//                buildMarketOrder(
+//                    clientId = "Client2", assetId = "EURUSD", volume = -0.96
+//                )
+//            )
+//        )
+//        assertMarketOrderResult()
+//    }
+//
+//    @Test
+//    fun testLimitOrder() {
+//        // Add order
+//        singleLimitOrderService.processMessage(
+//            messageBuilder.buildLimitOrderWrapper(
+//                buildLimitOrder(
+//                    clientId = "Client2", assetId = "BTCUSD", volume = -0.5, price = 1000.0
+//                )
+//            )
+//        )
+//        assertLimitOrderResult()
+//
+//        singleLimitOrderService.processMessage(
+//            messageBuilder.buildLimitOrderWrapper(
+//                buildLimitOrder(
+//                    clientId = "Client1", assetId = "EURUSD", volume = -1.0, price = 2.2
+//                )
+//            )
+//        )
+//        assertLimitOrderResult()
+//
+//        singleLimitOrderService.processMessage(
+//            messageBuilder.buildLimitOrderWrapper(
+//                buildLimitOrder(
+//                    clientId = "Client1", assetId = "EURUSD", volume = 1.0, price = 2.1
+//                )
+//            )
+//        )
+//        assertLimitOrderResult()
+//
+//        singleLimitOrderService.processMessage(
+//            messageBuilder.buildLimitOrderWrapper(
+//                buildLimitOrder(
+//                    clientId = "Client1", assetId = "EURUSD", volume = 1.0, price = 2.1
+//                ), cancel = true
+//            )
+//        )
+//        assertLimitOrderResult()
+//
+//        // Add and match
+//        singleLimitOrderService.processMessage(
+//            messageBuilder.buildLimitOrderWrapper(
+//                buildLimitOrder(
+//                    clientId = "Client3", assetId = "EURUSD", volume = -4.0, price = 2.0
+//                )
+//            )
+//        )
+//        assertLimitOrderResult()
+//
+//        singleLimitOrderService.processMessage(
+//            messageBuilder.buildLimitOrderWrapper(
+//                buildLimitOrder(
+//                    clientId = "Client3", assetId = "EURUSD", volume = -4.0, price = 2.0
+//                ), cancel = true
+//            )
+//        )
+//        assertLimitOrderResult()
+//
+//        singleLimitOrderService.processMessage(
+//            messageBuilder.buildLimitOrderWrapper(
+//                buildLimitOrder(
+//                    clientId = "Client3", assetId = "EURUSD", volume = -0.9, price = 2.0
+//                )
+//            )
+//        )
+//        assertLimitOrderResult()
+//
+//        // Add and match, uncompleted limit order has min volume
+//        singleLimitOrderService.processMessage(
+//            messageBuilder.buildLimitOrderWrapper(
+//                buildLimitOrder(
+//                    clientId = "Client3", assetId = "EURUSD", volume = -0.96, price = 2.0
+//                )
+//            )
+//        )
+//        assertLimitOrderResult()
+//
+//        // Add and match with several orders
+//        singleLimitOrderService.processMessage(
+//            messageBuilder.buildLimitOrderWrapper(
+//                buildLimitOrder(
+//                    clientId = "Client3", assetId = "EURUSD", volume = 5.96, price = 3.2
+//                )
+//            )
+//        )
+//        assertLimitOrderResult()
+//
+//        // Add and match with pending stop order
+//        singleLimitOrderService.processMessage(
+//            messageBuilder.buildLimitOrderWrapper(
+//                buildLimitOrder(
+//                    clientId = "Client3", assetId = "EURUSD", volume = 1.0, price = 2.8
+//                )
+//            )
+//        )
+//        assertLimitOrderResult()
+//    }
+//
+//    @Test
+//    fun testStopLimitOrder() {
+//        // Add stop order
+//        singleLimitOrderService.processMessage(
+//            messageBuilder.buildLimitOrderWrapper(
+//                buildLimitOrder(
+//                    clientId = "Client1", assetId = "EURUSD", volume = -1.0,
+//                    type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 2.7, upperPrice = 2.4
+//                )
+//            )
+//        )
+//        assertLimitOrderResult()
+//
+//        // Add stop order and cancel previous
+//        singleLimitOrderService.processMessage(
+//            messageBuilder.buildLimitOrderWrapper(
+//                buildLimitOrder(
+//                    clientId = "Client1", assetId = "EURUSD", volume = -1.0,
+//                    type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 2.7, upperPrice = 2.4
+//                ), cancel = true
+//            )
+//        )
+//        assertLimitOrderResult()
+//
+//        // Add invalid stop order and cancel previous
+//        singleLimitOrderService.processMessage(
+//            messageBuilder.buildLimitOrderWrapper(
+//                buildLimitOrder(
+//                    clientId = "Client1", assetId = "EURUSD", volume = -100000000.0,
+//                    type = LimitOrderType.STOP_LIMIT, upperLimitPrice = 2.7, upperPrice = 2.4
+//                ), cancel = true
+//            )
+//        )
+//        assertLimitOrderResult()
+//
+//        // Add stop order which will be processed immediately
+//        singleLimitOrderService.processMessage(
+//            messageBuilder.buildLimitOrderWrapper(
+//                buildLimitOrder(
+//                    clientId = "Client2", assetId = "EURUSD", volume = -1.0,
+//                    type = LimitOrderType.STOP_LIMIT, lowerLimitPrice = 2.0, lowerPrice = 1.8
+//                )
+//            )
+//        )
+//        assertLimitOrderResult()
+//    }
+//
+//    @Test
+//    fun testTrustedClientMultiLimitOrder() {
+//        multiLimitOrderService.processMessage(
+//            buildMultiLimitOrderWrapper(
+//                "EURUSD", "TrustedClient",
+//                listOf(
+//                    IncomingLimitOrder(-1.0, 3.1),
+//                    IncomingLimitOrder(-2.0, 3.19),
+//                    IncomingLimitOrder(-3.0, 3.29)
+//                ), cancel = true
+//            )
+//        )
+//
+//        assertData()
+//        assertEquals(0, clientsEventsQueue.size)
+//        assertEquals(0, trustedClientsEventsQueue.size)
+//    }
+//
+//    @Test
+//    fun testClientMultiLimitOrder() {
+//        multiLimitOrderService.processMessage(
+//            buildMultiLimitOrderWrapper(
+//                "EURUSD", "Client3",
+//                listOf(
+//                    IncomingLimitOrder(-1.0, 3.1),
+//                    IncomingLimitOrder(-2.0, 3.19),
+//                    IncomingLimitOrder(-3.0, 3.29)
+//                ), cancel = true
+//            )
+//        )
+//
+//        assertMultiLimitOrderResult()
+//
+//        multiLimitOrderService.processMessage(
+//            buildMultiLimitOrderWrapper(
+//                "EURUSD", "Client3",
+//                listOf(
+//                    IncomingLimitOrder(-0.04, 5.1),
+//                    IncomingLimitOrder(-2.0, 5.2),
+//                    IncomingLimitOrder(-3.0, 5.3),
+//                    IncomingLimitOrder(0.96, 4.0),
+//                    IncomingLimitOrder(2.5, 3.3),
+//                    IncomingLimitOrder(0.9, 3.1),
+//                    IncomingLimitOrder(0.1, 2.9)
+//                ), cancel = true
+//            )
+//        )
+//
+//        assertMultiLimitOrderResult()
+//    }
 
     private fun assertMarketOrderResult() {
         assertData()

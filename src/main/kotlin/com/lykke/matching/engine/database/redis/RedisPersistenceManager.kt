@@ -4,14 +4,12 @@ import com.lykke.matching.engine.daos.wallet.AssetBalance
 import com.lykke.matching.engine.database.PersistenceManager
 import com.lykke.matching.engine.database.common.entity.PersistenceData
 import com.lykke.matching.engine.database.common.strategy.PersistOrdersDuringRedisTransactionStrategy
-import com.lykke.matching.engine.database.redis.accessor.impl.RedisCashOperationIdDatabaseAccessor
-import com.lykke.matching.engine.database.redis.accessor.impl.RedisMessageSequenceNumberDatabaseAccessor
-import com.lykke.matching.engine.database.redis.accessor.impl.RedisProcessedMessagesDatabaseAccessor
-import com.lykke.matching.engine.database.redis.accessor.impl.RedisWalletDatabaseAccessor
+import com.lykke.matching.engine.database.redis.accessor.impl.*
 import com.lykke.matching.engine.database.redis.connection.RedisConnection
 import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.holders.CurrentTransactionDataHolder
 import com.lykke.matching.engine.messages.MessageType
+import com.lykke.matching.engine.order.EventsHolder
 import com.lykke.matching.engine.performance.PerformanceStatsHolder
 import com.lykke.matching.engine.utils.PrintUtils
 import com.lykke.matching.engine.utils.config.Config
@@ -21,11 +19,12 @@ import redis.clients.jedis.Transaction
 import redis.clients.jedis.exceptions.JedisException
 
 class RedisPersistenceManager(
-    private val primaryBalancesAccessor: RedisWalletDatabaseAccessor,
+    private val balancesAccessor: RedisWalletDatabaseAccessor,
     private val redisProcessedMessagesDatabaseAccessor: RedisProcessedMessagesDatabaseAccessor,
     private val redisProcessedCashOperationIdDatabaseAccessor: RedisCashOperationIdDatabaseAccessor,
     private val persistOrdersStrategy: PersistOrdersDuringRedisTransactionStrategy,
     private val redisMessageSequenceNumberDatabaseAccessor: RedisMessageSequenceNumberDatabaseAccessor,
+    private val redisEventDatabaseAccessor: RedisEventDatabaseAccessor,
     private val redisConnection: RedisConnection,
     private val config: Config,
     private val currentTransactionDataHolder: CurrentTransactionDataHolder,
@@ -67,6 +66,7 @@ class RedisPersistenceManager(
             persistOrders(transaction, data)
             val endPersistOrders = System.nanoTime()
 
+            persistOutgoingEvent(transaction, data.outgoingEvent)
             persistMessageSequenceNumber(transaction, data.messageSequenceNumber)
 
             val persistTime = System.nanoTime()
@@ -129,7 +129,22 @@ class RedisPersistenceManager(
 
         LOGGER.trace("Start to persist balances in redis")
         transaction.select(config.matchingEngine.redis.balanceDatabase)
-        primaryBalancesAccessor.insertOrUpdateBalances(transaction, assetBalances!!)
+        balancesAccessor.insertOrUpdateBalances(transaction, assetBalances!!)
+    }
+
+    private fun persistOutgoingEvent(transaction: Transaction, event: EventsHolder?) {
+        if (event == null) {
+            return
+        }
+
+        LOGGER.trace("Start to persist outgoing event in redis")
+        transaction.select(config.matchingEngine.redis.outgoingEventsDatabase)
+        if (event.trustedClientsEvent != null) {
+            redisEventDatabaseAccessor.save(transaction, event.trustedClientsEvent)
+        }
+        if (event.clientsEvent != null) {
+            redisEventDatabaseAccessor.save(transaction, event.clientsEvent)
+        }
     }
 
     private fun persistMessageSequenceNumber(transaction: Transaction, sequenceNumber: Long?) {

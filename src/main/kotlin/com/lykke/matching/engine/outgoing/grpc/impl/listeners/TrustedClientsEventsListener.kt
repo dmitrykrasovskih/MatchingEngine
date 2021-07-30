@@ -1,5 +1,6 @@
 package com.lykke.matching.engine.outgoing.grpc.impl.listeners
 
+import com.lykke.matching.engine.database.MessageSequenceNumberDatabaseAccessor
 import com.lykke.matching.engine.outgoing.grpc.impl.publishers.GrpcEventPublisher
 import com.lykke.matching.engine.outgoing.messages.v2.events.Event
 import com.lykke.matching.engine.utils.config.Config
@@ -22,6 +23,9 @@ class TrustedClientsEventsListener {
     @Autowired
     private lateinit var applicationEventPublisher: ApplicationEventPublisher
 
+    @Autowired
+    private lateinit var redisSentMessageSequenceNumberDatabaseAccessor: MessageSequenceNumberDatabaseAccessor
+
     @PostConstruct
     fun initGrpcPublisher() {
         config.matchingEngine.grpcEndpoints.outgoingTrustedClientsEventsConnections.forEachIndexed { index, grpcConnectionString ->
@@ -34,6 +38,7 @@ class TrustedClientsEventsListener {
                     "TrustedClientsEventPublisher_$trustedClientsEventConsumerQueue", queue,
                     trustedClientsEventConsumerQueue, grpcConnectionString, applicationEventPublisher,
                     config.matchingEngine.grpcEndpoints.publishTimeout,
+                    redisSentMessageSequenceNumberDatabaseAccessor,
                     null
                 )
             ).start()

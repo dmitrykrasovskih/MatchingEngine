@@ -1,5 +1,6 @@
 package com.lykke.matching.engine.outgoing.grpc.impl.publishers
 
+import com.lykke.matching.engine.database.MessageSequenceNumberDatabaseAccessor
 import com.lykke.matching.engine.logging.DatabaseLogger
 import com.lykke.matching.engine.outgoing.messages.v2.events.Event
 import com.lykke.matching.engine.outgoing.publishers.events.PublisherFailureEvent
@@ -24,7 +25,8 @@ class GrpcEventPublisher(
     private val grpcConnectionString: String,
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val publishTimeout: Long,
-    /** null if do not need to log */
+    private val redisSentMessageSequenceNumberDatabaseAccessor: MessageSequenceNumberDatabaseAccessor,
+    /** null if no not need to log */
     private val messageDatabaseLogger: DatabaseLogger<Event<*>>? = null
 ) : Runnable {
 
@@ -78,6 +80,7 @@ class GrpcEventPublisher(
                     val endTime = System.nanoTime()
                     fixTime(messages.size, startTime, endTime, startPersistTime, endPersistTime)
 
+                    redisSentMessageSequenceNumberDatabaseAccessor.save(messages.maxOf { event -> event.sequenceNumber() })
                     return
                 } else {
                     attempts++

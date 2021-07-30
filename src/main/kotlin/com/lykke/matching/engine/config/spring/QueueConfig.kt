@@ -5,7 +5,6 @@ import com.lykke.matching.engine.messages.wrappers.*
 import com.lykke.matching.engine.messages.wrappers.socket.LimitOrderMassCancelMessageWrapper
 import com.lykke.matching.engine.outgoing.messages.OrderBook
 import com.lykke.matching.engine.outgoing.messages.v2.events.Event
-import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.util.concurrent.BlockingDeque
@@ -25,7 +24,7 @@ class QueueConfig {
 
     @Bean
     @OutgoingQueue
-    fun trustedClientsEventsQueue(): BlockingDeque<ExecutionEvent> {
+    fun trustedClientsEventsQueue(): BlockingDeque<Event<*>> {
         return LinkedBlockingDeque()
     }
     //</editor-fold>

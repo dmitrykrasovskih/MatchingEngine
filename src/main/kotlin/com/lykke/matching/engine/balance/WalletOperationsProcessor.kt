@@ -10,9 +10,11 @@ import com.lykke.matching.engine.database.common.entity.PersistenceData
 import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.holders.ApplicationSettingsHolder
 import com.lykke.matching.engine.holders.AssetsHolder
+import com.lykke.matching.engine.order.EventsHolder
 import com.lykke.matching.engine.order.transaction.CurrentTransactionBalancesHolder
 import com.lykke.matching.engine.order.transaction.WalletAssetBalance
 import com.lykke.matching.engine.outgoing.messages.ClientBalanceUpdate
+import com.lykke.matching.engine.outgoing.messages.v2.events.Event
 import com.lykke.matching.engine.utils.NumberUtils
 import org.apache.log4j.Logger
 import java.math.BigDecimal
@@ -122,7 +124,8 @@ class WalletOperationsProcessor(
         processedMessage: ProcessedMessage?,
         orderBooksData: OrderBooksPersistenceData?,
         stopOrderBooksData: OrderBooksPersistenceData?,
-        messageSequenceNumber: Long?
+        messageSequenceNumber: Long?,
+        outgoingEvent: Event<*>?
     ): Boolean {
         return persistenceManager.persist(
             PersistenceData(
@@ -130,7 +133,8 @@ class WalletOperationsProcessor(
                 processedMessage,
                 orderBooksData,
                 stopOrderBooksData,
-                messageSequenceNumber
+                messageSequenceNumber,
+                EventsHolder(null, outgoingEvent)
             )
         )
     }

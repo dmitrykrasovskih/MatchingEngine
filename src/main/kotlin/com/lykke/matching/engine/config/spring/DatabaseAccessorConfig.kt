@@ -72,7 +72,7 @@ class DatabaseAccessorConfig {
     }
 
     @Bean
-    fun messageSequenceNumberDatabaseAccessor(redisMessageSequenceNumberDatabaseAccessor: Optional<RedisMessageSequenceNumberDatabaseAccessor>): ReadOnlyMessageSequenceNumberDatabaseAccessor {
+    fun messageSequenceNumberDatabaseAccessor(redisMessageSequenceNumberDatabaseAccessor: Optional<RedisMessageSequenceNumberDatabaseAccessor>): MessageSequenceNumberDatabaseAccessor {
         return redisMessageSequenceNumberDatabaseAccessor.get()
     }
     //</editor-fold>

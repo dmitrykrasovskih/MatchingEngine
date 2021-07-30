@@ -1,5 +1,6 @@
 package com.lykke.matching.engine.outgoing.grpc.impl.listeners
 
+import com.lykke.matching.engine.database.MessageSequenceNumberDatabaseAccessor
 import com.lykke.matching.engine.database.azure.AzureMessageLogDatabaseAccessor
 import com.lykke.matching.engine.logging.DatabaseLogger
 import com.lykke.matching.engine.outgoing.grpc.impl.publishers.GrpcEventPublisher
@@ -25,6 +26,9 @@ class ClientsEventListener {
     @Autowired
     private lateinit var applicationEventPublisher: ApplicationEventPublisher
 
+    @Autowired
+    private lateinit var redisSentMessageSequenceNumberDatabaseAccessor: MessageSequenceNumberDatabaseAccessor
+
     @Value("\${azure.logs.blob.container}")
     private lateinit var logBlobName: String
 
@@ -43,6 +47,7 @@ class ClientsEventListener {
                     "EventPublisher_$clientsEventConsumerQueueName", queue,
                     clientsEventConsumerQueueName, grpcConnectionString, applicationEventPublisher,
                     config.matchingEngine.grpcEndpoints.publishTimeout,
+                    redisSentMessageSequenceNumberDatabaseAccessor,
                     DatabaseLogger(
                         AzureMessageLogDatabaseAccessor(
                             config.matchingEngine.db.messageLogConnString,

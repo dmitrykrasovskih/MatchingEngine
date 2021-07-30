@@ -10,10 +10,8 @@ import com.lykke.matching.engine.database.cache.AssetPairsCache
 import com.lykke.matching.engine.database.cache.AssetsCache
 import com.lykke.matching.engine.holders.*
 import com.lykke.matching.engine.notification.TestOrderBookListener
-import com.lykke.matching.engine.notification.TradeInfoListener
 import com.lykke.matching.engine.order.utils.TestOrderBookWrapper
 import com.lykke.matching.engine.outgoing.messages.v2.events.Event
-import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.outgoing.messages.v2.events.common.BalanceUpdate
 import com.lykke.matching.engine.services.*
 import com.lykke.matching.engine.utils.assertEquals
@@ -86,9 +84,6 @@ abstract class AbstractTest {
     protected lateinit var testOrderBookWrapper: TestOrderBookWrapper
 
     @Autowired
-    protected lateinit var tradesInfoListener: TradeInfoListener
-
-    @Autowired
     protected lateinit var limitOrderCancelService: LimitOrderCancelService
 
     @Autowired
@@ -98,7 +93,7 @@ abstract class AbstractTest {
     protected lateinit var clientsEventsQueue: BlockingQueue<Event<*>>
 
     @Autowired
-    protected lateinit var trustedClientsEventsQueue: BlockingQueue<ExecutionEvent>
+    protected lateinit var trustedClientsEventsQueue: BlockingQueue<Event<*>>
 
     @Autowired
     protected lateinit var limitOrderMassCancelService: LimitOrderMassCancelService
@@ -121,8 +116,6 @@ abstract class AbstractTest {
     }
 
     protected fun clearMessageQueues() {
-        tradesInfoListener.clear()
-
         clientsEventsQueue.clear()
         trustedClientsEventsQueue.clear()
     }
@@ -134,7 +127,7 @@ abstract class AbstractTest {
         val allClientIds = testWalletDatabaseAccessor.loadWallets().keys
         assertEquals(
             size,
-            allClientIds.sumBy { genericLimitOrderService.searchOrders(it, assetPairId, isBuySide).size })
+            allClientIds.sumOf { genericLimitOrderService.searchOrders(it, assetPairId, isBuySide).size })
     }
 
     protected fun assertStopOrderBookSize(assetPairId: String, isBuySide: Boolean, size: Int) {
@@ -144,7 +137,7 @@ abstract class AbstractTest {
         val allClientIds = testWalletDatabaseAccessor.loadWallets().keys
         assertEquals(
             size,
-            allClientIds.sumBy { genericStopLimitOrderService.searchOrders(it, assetPairId, isBuySide).size })
+            allClientIds.sumOf { genericStopLimitOrderService.searchOrders(it, assetPairId, isBuySide).size })
     }
 
     protected fun assertBalance(clientId: String, assetId: String, balance: Double? = null, reserved: Double? = null) {

@@ -1,7 +1,6 @@
 package com.lykke.matching.engine.config.spring.grpc
 
 import com.lykke.matching.engine.outgoing.messages.v2.events.Event
-import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.outgoing.publishers.dispatchers.OutgoingEventDispatcher
 import com.lykke.matching.engine.utils.config.Config
 import com.swisschain.matching.engine.outgoing.grpc.utils.GrpcEventUtils
@@ -22,7 +21,7 @@ class GrpcConfiguration {
     private lateinit var applicationContext: ApplicationContext
 
     @Bean
-    fun trustedClientsEventsDispatcher(trustedClientsEventsQueue: BlockingDeque<ExecutionEvent>): OutgoingEventDispatcher<ExecutionEvent> {
+    fun trustedClientsEventsDispatcher(trustedClientsEventsQueue: BlockingDeque<Event<*>>): OutgoingEventDispatcher<Event<*>> {
         return OutgoingEventDispatcher(
             "TrustedClientEventsDispatcher",
             trustedClientsEventsQueue,
@@ -36,13 +35,13 @@ class GrpcConfiguration {
     }
 
     @Bean
-    fun trustedQueueNameToQueue(): Map<String, BlockingQueue<ExecutionEvent>> {
-        val consumerNameToQueue = HashMap<String, BlockingQueue<ExecutionEvent>>()
+    fun trustedQueueNameToQueue(): Map<String, BlockingQueue<Event<*>>> {
+        val consumerNameToQueue = HashMap<String, BlockingQueue<Event<*>>>()
         config.matchingEngine.grpcEndpoints.outgoingTrustedClientsEventsConnections.forEachIndexed { index, grpcConnectionString ->
             val trustedClientsEventConsumerQueueName =
                 GrpcEventUtils.getTrustedClientsEventConsumerQueueName(grpcConnectionString, index)
             @Suppress("UNCHECKED_CAST") val queue =
-                applicationContext.getBean(trustedClientsEventConsumerQueueName) as BlockingQueue<ExecutionEvent>
+                applicationContext.getBean(trustedClientsEventConsumerQueueName) as BlockingQueue<Event<*>>
 
             consumerNameToQueue[trustedClientsEventConsumerQueueName] = queue
         }

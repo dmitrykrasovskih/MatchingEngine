@@ -108,7 +108,6 @@ class InvalidBalanceTest : AbstractTest() {
         assertEquals(OrderRejectReason.NOT_ENOUGH_FUNDS, event.orders.single().rejectReason)
 
         assertEquals(0, testOrderBookListener.getCount())
-        assertEquals(0, tradesInfoListener.getCount())
 
         assertEquals(0, genericLimitOrderService.getOrderBook("", "ETHUSD").getOrderBook(true).size)
         assertEquals(2, genericLimitOrderService.getOrderBook("", "ETHUSD").getOrderBook(false).size)

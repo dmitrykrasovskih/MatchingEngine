@@ -1,10 +1,10 @@
 package com.lykke.matching.engine.holders
 
-import com.lykke.matching.engine.database.ReadOnlyMessageSequenceNumberDatabaseAccessor
+import com.lykke.matching.engine.database.MessageSequenceNumberDatabaseAccessor
 import org.springframework.stereotype.Component
 
 @Component
-class MessageSequenceNumberHolder(messageSequenceNumberDatabaseAccessor: ReadOnlyMessageSequenceNumberDatabaseAccessor) {
+class MessageSequenceNumberHolder(messageSequenceNumberDatabaseAccessor: MessageSequenceNumberDatabaseAccessor) {
 
     private var sequenceNumber = messageSequenceNumberDatabaseAccessor.getSequenceNumber()
     private var persistedSequenceNumber = sequenceNumber

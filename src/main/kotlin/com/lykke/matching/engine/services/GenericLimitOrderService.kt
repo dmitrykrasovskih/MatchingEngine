@@ -2,7 +2,6 @@ package com.lykke.matching.engine.services
 
 import com.lykke.matching.engine.daos.BestPrice
 import com.lykke.matching.engine.daos.LimitOrder
-import com.lykke.matching.engine.daos.TradeInfo
 import com.lykke.matching.engine.holders.OrdersDatabaseAccessorsHolder
 import com.lykke.matching.engine.order.ExpiryOrdersQueue
 import com.lykke.matching.engine.order.OrderStatus
@@ -12,13 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
-import java.util.concurrent.BlockingQueue
 import java.util.concurrent.ConcurrentHashMap
 
 @Component
 class GenericLimitOrderService @Autowired constructor(
     private val orderBookDatabaseAccessorHolder: OrdersDatabaseAccessorsHolder,
-    private val tradeInfoQueue: Optional<BlockingQueue<TradeInfo>>,
     private val expiryOrdersQueue: ExpiryOrdersQueue
 ) : AbstractGenericLimitOrderService<AssetOrderBook> {
 
@@ -124,12 +121,6 @@ class GenericLimitOrderService @Autowired constructor(
             if (removedOrder != null && status != null) {
                 removedOrder.updateStatus(status, date!!)
             }
-        }
-    }
-
-    fun putTradeInfo(tradeInfo: TradeInfo) {
-        if (tradeInfoQueue.isPresent) {
-            tradeInfoQueue.get().put(tradeInfo)
         }
     }
 

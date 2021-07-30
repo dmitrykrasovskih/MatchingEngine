@@ -3,7 +3,6 @@ package com.lykke.matching.engine.config
 import com.lykke.matching.engine.balance.util.TestBalanceHolderWrapper
 import com.lykke.matching.engine.config.spring.JsonConfig
 import com.lykke.matching.engine.config.spring.QueueConfig
-import com.lykke.matching.engine.daos.TradeInfo
 import com.lykke.matching.engine.daos.setting.AvailableSettingGroup
 import com.lykke.matching.engine.database.*
 import com.lykke.matching.engine.database.cache.ApplicationSettingsCache
@@ -25,7 +24,6 @@ import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.messages.wrappers.socket.LimitOrderMassCancelMessageWrapper
 import com.lykke.matching.engine.notification.SettingsListener
 import com.lykke.matching.engine.notification.TestOrderBookListener
-import com.lykke.matching.engine.notification.TradeInfoListener
 import com.lykke.matching.engine.order.ExecutionDataApplyService
 import com.lykke.matching.engine.order.ExpiryOrdersQueue
 import com.lykke.matching.engine.order.process.GenericLimitOrdersProcessor
@@ -36,7 +34,6 @@ import com.lykke.matching.engine.order.process.common.MatchingResultHandlingHelp
 import com.lykke.matching.engine.order.transaction.ExecutionContextFactory
 import com.lykke.matching.engine.order.utils.TestOrderBookWrapper
 import com.lykke.matching.engine.outgoing.messages.v2.events.Event
-import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.services.*
 import com.lykke.matching.engine.services.validators.MarketOrderValidator
 import com.lykke.matching.engine.services.validators.business.*
@@ -59,7 +56,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
-import java.util.*
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Executor
 import java.util.concurrent.LinkedBlockingQueue
@@ -67,11 +63,6 @@ import java.util.concurrent.LinkedBlockingQueue
 @Configuration
 @Import(QueueConfig::class, TestExecutionContext::class, JsonConfig::class)
 class TestApplicationContext {
-
-    @Bean
-    fun tradeInfoQueue(): BlockingQueue<TradeInfo> {
-        return LinkedBlockingQueue()
-    }
 
     @Bean
     fun threadPoolTaskExecutor(): Executor {
@@ -109,14 +100,14 @@ class TestApplicationContext {
     }
 
     @Bean
-    fun messageSequenceNumberHolder(messageSequenceNumberDatabaseAccessor: ReadOnlyMessageSequenceNumberDatabaseAccessor): MessageSequenceNumberHolder {
+    fun messageSequenceNumberHolder(messageSequenceNumberDatabaseAccessor: MessageSequenceNumberDatabaseAccessor): MessageSequenceNumberHolder {
         return MessageSequenceNumberHolder(messageSequenceNumberDatabaseAccessor)
     }
 
     @Bean
     fun notificationSender(
         clientsEventsQueue: BlockingQueue<Event<*>>,
-        trustedClientsEventsQueue: BlockingQueue<ExecutionEvent>
+        trustedClientsEventsQueue: BlockingQueue<Event<*>>
     ): MessageSender {
         return MessageSender(clientsEventsQueue, trustedClientsEventsQueue)
     }
@@ -334,12 +325,10 @@ class TestApplicationContext {
     @Bean
     fun genericLimitOrderService(
         ordersDatabaseAccessorsHolder: OrdersDatabaseAccessorsHolder,
-        tradeInfoQueue: Optional<BlockingQueue<TradeInfo>>,
         expiryOrdersQueue: ExpiryOrdersQueue
     ): GenericLimitOrderService {
         return GenericLimitOrderService(
             ordersDatabaseAccessorsHolder,
-            tradeInfoQueue,
             expiryOrdersQueue
         )
     }
@@ -478,11 +467,6 @@ class TestApplicationContext {
             genericStopLimitOrderService,
             stopOrderBookDatabaseAccessor
         )
-    }
-
-    @Bean
-    fun tradeInfoListener(): TradeInfoListener {
-        return TradeInfoListener()
     }
 
     @Bean

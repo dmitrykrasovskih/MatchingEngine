@@ -246,8 +246,6 @@ class ClientMultiLimitOrderTest : AbstractTest() {
         assertOrderBookSize("BTCUSD", false, 4)
         assertOrderBookSize("BTCUSD", true, 2)
 
-        assertEquals(2, tradesInfoListener.getCount())
-
         val buyOrderBook = genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(true)
         val sellOrderBook = genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false)
         assertEquals(2, buyOrderBook.size)
@@ -345,8 +343,6 @@ class ClientMultiLimitOrderTest : AbstractTest() {
         assertOrderBookSize("BTCUSD", false, 3)
         assertOrderBookSize("BTCUSD", true, 3)
 
-        assertEquals(1, tradesInfoListener.getCount())
-
         val sellOrderBook = genericLimitOrderService.getOrderBook("", "BTCUSD").getOrderBook(false)
         assertEquals(3, sellOrderBook.size)
         assertEquals(BigDecimal.valueOf(10000.0), sellOrderBook.first().price)
@@ -381,9 +377,6 @@ class ClientMultiLimitOrderTest : AbstractTest() {
 
         assertOrderBookSize("BTCUSD", false, 3)
         assertOrderBookSize("BTCUSD", true, 2)
-
-        assertEquals(2, tradesInfoListener.getCount())
-
 
         assertBalance("Client1", "BTC", 1.0, 0.60000001)
         assertBalance("Client1", "USD", 3000.0, 2750.0)

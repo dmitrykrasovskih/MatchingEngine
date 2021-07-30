@@ -167,24 +167,31 @@ class CashSwapOperationService(
             .preProcess(operations, true)
 
         val sequenceNumber = messageSequenceNumberHolder.getNewValue()
-        val updated = walletProcessor.persistBalances(cashSwapContext.processedMessage, null, null, sequenceNumber)
-        messageWrapper.triedToPersist = true
-        messageWrapper.persisted = updated
-        if (!updated) {
-            throw PersistenceException("Unable to save balance")
-        }
-        val messageId = cashSwapContext.messageId
-        walletProcessor.apply()
 
         val outgoingMessage = EventFactory.createCashSwapEvent(
             sequenceNumber,
-            messageId,
+            cashSwapContext.messageId,
             operation.externalId,
             date,
             MessageType.CASH_SWAP_OPERATION,
             walletProcessor.getClientBalanceUpdates(),
             operation
         )
+
+        val updated = walletProcessor.persistBalances(
+            cashSwapContext.processedMessage,
+            null,
+            null,
+            sequenceNumber,
+            outgoingMessage
+        )
+
+        messageWrapper.triedToPersist = true
+        messageWrapper.persisted = updated
+        if (!updated) {
+            throw PersistenceException("Unable to save balance")
+        }
+        walletProcessor.apply()
 
         return outgoingMessage
     }

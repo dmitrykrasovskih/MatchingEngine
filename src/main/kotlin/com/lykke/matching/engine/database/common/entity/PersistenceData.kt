@@ -1,28 +1,40 @@
 package com.lykke.matching.engine.database.common.entity
 
 import com.lykke.matching.engine.deduplication.ProcessedMessage
+import com.lykke.matching.engine.order.EventsHolder
 import org.springframework.util.CollectionUtils
 
-class PersistenceData(val balancesData: BalancesData?,
-                      val processedMessage: ProcessedMessage? = null,
-                      val orderBooksData: OrderBooksPersistenceData?,
-                      val stopOrderBooksData: OrderBooksPersistenceData?,
-                      val messageSequenceNumber: Long?) {
+class PersistenceData(
+    val balancesData: BalancesData?,
+    val processedMessage: ProcessedMessage? = null,
+    val orderBooksData: OrderBooksPersistenceData?,
+    val stopOrderBooksData: OrderBooksPersistenceData?,
+    val messageSequenceNumber: Long?,
+    val outgoingEvent: EventsHolder?
+) {
 
-    constructor(processedMessage: ProcessedMessage?, messageSequenceNumber: Long?) : this(null, processedMessage, null, null, messageSequenceNumber)
-    constructor(processedMessage: ProcessedMessage?) : this(null, processedMessage, null, null, null)
+    constructor(processedMessage: ProcessedMessage?, messageSequenceNumber: Long?) : this(
+        null,
+        processedMessage,
+        null,
+        null,
+        messageSequenceNumber,
+        null
+    )
+
+    constructor(processedMessage: ProcessedMessage?) : this(null, processedMessage, null, null, null, null)
 
     fun isEmpty(): Boolean {
         return isEmptyWithoutOrders() &&
                 isOrdersEmpty()
     }
 
-    fun isOrdersEmpty(): Boolean {
+    private fun isOrdersEmpty(): Boolean {
         return (orderBooksData == null || orderBooksData.isEmpty()) &&
                 (stopOrderBooksData == null || stopOrderBooksData.isEmpty())
     }
 
-    fun isEmptyWithoutOrders(): Boolean {
+    private fun isEmptyWithoutOrders(): Boolean {
         return CollectionUtils.isEmpty(balancesData?.balances) &&
                 CollectionUtils.isEmpty(balancesData?.wallets) &&
                 processedMessage == null &&

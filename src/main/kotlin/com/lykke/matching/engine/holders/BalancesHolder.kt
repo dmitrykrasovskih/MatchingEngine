@@ -140,7 +140,8 @@ class BalancesHolder(
                 processedMessage,
                 null,
                 null,
-                messageSequenceNumber
+                messageSequenceNumber,
+                null
             )
         )
         if (!persisted) {
@@ -169,7 +170,8 @@ class BalancesHolder(
                 processedMessage,
                 null,
                 null,
-                messageSequenceNumber
+                messageSequenceNumber,
+                null
             )
         )
         if (!persisted) {
@@ -183,7 +185,7 @@ class BalancesHolder(
         persistenceManager.persist(
             PersistenceData(
                 BalancesData(wallets, wallets.flatMap { it.balances.values }), null, null, null,
-                messageSequenceNumber = messageSequenceNumber
+                messageSequenceNumber = messageSequenceNumber, null
             )
         )
         update()

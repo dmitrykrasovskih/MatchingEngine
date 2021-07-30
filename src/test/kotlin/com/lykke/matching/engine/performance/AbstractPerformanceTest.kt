@@ -1,7 +1,6 @@
 package com.lykke.matching.engine.performance
 
 import com.lykke.matching.engine.balance.util.TestBalanceHolderWrapper
-import com.lykke.matching.engine.daos.TradeInfo
 import com.lykke.matching.engine.database.*
 import com.lykke.matching.engine.database.cache.ApplicationSettingsCache
 import com.lykke.matching.engine.database.cache.AssetPairsCache
@@ -19,11 +18,7 @@ import com.lykke.matching.engine.order.process.common.LimitOrdersCancellerImpl
 import com.lykke.matching.engine.order.process.common.MatchingResultHandlingHelper
 import com.lykke.matching.engine.order.transaction.ExecutionContextFactory
 import com.lykke.matching.engine.order.transaction.ExecutionEventsSequenceNumbersGenerator
-import com.lykke.matching.engine.outgoing.messages.LimitOrdersReport
-import com.lykke.matching.engine.outgoing.messages.MarketOrderWithTrades
-import com.lykke.matching.engine.outgoing.messages.OrderBook
 import com.lykke.matching.engine.outgoing.messages.v2.events.Event
-import com.lykke.matching.engine.outgoing.messages.v2.events.ExecutionEvent
 import com.lykke.matching.engine.services.*
 import com.lykke.matching.engine.services.validators.business.impl.LimitOrderBusinessValidatorImpl
 import com.lykke.matching.engine.services.validators.business.impl.StopOrderBusinessValidatorImpl
@@ -32,7 +27,6 @@ import com.lykke.matching.engine.services.validators.input.impl.LimitOrderInputV
 import com.lykke.matching.engine.utils.MessageBuilder
 import com.lykke.utils.logging.ThrottlingLogger
 import org.mockito.Mockito
-import java.util.*
 import java.util.concurrent.LinkedBlockingQueue
 
 abstract class AbstractPerformanceTest {
@@ -75,8 +69,8 @@ abstract class AbstractPerformanceTest {
     protected lateinit var applicationSettingsCache: ApplicationSettingsCache
     private lateinit var persistenceManager: PersistenceManager
 
-    private var rabbitEventsQueue = LinkedBlockingQueue<Event<*>>()
-    private var rabbitTrustedClientsEventsQueue = LinkedBlockingQueue<ExecutionEvent>()
+    private var clientsEventsQueue = LinkedBlockingQueue<Event<*>>()
+    private var trustedClientsEventsQueue = LinkedBlockingQueue<Event<*>>()
 
     private lateinit var singleLimitOrderContextParser: SingleLimitOrderContextParser
     private lateinit var cashInOutContextParser: CashInOutContextParser
@@ -90,27 +84,7 @@ abstract class AbstractPerformanceTest {
 
     protected lateinit var messageBuilder: MessageBuilder
 
-    private val clientLimitOrdersQueue = LinkedBlockingQueue<LimitOrdersReport>()
-
-    private val orderBookQueue = LinkedBlockingQueue<OrderBook>()
-
-    private val rabbitOrderBookQueue = LinkedBlockingQueue<OrderBook>()
-
-    private val rabbitSwapQueue = LinkedBlockingQueue<MarketOrderWithTrades>()
-
-    private val trustedClientsLimitOrdersQueue = LinkedBlockingQueue<LimitOrdersReport>()
-
-    private val tradeInfoQueue = LinkedBlockingQueue<TradeInfo>()
-
     private fun clearMessageQueues() {
-        rabbitEventsQueue.clear()
-        rabbitTrustedClientsEventsQueue.clear()
-        clientLimitOrdersQueue.clear()
-        orderBookQueue.clear()
-        rabbitOrderBookQueue.clear()
-        rabbitSwapQueue.clear()
-        trustedClientsLimitOrdersQueue.clear()
-        tradeInfoQueue.clear()
     }
 
     open fun initServices() {
@@ -143,14 +117,13 @@ abstract class AbstractPerformanceTest {
         expiryOrdersQueue = ExpiryOrdersQueue()
         genericLimitOrderService = GenericLimitOrderService(
             ordersDatabaseAccessorsHolder,
-            Optional.of(tradeInfoQueue),
             expiryOrdersQueue
         )
 
         feeProcessor = FeeProcessor(assetsHolder, assetsPairsHolder, genericLimitOrderService)
 
         val messageSequenceNumberHolder = MessageSequenceNumberHolder(TestMessageSequenceNumberDatabaseAccessor())
-        val notificationSender = MessageSender(rabbitEventsQueue, rabbitTrustedClientsEventsQueue)
+        val notificationSender = MessageSender(clientsEventsQueue, trustedClientsEventsQueue)
         val limitOrderInputValidator = LimitOrderInputValidatorImpl(applicationSettingsHolder)
         singleLimitOrderContextParser =
             SingleLimitOrderContextParser(assetsPairsHolder, assetsHolder, applicationSettingsHolder, LOGGER)
@@ -174,8 +147,7 @@ abstract class AbstractPerformanceTest {
             ExecutionEventsSequenceNumbersGenerator(messageSequenceNumberHolder)
         val executionPersistenceService = ExecutionPersistenceService(persistenceManager)
         val executionEventSender = ExecutionEventSender(
-            notificationSender,
-            genericLimitOrderService
+            notificationSender
         )
         val executionDataApplyService = ExecutionDataApplyService(
             executionEventsSequenceNumbersGenerator,

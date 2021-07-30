@@ -9,27 +9,38 @@ import org.springframework.stereotype.Component
 @Component
 class ExecutionPersistenceService(private val persistenceManager: PersistenceManager) {
 
-    fun persist(messageWrapper: MessageWrapper?,
-                executionContext: ExecutionContext,
-                sequenceNumber: Long? = null): Boolean {
+    fun persist(
+        messageWrapper: MessageWrapper?,
+        executionContext: ExecutionContext,
+        executionEventSender: ExecutionEventSender,
+        sequenceNumber: SequenceNumbersWrapper
+    ): EventsHolder? {
 
         if (messageWrapper?.triedToPersist == true) {
             executionContext.error("There already was attempt to persist data")
-            return messageWrapper.persisted
+            return null
         }
 
-        val persisted = persistenceManager.persist(PersistenceData(executionContext.walletOperationsProcessor.persistenceData(),
+        executionContext.apply()
+
+        val eventsHolder = executionEventSender.generateEvents(executionContext, sequenceNumber)
+
+        val persisted = persistenceManager.persist(
+            PersistenceData(
+                executionContext.walletOperationsProcessor.persistenceData(),
                 executionContext.processedMessage,
                 executionContext.orderBooksHolder.getPersistenceData(),
                 executionContext.stopOrderBooksHolder.getPersistenceData(),
-                sequenceNumber))
+                sequenceNumber.sequenceNumber,
+                eventsHolder
+            )
+        )
+
         messageWrapper?.triedToPersist = true
         messageWrapper?.persisted = persisted
-        if (persisted) {
-            executionContext.apply()
-        } else {
+        if (!persisted) {
             executionContext.error("Unable to persist result")
         }
-        return persisted
+        return eventsHolder
     }
 }

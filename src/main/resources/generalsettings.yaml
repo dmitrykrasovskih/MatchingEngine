@@ -1,23 +1,23 @@
 MatchingEngine:
   matchingEngine:
     db:
-      hBlobConnString: ${ME-AzureStorageUrl}
-      hBestPriceConnString: ${ME-AzureStorageUrl}
-      hCandlesConnString: ${ME-AzureStorageUrl}
-      hHourCandlesConnString: ${ME-AzureStorageUrl}
-      balancesInfoConnString: ${ME-AzureStorageUrl}
-      hTradesConnString: ${ME-AzureStorageUrl}
-      dictsConnString: ${ME-AzureStorageUrl}
-      sharedStorageConnString: ${ME-AzureStorageUrl}
-      messageLogConnString: ${ME-AzureStorageUrl}
-      matchingEngineConnString: ${ME-AzureStorageUrl}
-      monitoringConnString: ${ME-AzureStorageUrl}
-      reservedVolumesConnString: ${ME-AzureStorageUrl}
-      accountsTableName: ${ME-AzureStorageUrl}
-      newAccountsTableName: ${ME-AzureStorageUrl}
+      hBlobConnString: DefaultEndpointsProtocol=https;AccountName=sbwltmetest;AccountKey=8UY02TesqkWQKqucDk64LbvS19hBswYFTouFDlkr1t3EGubMt+TlPk5/ng3kfDDQSczmHppAgEydPo6WOyuI+A==;EndpointSuffix=core.windows.net
+      hBestPriceConnString: DefaultEndpointsProtocol=https;AccountName=sbwltmetest;AccountKey=8UY02TesqkWQKqucDk64LbvS19hBswYFTouFDlkr1t3EGubMt+TlPk5/ng3kfDDQSczmHppAgEydPo6WOyuI+A==;EndpointSuffix=core.windows.net
+      hCandlesConnString: DefaultEndpointsProtocol=https;AccountName=sbwltmetest;AccountKey=8UY02TesqkWQKqucDk64LbvS19hBswYFTouFDlkr1t3EGubMt+TlPk5/ng3kfDDQSczmHppAgEydPo6WOyuI+A==;EndpointSuffix=core.windows.net
+      hHourCandlesConnString: DefaultEndpointsProtocol=https;AccountName=sbwltmetest;AccountKey=8UY02TesqkWQKqucDk64LbvS19hBswYFTouFDlkr1t3EGubMt+TlPk5/ng3kfDDQSczmHppAgEydPo6WOyuI+A==;EndpointSuffix=core.windows.net
+      balancesInfoConnString: DefaultEndpointsProtocol=https;AccountName=sbwltmetest;AccountKey=8UY02TesqkWQKqucDk64LbvS19hBswYFTouFDlkr1t3EGubMt+TlPk5/ng3kfDDQSczmHppAgEydPo6WOyuI+A==;EndpointSuffix=core.windows.net
+      hTradesConnString: DefaultEndpointsProtocol=https;AccountName=sbwltmetest;AccountKey=8UY02TesqkWQKqucDk64LbvS19hBswYFTouFDlkr1t3EGubMt+TlPk5/ng3kfDDQSczmHppAgEydPo6WOyuI+A==;EndpointSuffix=core.windows.net
+      dictsConnString: DefaultEndpointsProtocol=https;AccountName=sbwltmetest;AccountKey=8UY02TesqkWQKqucDk64LbvS19hBswYFTouFDlkr1t3EGubMt+TlPk5/ng3kfDDQSczmHppAgEydPo6WOyuI+A==;EndpointSuffix=core.windows.net
+      sharedStorageConnString: DefaultEndpointsProtocol=https;AccountName=sbwltmetest;AccountKey=8UY02TesqkWQKqucDk64LbvS19hBswYFTouFDlkr1t3EGubMt+TlPk5/ng3kfDDQSczmHppAgEydPo6WOyuI+A==;EndpointSuffix=core.windows.net
+      messageLogConnString: DefaultEndpointsProtocol=https;AccountName=sbwltmetest;AccountKey=8UY02TesqkWQKqucDk64LbvS19hBswYFTouFDlkr1t3EGubMt+TlPk5/ng3kfDDQSczmHppAgEydPo6WOyuI+A==;EndpointSuffix=core.windows.net
+      matchingEngineConnString: DefaultEndpointsProtocol=https;AccountName=sbwltmetest;AccountKey=8UY02TesqkWQKqucDk64LbvS19hBswYFTouFDlkr1t3EGubMt+TlPk5/ng3kfDDQSczmHppAgEydPo6WOyuI+A==;EndpointSuffix=core.windows.net
+      monitoringConnString: DefaultEndpointsProtocol=https;AccountName=sbwltmetest;AccountKey=8UY02TesqkWQKqucDk64LbvS19hBswYFTouFDlkr1t3EGubMt+TlPk5/ng3kfDDQSczmHppAgEydPo6WOyuI+A==;EndpointSuffix=core.windows.net
+      reservedVolumesConnString: DefaultEndpointsProtocol=https;AccountName=sbwltmetest;AccountKey=8UY02TesqkWQKqucDk64LbvS19hBswYFTouFDlkr1t3EGubMt+TlPk5/ng3kfDDQSczmHppAgEydPo6WOyuI+A==;EndpointSuffix=core.windows.net
+      accountsTableName: Balances
+      newAccountsTableName: Balances
     redis:
-      host: ${ME-RedisHost}
-      port: ${ME-RedisPort}
+      host: 127.0.0.1
+      port: 6379
       timeout: 1000
       useSsl: false
       balanceDatabase: 0
@@ -26,10 +26,18 @@ MatchingEngine:
       ordersDatabase: 3
       pingDatabase: 4
       sequenceNumberDatabase: 5
+      outgoingEventsDatabase: 6
+      outgoingEventsTtl: 3600
     grpcEndpoints:
       cashApiServicePort: 5001
       tradingApiServicePort: 5002
-      dictionariesConnection: ${ME-AssetsServiceUrl}
+      balancesServicePort: 5003
+      orderBooksServicePort: 5004
+      dictionariesConnection: assets-dictionary.spot-services.svc.cluster.local
+      outgoingEventsConnections:
+        - localhost:95
+      outgoingTrustedClientsEventsConnections:
+        - localhost:95
     socket:
       port: 8888
       maxConnections: 100
@@ -37,39 +45,6 @@ MatchingEngine:
     serverOrderBookMaxConnections: 10
     httpOrderBookPort: 8886
     httpApiPort: 8885
-    rabbitMqConfigs:
-      orderBooks:
-        uri: ${ME-Rabbit-OrderBooksUrl}
-        exchange: spot.me.orderbooks
-      cashOperations:
-        uri: ${ME-Rabbit-CashUrl}
-        exchange: spot.me.cash
-      reservedCashOperations:
-        uri: ${ME-Rabbit-ReservedCashUrl}
-        exchange: spot.me.reserved
-      transfers:
-        uri: ${ME-Rabbit-TransfersUrl}
-        exchange: spot.me.transfers
-      balanceUpdates:
-        uri: ${ME-Rabbit-BalancesUrl}
-        exchange: spot.me.balances
-      marketOrders:
-        uri: ${ME-Rabbit-MarketOrdersUrl}
-        exchange: spot.me.orders.market
-      limitOrders:
-        uri: ${ME-Rabbit-LimitOrdersUrl}
-        exchange: spot.me.orders.limit
-      trustedLimitOrders:
-        uri: ${ME-Rabbit-TrustedLimitOrdersUrl}
-        exchange: spot.me.orders.limit.trusted
-      events:
-          -
-            uri: ${ME-Rabbit-EventsUrl}
-            exchange: spot.me.events
-      trustedClientsEvents:
-        -
-            uri: ${ME-Rabbit-TrustedEventsUrl}
-            exchange: spot.me.events.trusted
     bestPricesInterval: 100000
     candleSaverInterval: 100000
     hoursCandleSaverInterval: 100000
@@ -83,13 +58,13 @@ MatchingEngine:
     queueConfig:
       queueSizeHealthCheckInterval: 10000
       queueSizeLoggerInterval: 60000
-      queueSizeLimit: 5000
-      maxQueueSizeLimit: 10000
-      recoverQueueSizeLimit: 2000
-      outgoingMaxQueueSizeLimit: 5000
-      outgoingRecoverQueueSizeLimit: 2000
-      dataMaxQueueSizeLimit: 5000
-      dataRecoverQueueSizeLimit: 2000
+      queueSizeLimit: 1
+      maxQueueSizeLimit: 1
+      recoverQueueSizeLimit: 5
+      outgoingMaxQueueSizeLimit: 1
+      outgoingRecoverQueueSizeLimit: 5
+      dataMaxQueueSizeLimit: 1
+      dataRecoverQueueSizeLimit: 5
     name: Spot.MatchingEngine
     aliveStatus:
       updatePeriod: 10000
@@ -99,6 +74,7 @@ MatchingEngine:
     performanceStatsInterval: 60000
     keepAlive:
       passive: true
+      port: 8880
       name: Spot.MatchingEngine
     logFilesCleaner:
       enabled: false
@@ -109,7 +85,7 @@ MatchingEngine:
     writeOrdersToSecondaryDb: true
   slackNotifications:
     azureQueue:
-      connectionString: ${ME-AzureStorageUrl}
+      connectionString: DefaultEndpointsProtocol=https;AccountName=sbwltmetest;AccountKey=8UY02TesqkWQKqucDk64LbvS19hBswYFTouFDlkr1t3EGubMt+TlPk5/ng3kfDDQSczmHppAgEydPo6WOyuI+A==;EndpointSuffix=core.windows.net
       queueName: TestQueue
   throttlingLogger:
     limitSeconds: 5
