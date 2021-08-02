@@ -56,8 +56,11 @@ class RedisPersistenceManager(
             persistBalances(transaction, data.balancesData?.balances)
             persistProcessedMessages(transaction, data.processedMessage)
 
-            if (data.processedMessage?.type == MessageType.CASH_IN_OUT_OPERATION.type ||
-                data.processedMessage?.type == MessageType.CASH_TRANSFER_OPERATION.type
+            if (data.processedMessage != null && (
+                        data.processedMessage.type == MessageType.CASH_IN_OUT_OPERATION.type ||
+                                data.processedMessage.type == MessageType.CASH_TRANSFER_OPERATION.type ||
+                                data.processedMessage.type == MessageType.CASH_SWAP_OPERATION.type ||
+                                data.processedMessage.type == MessageType.RESERVED_CASH_IN_OUT_OPERATION.type)
             ) {
                 persistProcessedCashMessage(transaction, data.processedMessage)
             }

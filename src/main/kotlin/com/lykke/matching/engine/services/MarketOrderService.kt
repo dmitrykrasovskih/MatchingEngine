@@ -117,9 +117,12 @@ class MarketOrderService @Autowired constructor(
             )
             messageWrapper.writeResponse(
                 MessageStatus.INVALID_WALLET_VERSION,
-                order,
                 "Invalid wallet version",
-                actualWalletVersion
+                actualWalletVersion,
+                order.price,
+                order.isStraight(),
+                order.volume,
+                order.oppositeVolume
             )
             return
         }
@@ -129,7 +132,7 @@ class MarketOrderService @Autowired constructor(
         } catch (e: OrderValidationException) {
             order.updateStatus(e.orderStatus, now)
             sendErrorNotification(messageWrapper, order, now)
-            messageWrapper.writeResponse(MessageStatusUtils.toMessageStatus(order.status), order, e.message)
+            messageWrapper.writeResponse(MessageStatusUtils.toMessageStatus(order.status), e.message)
             return
         }
 
@@ -236,17 +239,40 @@ class MarketOrderService @Autowired constructor(
         }
 
         stopOrderBookProcessor.checkAndExecuteStopLimitOrders(executionContext)
+        val walletVersion = balancesHolder.getBalanceVersion(
+            order.clientId,
+            if (order.isBuySide()) assetPair.quotingAssetId else assetPair.baseAssetId
+        )
+
+        executionContext.processedMessage?.status = MessageStatusUtils.toMessageStatus(order.status)
+        executionContext.processedMessage?.walletVersion = walletVersion
+        executionContext.processedMessage?.price = order.price
+        executionContext.processedMessage?.isStraight = order.isStraight()
+        executionContext.processedMessage?.volume = order.volume
+        executionContext.processedMessage?.oppositeVolume = order.oppositeVolume
+
         val persisted = executionDataApplyService.persistAndSendEvents(messageWrapper, executionContext)
         if (!persisted) {
             LOGGER.error("$order: Unable to save result data")
-            messageWrapper.writeResponse(MessageStatus.RUNTIME, order, "Unable to save result data")
+            messageWrapper.writeResponse(
+                MessageStatus.RUNTIME,
+                "Unable to save result data",
+                null,
+                order.price,
+                order.isStraight(),
+                order.volume,
+                order.oppositeVolume
+            )
             return
         }
         messageWrapper.writeResponse(
-            MessageStatusUtils.toMessageStatus(order.status), order, null, balancesHolder.getBalanceVersion(
-                order.clientId,
-                if (order.isBuySide()) assetPair.quotingAssetId else assetPair.baseAssetId
-            )
+            MessageStatusUtils.toMessageStatus(order.status),
+            null,
+            walletVersion,
+            order.price,
+            order.isStraight(),
+            order.volume,
+            order.oppositeVolume
         )
 
         val endTime = System.nanoTime()
@@ -263,6 +289,19 @@ class MarketOrderService @Autowired constructor(
     override fun writeResponse(genericMessageWrapper: MessageWrapper, status: MessageStatus) {
         val messageWrapper = genericMessageWrapper as MarketOrderMessageWrapper
         messageWrapper.writeResponse(status)
+    }
+
+    override fun writeResponse(genericMessageWrapper: MessageWrapper, processedMessage: ProcessedMessage) {
+        val messageWrapper = genericMessageWrapper as MarketOrderMessageWrapper
+        messageWrapper.writeResponse(
+            processedMessage.status ?: MessageStatus.DUPLICATE,
+            processedMessage.statusReason,
+            processedMessage.walletVersion,
+            processedMessage.price,
+            processedMessage.isStraight,
+            processedMessage.volume,
+            processedMessage.oppositeVolume
+        )
     }
 
     private fun getOrderBook(order: MarketOrder) =

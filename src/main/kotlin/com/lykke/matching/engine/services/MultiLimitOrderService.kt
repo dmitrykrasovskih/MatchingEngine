@@ -6,6 +6,7 @@ import com.lykke.matching.engine.daos.MultiLimitOrder
 import com.lykke.matching.engine.daos.fee.v2.NewLimitOrderFeeInstruction
 import com.lykke.matching.engine.daos.order.LimitOrderType
 import com.lykke.matching.engine.daos.order.OrderTimeInForce
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.holders.*
 import com.lykke.matching.engine.messages.MessageStatus
 import com.lykke.matching.engine.messages.MessageStatus.*
@@ -88,6 +89,9 @@ class MultiLimitOrderService(
 
         val processedOrders = genericLimitOrdersProcessor.processOrders(multiLimitOrder.orders, executionContext)
         stopOrderBookProcessor.checkAndExecuteStopLimitOrders(executionContext)
+        executionContext.processedMessage?.processedOrders = processedOrders
+        executionContext.processedMessage?.status = OK
+
         val persisted = executionDataApplyService.persistAndSendEvents(messageWrapper, executionContext)
 
         if (!persisted) {
@@ -103,6 +107,16 @@ class MultiLimitOrderService(
     override fun writeResponse(genericMessageWrapper: MessageWrapper, status: MessageStatus) {
         val messageWrapper = genericMessageWrapper as MultiLimitOrderMessageWrapper
         messageWrapper.writeResponse(status)
+    }
+
+    override fun writeResponse(genericMessageWrapper: MessageWrapper, processedMessage: ProcessedMessage) {
+        val messageWrapper = genericMessageWrapper as MultiLimitOrderMessageWrapper
+        messageWrapper.writeResponse(
+            processedMessage.status ?: DUPLICATE,
+            processedMessage.statusReason,
+            processedMessage.processedOrders,
+            processedMessage.walletVersion
+        )
     }
 
     private fun readMultiLimitOrder(

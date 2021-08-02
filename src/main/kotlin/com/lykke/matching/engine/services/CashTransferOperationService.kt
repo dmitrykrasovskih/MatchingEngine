@@ -5,6 +5,7 @@ import com.lykke.matching.engine.daos.TransferOperation
 import com.lykke.matching.engine.daos.WalletOperation
 import com.lykke.matching.engine.daos.context.CashTransferContext
 import com.lykke.matching.engine.daos.fee.v2.Fee
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.exception.PersistenceException
 import com.lykke.matching.engine.fee.FeeException
 import com.lykke.matching.engine.fee.FeeProcessor
@@ -21,6 +22,7 @@ import com.lykke.matching.engine.services.validators.business.CashTransferOperat
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
+import org.apache.commons.lang3.StringUtils
 import org.apache.log4j.Logger
 import org.springframework.stereotype.Service
 import java.util.*
@@ -102,6 +104,15 @@ class CashTransferOperationService(
         messageWrapper.writeResponse(messageWrapper.id, status)
     }
 
+    override fun writeResponse(genericMessageWrapper: MessageWrapper, processedMessage: ProcessedMessage) {
+        val messageWrapper = genericMessageWrapper as CashTransferOperationMessageWrapper
+        messageWrapper.writeResponse(
+            processedMessage.matchingEngineId ?: messageWrapper.messageId,
+            processedMessage.status ?: DUPLICATE,
+            processedMessage.statusReason ?: StringUtils.EMPTY
+        )
+    }
+
     private fun processTransferOperation(
         operation: TransferOperation,
         messageWrapper: MessageWrapper,
@@ -149,6 +160,9 @@ class CashTransferOperationService(
             operation,
             fees
         )
+
+        cashTransferContext.processedMessage.status = OK
+        cashTransferContext.processedMessage.matchingEngineId = operation.matchingEngineOperationId
 
         val updated = walletProcessor.persistBalances(
             cashTransferContext.processedMessage,

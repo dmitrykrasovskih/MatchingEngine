@@ -28,13 +28,8 @@ class RedisConfig {
     }
 
     @Bean
-    fun cashTransferOperationIdRedisConnection(): RedisConnection? {
-        return redisConnectionFactory.getConnection("cashTransferOperationIdRedisConnection")
-    }
-
-    @Bean
-    fun cashInOutOperationIdRedisConnection(): RedisConnection? {
-        return redisConnectionFactory.getConnection("cashInOutOperationIdRedisConnection")
+    fun cashOperationIdRedisConnection(): RedisConnection? {
+        return redisConnectionFactory.getConnection("cashOperationIdRedisConnection")
     }
 
     @Bean
@@ -99,8 +94,7 @@ class RedisConfig {
     @Bean
     fun redisCashOperationIdDatabaseAccessor(): RedisCashOperationIdDatabaseAccessor? {
         return RedisCashOperationIdDatabaseAccessor(
-            cashInOutOperationIdRedisConnection()!!,
-            cashTransferOperationIdRedisConnection()!!,
+            cashOperationIdRedisConnection()!!,
             config.matchingEngine.redis.processedCashMessageDatabase
         )
     }

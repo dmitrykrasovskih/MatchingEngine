@@ -1,5 +1,6 @@
 package com.lykke.matching.engine.incoming.preprocessor.impl
 
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
 import com.lykke.matching.engine.incoming.parsers.data.LimitOrderMassCancelOperationParsedData
 import com.lykke.matching.engine.incoming.parsers.impl.LimitOrderMassCancelOperationContextParser
@@ -13,15 +14,19 @@ import org.springframework.stereotype.Component
 import java.util.concurrent.BlockingQueue
 
 @Component
-class LimitOrderMassCancelOperationPreprocessor(limitOrderMassCancelOperationContextParser: LimitOrderMassCancelOperationContextParser,
-                                                messageProcessingStatusHolder: MessageProcessingStatusHolder,
-                                                preProcessedMessageQueue: BlockingQueue<MessageWrapper>,
-                                                @Qualifier("limitOrderMassCancelPreProcessingLogger")
-                                                private val logger: ThrottlingLogger) :
-        AbstractMessagePreprocessor<LimitOrderMassCancelOperationParsedData, LimitOrderMassCancelMessageWrapper>(limitOrderMassCancelOperationContextParser,
-                messageProcessingStatusHolder,
-                preProcessedMessageQueue,
-                logger) {
+class LimitOrderMassCancelOperationPreprocessor(
+    limitOrderMassCancelOperationContextParser: LimitOrderMassCancelOperationContextParser,
+    messageProcessingStatusHolder: MessageProcessingStatusHolder,
+    preProcessedMessageQueue: BlockingQueue<MessageWrapper>,
+    @Qualifier("limitOrderMassCancelPreProcessingLogger")
+    private val logger: ThrottlingLogger
+) :
+    AbstractMessagePreprocessor<LimitOrderMassCancelOperationParsedData, LimitOrderMassCancelMessageWrapper>(
+        limitOrderMassCancelOperationContextParser,
+        messageProcessingStatusHolder,
+        preProcessedMessageQueue,
+        logger
+    ) {
 
     override fun preProcessParsedData(parsedData: LimitOrderMassCancelOperationParsedData): Boolean {
         return true
@@ -33,5 +38,9 @@ class LimitOrderMassCancelOperationPreprocessor(limitOrderMassCancelOperationCon
         message: String?
     ) {
         messageWrapper.writeResponse(status, message)
+    }
+
+    override fun writeResponse(messageWrapper: LimitOrderMassCancelMessageWrapper, processedMessage: ProcessedMessage) {
+        //do nothing
     }
 }

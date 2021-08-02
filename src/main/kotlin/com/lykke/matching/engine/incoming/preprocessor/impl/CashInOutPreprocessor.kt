@@ -4,6 +4,7 @@ import com.lykke.matching.engine.daos.context.CashInOutContext
 import com.lykke.matching.engine.database.CashOperationIdDatabaseAccessor
 import com.lykke.matching.engine.database.PersistenceManager
 import com.lykke.matching.engine.database.common.entity.PersistenceData
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.deduplication.ProcessedMessagesCache
 import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
 import com.lykke.matching.engine.incoming.parsers.data.CashInOutParsedData
@@ -60,10 +61,10 @@ class CashInOutPreprocessor(
             return false
         }
 
-        if (isMessageDuplicated(parsedData)) {
-            writeResponse(parsedMessageWrapper, DUPLICATE)
-            val errorMessage = "Message already processed: ${parsedMessageWrapper.type}: ${context.messageId}"
-            logger.info(errorMessage)
+        val processedMessage = getProcessedMessage(parsedData)
+        if (processedMessage != null) {
+            logger.info("Message already processed: ${parsedMessageWrapper.type}: ${context.messageId}")
+            writeResponse(parsedMessageWrapper, processedMessage)
             return false
         }
 
@@ -109,11 +110,11 @@ class CashInOutPreprocessor(
         }
     }
 
-    private fun isMessageDuplicated(cashInOutParsedData: CashInOutParsedData): Boolean {
+    private fun getProcessedMessage(cashInOutParsedData: CashInOutParsedData): ProcessedMessage? {
         val parsedMessageWrapper = cashInOutParsedData.messageWrapper as CashInOutOperationMessageWrapper
         val context = parsedMessageWrapper.context!!
-        return cashOperationIdDatabaseAccessor.isAlreadyProcessed(
-            parsedMessageWrapper.type.toString(),
+        return cashOperationIdDatabaseAccessor.getProcessedMessage(
+            parsedMessageWrapper.type.type.toString(),
             context.messageId
         )
     }
@@ -146,6 +147,14 @@ class CashInOutPreprocessor(
         logger.info(
             "Cash in/out operation (${context.cashInOutOperation.externalId}), messageId: ${messageWrapper.messageId} for client ${context.cashInOutOperation.clientId}, " +
                     "asset ${context.cashInOutOperation.asset!!.symbol}, amount: ${NumberUtils.roundForPrint(context.cashInOutOperation.amount)}: $message"
+        )
+    }
+
+    override fun writeResponse(messageWrapper: CashInOutOperationMessageWrapper, processedMessage: ProcessedMessage) {
+        messageWrapper.writeResponse(
+            processedMessage.matchingEngineId ?: messageWrapper.messageId,
+            processedMessage.status ?: DUPLICATE,
+            processedMessage.statusReason ?: StringUtils.EMPTY
         )
     }
 }

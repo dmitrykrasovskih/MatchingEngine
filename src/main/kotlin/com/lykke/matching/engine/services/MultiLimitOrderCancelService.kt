@@ -71,4 +71,11 @@ class MultiLimitOrderCancelService(
         val messageWrapper = genericMessageWrapper as MultiLimitOrderCancelMessageWrapper
         messageWrapper.writeResponse(status)
     }
+
+    override fun writeResponse(genericMessageWrapper: MessageWrapper, processedMessage: ProcessedMessage) {
+        val messageWrapper = genericMessageWrapper as MultiLimitOrderCancelMessageWrapper
+        messageWrapper.writeResponse(
+            processedMessage.status ?: MessageStatus.DUPLICATE
+        )
+    }
 }

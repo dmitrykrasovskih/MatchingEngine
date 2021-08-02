@@ -1,7 +1,9 @@
 package com.lykke.matching.engine.services
 
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.messages.MessageStatus
+import com.lykke.matching.engine.messages.MessageStatus.OK
 import com.lykke.matching.engine.messages.MessageType
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.messages.wrappers.SingleLimitOrderMessageWrapper
@@ -91,6 +93,10 @@ class SingleLimitOrderService(
         )
         val processedOrder = genericLimitOrdersProcessor.processOrders(listOf(order), executionContext).single()
         stopOrderBookProcessor.checkAndExecuteStopLimitOrders(executionContext)
+        executionContext.processedMessage?.status = MessageStatusUtils.toMessageStatus(processedOrder.order.status)
+        executionContext.processedMessage?.statusReason = processedOrder.reason
+        executionContext.processedMessage?.orderId = processedOrder.order.id
+
         val persisted = executionDataApplyService.persistAndSendEvents(messageWrapper, executionContext)
 
         if (!persisted) {
@@ -106,7 +112,7 @@ class SingleLimitOrderService(
 
         if (processedOrder.accepted) {
             messageWrapper.writeResponse(
-                MessageStatus.OK, null, processedOrder.order.id,
+                OK, null, processedOrder.order.id,
                 balancesHolder.getBalanceVersion(
                     order.clientId,
                     if (order.isBuySide()) assetPair.quotingAssetId else assetPair.baseAssetId
@@ -134,6 +140,16 @@ class SingleLimitOrderService(
     override fun writeResponse(genericMessageWrapper: MessageWrapper, status: MessageStatus) {
         val messageWrapper = genericMessageWrapper as SingleLimitOrderMessageWrapper
         messageWrapper.writeResponse(status)
+    }
+
+    override fun writeResponse(genericMessageWrapper: MessageWrapper, processedMessage: ProcessedMessage) {
+        val messageWrapper = genericMessageWrapper as SingleLimitOrderMessageWrapper
+        messageWrapper.writeResponse(
+            processedMessage.status ?: MessageStatus.DUPLICATE,
+            processedMessage.statusReason,
+            processedMessage.orderId,
+            processedMessage.walletVersion
+        )
     }
 }
 

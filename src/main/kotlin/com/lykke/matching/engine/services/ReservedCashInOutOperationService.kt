@@ -3,6 +3,7 @@ package com.lykke.matching.engine.services
 import com.lykke.matching.engine.balance.BalanceException
 import com.lykke.matching.engine.daos.WalletOperation
 import com.lykke.matching.engine.daos.context.ReservedCashInOutContext
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.holders.MessageSequenceNumberHolder
 import com.lykke.matching.engine.messages.MessageStatus
@@ -15,6 +16,7 @@ import com.lykke.matching.engine.outgoing.messages.v2.builders.EventFactory
 import com.lykke.matching.engine.services.validators.business.ReservedCashInOutOperationBusinessValidator
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
+import org.apache.commons.lang3.StringUtils
 import org.apache.log4j.Logger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -93,6 +95,9 @@ class ReservedCashInOutOperationService @Autowired constructor(
             walletOperation
         )
 
+        messageWrapper.processedMessage?.status = MessageStatus.OK
+        messageWrapper.processedMessage?.matchingEngineId = reservedCashInOutOperation.matchingEngineOperationId
+
         val updated = walletProcessor.persistBalances(
             messageWrapper.processedMessage,
             null,
@@ -124,5 +129,14 @@ class ReservedCashInOutOperationService @Autowired constructor(
     override fun writeResponse(genericMessageWrapper: MessageWrapper, status: MessageStatus) {
         val messageWrapper = genericMessageWrapper as ReservedCashInOutOperationMessageWrapper
         messageWrapper.writeResponse(messageWrapper.id, status)
+    }
+
+    override fun writeResponse(genericMessageWrapper: MessageWrapper, processedMessage: ProcessedMessage) {
+        val messageWrapper = genericMessageWrapper as ReservedCashInOutOperationMessageWrapper
+        messageWrapper.writeResponse(
+            processedMessage.matchingEngineId ?: messageWrapper.messageId,
+            processedMessage.status ?: MessageStatus.DUPLICATE,
+            processedMessage.statusReason ?: StringUtils.EMPTY
+        )
     }
 }

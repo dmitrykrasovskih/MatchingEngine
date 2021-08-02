@@ -1,5 +1,6 @@
 package com.lykke.matching.engine.incoming.preprocessor
 
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
 import com.lykke.matching.engine.incoming.parsers.ContextParser
 import com.lykke.matching.engine.incoming.parsers.data.ParsedData
@@ -53,6 +54,8 @@ abstract class AbstractMessagePreprocessor<T : ParsedData, WrapperType : Message
     protected abstract fun preProcessParsedData(parsedData: T): Boolean
 
     abstract fun writeResponse(messageWrapper: WrapperType, status: MessageStatus, message: String? = null)
+
+    abstract fun writeResponse(messageWrapper: WrapperType, processedMessage: ProcessedMessage)
 
     private fun parse(messageWrapper: WrapperType): T {
         return contextParser.parse(messageWrapper)

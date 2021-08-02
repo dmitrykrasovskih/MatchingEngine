@@ -1,5 +1,6 @@
 package com.lykke.matching.engine.services
 
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.messages.MessageStatus
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
 import com.lykke.matching.engine.messages.wrappers.socket.LimitOrderMassCancelMessageWrapper
@@ -51,5 +52,12 @@ class LimitOrderMassCancelService(
     override fun writeResponse(genericMessageWrapper: MessageWrapper, status: MessageStatus) {
         val messageWrapper = genericMessageWrapper as LimitOrderMassCancelMessageWrapper
         messageWrapper.writeResponse(status)
+    }
+
+    override fun writeResponse(genericMessageWrapper: MessageWrapper, processedMessage: ProcessedMessage) {
+        val messageWrapper = genericMessageWrapper as LimitOrderMassCancelMessageWrapper
+        messageWrapper.writeResponse(
+            processedMessage.status ?: MessageStatus.DUPLICATE
+        )
     }
 }

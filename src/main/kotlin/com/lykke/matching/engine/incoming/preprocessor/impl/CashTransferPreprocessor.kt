@@ -4,6 +4,7 @@ import com.lykke.matching.engine.daos.context.CashTransferContext
 import com.lykke.matching.engine.database.CashOperationIdDatabaseAccessor
 import com.lykke.matching.engine.database.PersistenceManager
 import com.lykke.matching.engine.database.common.entity.PersistenceData
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.deduplication.ProcessedMessagesCache
 import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
 import com.lykke.matching.engine.incoming.parsers.data.CashTransferParsedData
@@ -57,10 +58,10 @@ class CashTransferPreprocessor(
             return false
         }
 
-        if (isMessageDuplicated(parsedData)) {
-            writeResponse(parsedMessageWrapper, DUPLICATE)
-            val errorMessage = "Message already processed: ${parsedMessageWrapper.type}: ${context.messageId}"
-            logger.info(errorMessage)
+        val processedMessage = getProcessedMessage(parsedData)
+        if (processedMessage != null) {
+            logger.info("Message already processed: ${parsedMessageWrapper.type}: ${context.messageId}")
+            writeResponse(parsedMessageWrapper, processedMessage)
             return false
         }
 
@@ -102,11 +103,11 @@ class CashTransferPreprocessor(
         }
     }
 
-    private fun isMessageDuplicated(cashTransferParsedData: CashTransferParsedData): Boolean {
-        val parsedMessageWrapper = cashTransferParsedData.messageWrapper as CashTransferOperationMessageWrapper
+    private fun getProcessedMessage(cashSwapParsedData: CashTransferParsedData): ProcessedMessage? {
+        val parsedMessageWrapper = cashSwapParsedData.messageWrapper as CashTransferOperationMessageWrapper
         val context = parsedMessageWrapper.context!!
-        return cashOperationIdDatabaseAccessor.isAlreadyProcessed(
-            parsedMessageWrapper.type.toString(),
+        return cashOperationIdDatabaseAccessor.getProcessedMessage(
+            parsedMessageWrapper.type.type.toString(),
             context.messageId
         )
     }
@@ -137,6 +138,17 @@ class CashTransferPreprocessor(
             "Cash transfer operation (${context.transferOperation.externalId}) from client ${context.transferOperation.fromClientId} " +
                     "to client ${context.transferOperation.toClientId}, asset ${context.transferOperation.asset}," +
                     " volume: ${NumberUtils.roundForPrint(context.transferOperation.volume)}: $message"
+        )
+    }
+
+    override fun writeResponse(
+        messageWrapper: CashTransferOperationMessageWrapper,
+        processedMessage: ProcessedMessage
+    ) {
+        messageWrapper.writeResponse(
+            processedMessage.matchingEngineId ?: messageWrapper.messageId,
+            processedMessage.status ?: DUPLICATE,
+            processedMessage.statusReason ?: StringUtils.EMPTY
         )
     }
 }

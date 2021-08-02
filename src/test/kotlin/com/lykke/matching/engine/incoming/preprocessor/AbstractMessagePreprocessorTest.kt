@@ -1,6 +1,7 @@
 package com.lykke.matching.engine.incoming.preprocessor
 
 import com.lykke.matching.engine.daos.context.SingleLimitOrderContext
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.grpc.TestStreamObserver
 import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
 import com.lykke.matching.engine.incoming.parsers.ContextParser
@@ -47,6 +48,10 @@ class AbstractMessagePreprocessorTest {
             message: String?
         ) {
             messageWrapper.writeResponse(status, message)
+        }
+
+        override fun writeResponse(messageWrapper: SingleLimitOrderMessageWrapper, processedMessage: ProcessedMessage) {
+            //do nothing
         }
     }
 

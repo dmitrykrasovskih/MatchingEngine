@@ -4,6 +4,7 @@ import com.lykke.matching.engine.balance.BalanceException
 import com.lykke.matching.engine.daos.SwapOperation
 import com.lykke.matching.engine.daos.WalletOperation
 import com.lykke.matching.engine.daos.context.CashSwapContext
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.exception.PersistenceException
 import com.lykke.matching.engine.holders.BalancesHolder
 import com.lykke.matching.engine.holders.MessageSequenceNumberHolder
@@ -18,6 +19,7 @@ import com.lykke.matching.engine.services.validators.business.CashSwapOperationB
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
+import org.apache.commons.lang3.StringUtils
 import org.apache.log4j.Logger
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -103,6 +105,15 @@ class CashSwapOperationService(
         messageWrapper.writeResponse(messageWrapper.id, status)
     }
 
+    override fun writeResponse(genericMessageWrapper: MessageWrapper, processedMessage: ProcessedMessage) {
+        val messageWrapper = genericMessageWrapper as CashSwapOperationMessageWrapper
+        messageWrapper.writeResponse(
+            processedMessage.matchingEngineId ?: messageWrapper.messageId,
+            processedMessage.status ?: DUPLICATE,
+            processedMessage.statusReason ?: StringUtils.EMPTY
+        )
+    }
+
     private fun processSwapOperation(
         operation: SwapOperation,
         messageWrapper: MessageWrapper,
@@ -177,6 +188,9 @@ class CashSwapOperationService(
             walletProcessor.getClientBalanceUpdates(),
             operation
         )
+
+        cashSwapContext.processedMessage.status = OK
+        cashSwapContext.processedMessage.matchingEngineId = operation.matchingEngineOperationId
 
         val updated = walletProcessor.persistBalances(
             cashSwapContext.processedMessage,

@@ -2,6 +2,7 @@ package com.lykke.matching.engine.incoming.preprocessor.impl
 
 import com.lykke.matching.engine.database.PersistenceManager
 import com.lykke.matching.engine.database.common.entity.PersistenceData
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.deduplication.ProcessedMessagesCache
 import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
 import com.lykke.matching.engine.incoming.parsers.ContextParser
@@ -80,5 +81,9 @@ class LimitOrderCancelOperationPreprocessor(
         message: String?
     ) {
         messageWrapper.writeResponse(status, message)
+    }
+
+    override fun writeResponse(messageWrapper: LimitOrderCancelMessageWrapper, processedMessage: ProcessedMessage) {
+        //do nothing
     }
 }

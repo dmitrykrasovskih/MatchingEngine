@@ -2,6 +2,7 @@ package com.lykke.matching.engine.services
 
 import com.lykke.matching.engine.daos.LimitOrder
 import com.lykke.matching.engine.daos.order.LimitOrderType
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.messages.MessageStatus
 import com.lykke.matching.engine.messages.wrappers.LimitOrderCancelMessageWrapper
 import com.lykke.matching.engine.messages.wrappers.MessageWrapper
@@ -68,6 +69,13 @@ class LimitOrderCancelService(
     override fun writeResponse(genericMessageWrapper: MessageWrapper, status: MessageStatus) {
         val messageWrapper = genericMessageWrapper as LimitOrderCancelMessageWrapper
         messageWrapper.writeResponse(status)
+    }
+
+    override fun writeResponse(genericMessageWrapper: MessageWrapper, processedMessage: ProcessedMessage) {
+        val messageWrapper = genericMessageWrapper as LimitOrderCancelMessageWrapper
+        messageWrapper.writeResponse(
+            processedMessage.status ?: MessageStatus.DUPLICATE
+        )
     }
 
     private fun getLimitOrderTypeToLimitOrders(orderIds: Set<String>): Map<LimitOrderType, List<LimitOrder>> {

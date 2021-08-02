@@ -4,6 +4,7 @@ import com.lykke.matching.engine.daos.context.ReservedCashInOutContext
 import com.lykke.matching.engine.database.CashOperationIdDatabaseAccessor
 import com.lykke.matching.engine.database.PersistenceManager
 import com.lykke.matching.engine.database.common.entity.PersistenceData
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.deduplication.ProcessedMessagesCache
 import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
 import com.lykke.matching.engine.incoming.parsers.data.ReservedCashInOutParsedData
@@ -54,10 +55,10 @@ class ReservedCashInOutPreprocessor(
             return false
         }
 
-        if (isMessageDuplicated(parsedData)) {
-            writeResponse(parsedMessageWrapper, DUPLICATE)
-            val errorMessage = "Message already processed: ${parsedMessageWrapper.type}: ${context.messageId}"
-            logger.info(errorMessage)
+        val processedMessage = getProcessedMessage(parsedData)
+        if (processedMessage != null) {
+            logger.info("Message already processed: ${parsedMessageWrapper.type}: ${context.messageId}")
+            writeResponse(parsedMessageWrapper, processedMessage)
             return false
         }
 
@@ -103,11 +104,11 @@ class ReservedCashInOutPreprocessor(
         }
     }
 
-    private fun isMessageDuplicated(cashInOutParsedData: ReservedCashInOutParsedData): Boolean {
-        val parsedMessageWrapper = cashInOutParsedData.messageWrapper as ReservedCashInOutOperationMessageWrapper
+    private fun getProcessedMessage(cashSwapParsedData: ReservedCashInOutParsedData): ProcessedMessage? {
+        val parsedMessageWrapper = cashSwapParsedData.messageWrapper as ReservedCashInOutOperationMessageWrapper
         val context = parsedMessageWrapper.context!!
-        return cashOperationIdDatabaseAccessor.isAlreadyProcessed(
-            parsedMessageWrapper.type.toString(),
+        return cashOperationIdDatabaseAccessor.getProcessedMessage(
+            parsedMessageWrapper.type.type.toString(),
             context.messageId
         )
     }
@@ -144,6 +145,17 @@ class ReservedCashInOutPreprocessor(
                             context.reservedCashInOutOperation.reservedAmount
                         )
                     }: $message"
+        )
+    }
+
+    override fun writeResponse(
+        messageWrapper: ReservedCashInOutOperationMessageWrapper,
+        processedMessage: ProcessedMessage
+    ) {
+        messageWrapper.writeResponse(
+            processedMessage.matchingEngineId ?: messageWrapper.messageId,
+            processedMessage.status ?: DUPLICATE,
+            processedMessage.statusReason ?: StringUtils.EMPTY
         )
     }
 }

@@ -1,14 +1,13 @@
 package com.lykke.matching.engine.messages.wrappers
 
 import com.google.protobuf.StringValue
-import com.lykke.matching.engine.daos.MarketOrder
 import com.lykke.matching.engine.messages.MessageStatus
 import com.lykke.matching.engine.messages.MessageType
-import com.lykke.matching.engine.order.OrderStatus
 import com.myjetwallet.messages.incoming.grpc.GrpcIncomingMessages
 import io.grpc.stub.StreamObserver
 import io.micrometer.core.instrument.Timer
 import java.io.IOException
+import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
 
 class MarketOrderMessageWrapper(
@@ -24,9 +23,12 @@ class MarketOrderMessageWrapper(
 
     fun writeResponse(
         status: MessageStatus,
-        order: MarketOrder? = null,
         errorMessage: String? = null,
-        version: Long? = null
+        version: Long? = null,
+        price: BigDecimal? = null,
+        isStraight: Boolean? = null,
+        volume: BigDecimal? = null,
+        oppositeVolume: BigDecimal? = null
     ) {
         marketOrderTimer?.record(System.nanoTime() - startTimestamp, TimeUnit.NANOSECONDS)
         val responseBuilder = GrpcIncomingMessages.MarketOrderResponse.newBuilder()
@@ -38,16 +40,14 @@ class MarketOrderMessageWrapper(
 
         responseBuilder.messageId = StringValue.of(messageId)
 
-        if (order != null && order.status == OrderStatus.Matched.name) {
-            if (order.price != null) {
-                responseBuilder.price = StringValue.of(order.price!!.toPlainString())
-            }
-            if (order.isStraight()) {
-                responseBuilder.baseVolume = StringValue.of(order.volume.toPlainString())
-                responseBuilder.quotingVolume = StringValue.of(order.oppositeVolume.toPlainString())
+        if (price != null) {
+            responseBuilder.price = StringValue.of(price.toPlainString())
+            if (isStraight != null && isStraight) {
+                responseBuilder.baseVolume = StringValue.of(volume!!.toPlainString())
+                responseBuilder.quotingVolume = StringValue.of(oppositeVolume!!.toPlainString())
             } else {
-                responseBuilder.baseVolume = StringValue.of(order.oppositeVolume.toPlainString())
-                responseBuilder.quotingVolume = StringValue.of(order.volume.toPlainString())
+                responseBuilder.baseVolume = StringValue.of(oppositeVolume!!.toPlainString())
+                responseBuilder.quotingVolume = StringValue.of(volume!!.toPlainString())
             }
         }
 

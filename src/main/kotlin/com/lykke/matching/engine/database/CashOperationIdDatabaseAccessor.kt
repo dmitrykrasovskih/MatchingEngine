@@ -1,5 +1,7 @@
 package com.lykke.matching.engine.database
 
+import com.lykke.matching.engine.deduplication.ProcessedMessage
+
 interface CashOperationIdDatabaseAccessor {
-    fun isAlreadyProcessed(type: String, id: String): Boolean
+    fun getProcessedMessage(type: String, id: String): ProcessedMessage?
 }

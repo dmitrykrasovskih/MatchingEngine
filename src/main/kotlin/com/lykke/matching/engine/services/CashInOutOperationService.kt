@@ -3,6 +3,7 @@ package com.lykke.matching.engine.services
 import com.lykke.matching.engine.balance.BalanceException
 import com.lykke.matching.engine.daos.context.CashInOutContext
 import com.lykke.matching.engine.daos.converters.CashInOutOperationConverter
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.fee.FeeException
 import com.lykke.matching.engine.fee.FeeProcessor
 import com.lykke.matching.engine.holders.BalancesHolder
@@ -17,6 +18,7 @@ import com.lykke.matching.engine.services.validators.business.CashInOutOperation
 import com.lykke.matching.engine.services.validators.impl.ValidationException
 import com.lykke.matching.engine.utils.NumberUtils
 import com.lykke.matching.engine.utils.order.MessageStatusUtils
+import org.apache.commons.lang3.StringUtils
 import org.apache.log4j.Logger
 import org.springframework.stereotype.Service
 import java.util.*
@@ -121,6 +123,9 @@ class CashInOutOperationService(
             fees
         )
 
+        cashInOutContext.processedMessage.status = OK
+        cashInOutContext.processedMessage.matchingEngineId = cashInOutOperation.matchingEngineOperationId
+
         val updated = walletProcessor.persistBalances(
             cashInOutContext.processedMessage,
             null,
@@ -157,5 +162,14 @@ class CashInOutOperationService(
     override fun writeResponse(genericMessageWrapper: MessageWrapper, status: MessageStatus) {
         val messageWrapper = genericMessageWrapper as CashInOutOperationMessageWrapper
         messageWrapper.writeResponse(messageWrapper.id, status)
+    }
+
+    override fun writeResponse(genericMessageWrapper: MessageWrapper, processedMessage: ProcessedMessage) {
+        val messageWrapper = genericMessageWrapper as CashInOutOperationMessageWrapper
+        messageWrapper.writeResponse(
+            processedMessage.matchingEngineId ?: messageWrapper.messageId,
+            processedMessage.status ?: DUPLICATE,
+            processedMessage.statusReason ?: StringUtils.EMPTY
+        )
     }
 }

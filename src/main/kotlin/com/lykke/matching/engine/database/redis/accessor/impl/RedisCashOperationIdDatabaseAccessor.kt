@@ -3,14 +3,14 @@ package com.lykke.matching.engine.database.redis.accessor.impl
 import com.lykke.matching.engine.database.CashOperationIdDatabaseAccessor
 import com.lykke.matching.engine.database.redis.connection.RedisConnection
 import com.lykke.matching.engine.deduplication.ProcessedMessage
-import com.lykke.matching.engine.messages.MessageType
 import com.lykke.utils.logging.ThrottlingLogger
 import org.nustaq.serialization.FSTConfiguration
 import redis.clients.jedis.Transaction
 
-class RedisCashOperationIdDatabaseAccessor(private val cashInOutOperationRedisConnection: RedisConnection,
-                                           private val cashTransferOperationRedisConnection: RedisConnection,
-                                           private val dbIndex: Int): CashOperationIdDatabaseAccessor {
+class RedisCashOperationIdDatabaseAccessor(
+    private val cashOperationRedisConnection: RedisConnection,
+    private val dbIndex: Int
+) : CashOperationIdDatabaseAccessor {
     companion object {
         val LOGGER = ThrottlingLogger.getLogger(RedisCashOperationIdDatabaseAccessor::class.java.name)
         private const val SEPARATOR = ":"
@@ -18,31 +18,15 @@ class RedisCashOperationIdDatabaseAccessor(private val cashInOutOperationRedisCo
 
     private var conf = FSTConfiguration.createJsonConfiguration()
 
-    override fun isAlreadyProcessed(type: String, id: String): Boolean {
-        return when (type) {
-            MessageType.CASH_TRANSFER_OPERATION.type.toString() -> isTransferAlreadyProcessed(id)
-            MessageType.CASH_IN_OUT_OPERATION.type.toString() -> isCashInOutAlreadyProcessed(id)
-            else -> false
-        }
-    }
+    override fun getProcessedMessage(type: String, id: String): ProcessedMessage? {
+        var result: ProcessedMessage? = null
 
-    private fun isCashInOutAlreadyProcessed(id: String): Boolean {
-        var result = false
-
-        cashInOutOperationRedisConnection.resource {
-            jedis -> jedis.select(dbIndex)
-            result = jedis.exists(getKey(MessageType.CASH_IN_OUT_OPERATION.type.toString(), id))
-        }
-
-        return result
-    }
-
-    private fun isTransferAlreadyProcessed(id: String): Boolean {
-        var result = false
-
-        cashTransferOperationRedisConnection.resource { jedis ->
+        cashOperationRedisConnection.resource { jedis ->
             jedis.select(dbIndex)
-            result = jedis.exists(getKey(MessageType.CASH_TRANSFER_OPERATION.type.toString(), id))
+            val value = jedis.get(getKey(type, id))
+            if (value != null) {
+                result = conf.asObject(value.toByteArray()) as ProcessedMessage
+            }
         }
 
         return result

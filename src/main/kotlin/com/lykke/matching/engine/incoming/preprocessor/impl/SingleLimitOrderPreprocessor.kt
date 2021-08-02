@@ -1,6 +1,7 @@
 package com.lykke.matching.engine.incoming.preprocessor.impl
 
 import com.lykke.matching.engine.daos.order.LimitOrderType
+import com.lykke.matching.engine.deduplication.ProcessedMessage
 import com.lykke.matching.engine.holders.MessageProcessingStatusHolder
 import com.lykke.matching.engine.incoming.parsers.data.SingleLimitOrderParsedData
 import com.lykke.matching.engine.incoming.parsers.impl.SingleLimitOrderContextParser
@@ -92,5 +93,9 @@ class SingleLimitOrderPreprocessor(
         message: String?
     ) {
         messageWrapper.writeResponse(status, message)
+    }
+
+    override fun writeResponse(messageWrapper: SingleLimitOrderMessageWrapper, processedMessage: ProcessedMessage) {
+        //do nothing
     }
 }
