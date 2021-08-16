@@ -6,5 +6,6 @@ enum class MessageType(val id: Int) {
     CASH_OUT(2),
     CASH_TRANSFER(3),
     ORDER(4),
-    CASH_SWAP(5)
+    RESERVED_CASH(5),
+    CASH_SWAP(6)
 }

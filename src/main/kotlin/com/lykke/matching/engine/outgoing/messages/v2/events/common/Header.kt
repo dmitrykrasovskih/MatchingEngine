@@ -17,7 +17,7 @@ class Header(
 
     override fun createGeneratedMessageBuilder(): OutgoingMessages.Header.Builder {
         val builder = OutgoingMessages.Header.newBuilder()
-        builder.setMessageType(OutgoingMessages.Header.MessageType.forNumber(messageType.id))
+        builder.setMessageType(mapMessageType(messageType))
             .setSequenceNumber(sequenceNumber)
             .setMessageId(messageId)
             .setRequestId(requestId)
@@ -25,5 +25,17 @@ class Header(
             .setTimestamp(timestamp.createProtobufTimestampBuilder())
             .eventType = eventType
         return builder
+    }
+
+    private fun mapMessageType(messageType: MessageType): OutgoingMessages.Header.MessageType {
+        return when (messageType) {
+            MessageType.UNKNOWN_MESSAGE_TYPE -> OutgoingMessages.Header.MessageType.UNKNOWN_MESSAGE_TYPE
+            MessageType.CASH_IN -> OutgoingMessages.Header.MessageType.CASH_IN
+            MessageType.CASH_OUT -> OutgoingMessages.Header.MessageType.CASH_OUT
+            MessageType.CASH_TRANSFER -> OutgoingMessages.Header.MessageType.CASH_TRANSFER
+            MessageType.ORDER -> OutgoingMessages.Header.MessageType.ORDER
+            MessageType.RESERVED_CASH -> OutgoingMessages.Header.MessageType.RESERVED_CASH
+            MessageType.CASH_SWAP -> OutgoingMessages.Header.MessageType.CASH_SWAP
+        }
     }
 }
