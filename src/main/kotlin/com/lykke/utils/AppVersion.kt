@@ -2,7 +2,7 @@ package com.lykke.utils
 
 import java.net.InetAddress
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.*
 import java.util.jar.Attributes
 import java.util.jar.Manifest
 
@@ -32,7 +32,7 @@ object AppVersion {
         }
 
         REVISION_NUMBER = attributes.getValue("Revision-number")
-        BUILD_NUMBER = attributes.getValue("Build-number")
+        BUILD_NUMBER = attributes.getValue("BuildVersion")
         VERSION = attributes.getValue("Version") ?: "local"
     }
 
